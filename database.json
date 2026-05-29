@@ -1,0 +1,14 @@
+{
+  "users": [
+    {
+      "id": "90b4e49d-3ed1-4b71-a51c-32c0eaa08148",
+      "name": "mateusz",
+      "email": "mateusz@gmail.com",
+      "passwordHash": "$2b$12$xCAhKH3T3SvSZWTSGSeJhuhuZmYPy9UpvC0/oMJhLgDrbL/Ltdic6",
+      "role": "user",
+      "address": "",
+      "createdAt": "2025-12-21T15:27:05.690Z"
+    }
+  ],
+  "orders": []
+}

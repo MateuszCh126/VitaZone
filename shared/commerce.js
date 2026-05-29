@@ -1,0 +1,1 @@
+export const DEFAULT_SHIPPING_AMOUNT_CENTS = 4500;
