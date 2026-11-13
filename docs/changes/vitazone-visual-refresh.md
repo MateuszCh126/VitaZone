@@ -1,6 +1,6 @@
 ---
 title: "VitaZone: calmer visual layer"
-status: implemented-locally-awaiting-owner-facts-and-review
+status: draft-pr-open-awaiting-owner-facts-and-review
 owner: Codex
 updated: 2026-11-13
 ---
@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## Zakres
 
-Gałąź `codex/vitazone-visual-refresh`, bazuje na etapie `codex/vitazone-trust-checkout` (`d9a3adf`). Zmiany wyłącznie lokalne; brak MR, pushu i wdrożenia. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
+Gałąź `codex/vitazone-visual-refresh`, bazuje na etapie `codex/vitazone-trust-checkout` (`d9a3adf`); [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
 
 ## Wykonane
 
