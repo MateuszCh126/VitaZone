@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## Zakres
 
-Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazone-trust-checkout` (`d9a3adf`) i jest teraz zsynchronizowana z jej aktualnym commitem `ec6d6be`; [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
+Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazone-trust-checkout` (`d9a3adf`) i jest teraz zsynchronizowana z jej aktualnym commitem `a4fe946`; [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
 
 ## Wykonane
 
@@ -42,9 +42,9 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — 49 testów w 11 plikach przeszło na finalnym drzewie, w tym testy adaptera na mockach HTTP i test webhooka dla ponawianej płatności.
+- `pnpm test -- --run` — 50 testów w 11 plikach przeszło na finalnym drzewie, w tym testy adaptera na mockach HTTP i testy webhooków dla błędnej próby, wygaśnięcia sesji oraz anulowania PaymentIntent.
 - `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
-- `pnpm lint` — 0 błędów; poprawiono import `process` w konfiguracji Playwright, brak ostrzeżeń.
+- `pnpm lint` — przeszedł bez błędów; poprawiono import `process` w konfiguracji Playwright. Pierwsza równoległa próba uruchomiona podczas E2E zakończyła się błędem odczytu tworzonego katalogu `test-results`; ponowne uruchomienie po zakończeniu E2E przeszło.
 - `pnpm check:secrets` — przeszedł.
 - Impeccable detector — zwrócił `[]` na wskazanym zestawie UI przed końcową korektą wyszukiwanych podpowiedzi i copy; odczytuję to jako brak zgłoszeń w tej przebieżce, nie jako certyfikację.
 - W podglądzie lokalnym bez backendu listing zgłosił błąd pobrania, dlatego do dalszej oceny renderu użyłem jawnie mockowanego API i fixture demo (opis poniżej). Nie otwierałem ani nie modyfikowałem deploymentu produkcyjnego.
