@@ -1,7 +1,7 @@
 import Stripe from 'stripe';
 import env from '../config/env.js';
 import logger from '../config/logger.js';
-import { CreateCheckoutSessionSchema } from '../../schemas/stripeSchema.js';
+import { CheckoutSessionStatusSchema, CreateCheckoutSessionSchema } from '../../schemas/stripeSchema.js';
 import * as orderRepo from '../../repositories/orderRepository.js';
 import { ORDER_STATUS } from '../../shared/orderStatus.js';
 import { sendOrderPaidEmail } from '../services/emailService.js';
@@ -53,7 +53,6 @@ const buildAllowedCheckoutOrigins = () => {
 };
 
 const allowedCheckoutOrigins = buildAllowedCheckoutOrigins();
-const STRIPE_CHECKOUT_SESSION_ID_PATTERN = /^cs(?:_test|_live)?_[A-Za-z0-9]+$/;
 
 const buildAppUrl = (req) => {
     const requestOrigin = normalizeOrigin(req.headers.origin);
@@ -161,12 +160,10 @@ export const createCheckoutSession = async (req, res) => {
         ensureStripeClientConfigured();
 
         const validatedData = CreateCheckoutSessionSchema.parse(req.body);
-        if (req.user.id !== validatedData.userId) {
-            return res.status(403).json({ error: 'Brak dostępu: nie możesz utworzyć checkoutu dla innego użytkownika' });
-        }
+        const userId = req.user?.id || null;
 
         const createdOrder = await orderRepo.createOrder({
-            userId: validatedData.userId,
+            userId,
             paymentMethod: 'stripe_checkout',
             paymentId: null,
             items: validatedData.items,
@@ -203,12 +200,12 @@ export const createCheckoutSession = async (req, res) => {
             line_items: buildLineItems(hydratedOrder),
             metadata: {
                 orderId,
-                userId: req.user.id
+                ...(userId ? { userId } : {})
             },
             payment_intent_data: {
                 metadata: {
                     orderId,
-                    userId: req.user.id
+                    ...(userId ? { userId } : {})
                 }
             }
         });
@@ -265,21 +262,17 @@ export const createCheckoutSession = async (req, res) => {
 export const getCheckoutSessionStatus = async (req, res) => {
     try {
         ensureStripeClientConfigured();
-        const sessionId = req.params.sessionId;
-
-        if (!sessionId || typeof sessionId !== 'string') {
-            return res.status(400).json({ error: 'Brak identyfikatora sesji checkout' });
-        }
-
-        if (!STRIPE_CHECKOUT_SESSION_ID_PATTERN.test(sessionId)) {
+        const parsed = CheckoutSessionStatusSchema.safeParse(req.body || {});
+        if (!parsed.success) {
             return res.status(400).json({ error: 'Nieprawidłowy identyfikator sesji checkout' });
         }
 
+        const { sessionId } = parsed.data;
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const orderId = session.metadata?.orderId || session.client_reference_id;
         const sessionUserId = session.metadata?.userId;
 
-        if (sessionUserId && sessionUserId !== req.user.id) {
+        if (sessionUserId && sessionUserId !== req.user?.id) {
             return res.status(403).json({ error: 'Brak dostępu' });
         }
 
@@ -292,21 +285,24 @@ export const getCheckoutSessionStatus = async (req, res) => {
         }
 
         const order = orderId ? await orderRepo.findById(orderId) : null;
-
-        res.json({
-            sessionId: session.id,
+        const response = {
             checkoutStatus: session.status,
-            paymentStatus: session.payment_status,
-            orderId,
-            orderStatus: order?.status || null
-        });
+            paymentStatus: session.payment_status
+        };
+
+        if (sessionUserId && req.user?.id === sessionUserId) {
+            response.orderId = orderId || null;
+            response.orderStatus = order?.status || null;
+        }
+
+        res.set('Cache-Control', 'no-store');
+        res.json(response);
     } catch (error) {
         if (error.code === 'STRIPE_NOT_CONFIGURED') {
-            return res.status(503).json({ error: 'Płatności Stripe Checkout nie są skonfigurowane' });
+            return res.status(503).json({ error: 'Płatności Stripe nie są skonfigurowane' });
         }
 
         logger.error('Stripe checkout status error', {
-            sessionId: req.params.sessionId,
             errorMessage: error?.message || 'Unknown Stripe status error',
             errorName: error?.name || 'Error',
             errorCode: error?.code || null

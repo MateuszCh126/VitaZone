@@ -84,10 +84,12 @@ const Checkout = () => {
                 type: 'cancelled',
                 message: 'Płatność została przerwana. Koszyk i dane dostawy nadal czekają na Ciebie.'
             });
+            window.history.replaceState(window.history.state, '', window.location.pathname);
             return;
         }
 
-        if (!sessionId || !user) return;
+        if (!sessionId || loading) return;
+        window.history.replaceState(window.history.state, '', window.location.pathname);
 
         let isActive = true;
         let pollTimer = null;
@@ -102,9 +104,12 @@ const Checkout = () => {
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/api/stripe/checkout-session/${sessionId}/status`,
+                    `${API_BASE}/api/stripe/checkout-session/status`,
                     {
-                        credentials: 'include'
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ sessionId })
                     }
                 );
 
@@ -119,8 +124,6 @@ const Checkout = () => {
                         const trackedPurchaseKey = `purchase:${sessionId}`;
                         if (!window.sessionStorage.getItem(trackedPurchaseKey)) {
                             trackEvent('purchase', {
-                                sessionId,
-                                orderId: data.orderId || null,
                                 value: total,
                                 currency: 'PLN',
                                 itemCount: cart.length
@@ -132,10 +135,14 @@ const Checkout = () => {
 
                     setCheckoutState({
                         type: 'paid',
-                        message: 'Płatność zakończyła się sukcesem. Zamówienie trafiło już do panelu klienta.'
+                        message: user
+                            ? 'Płatność zakończyła się sukcesem. Potwierdzenie otrzymasz e-mailem, a zamówienie znajdziesz w panelu klienta.'
+                            : 'Płatność zakończyła się sukcesem. Potwierdzenie i informacje o realizacji wyślemy na podany adres e-mail.'
                     });
 
-                    pollTimer = window.setTimeout(() => navigate('/dashboard'), 2500);
+                    if (user) {
+                        pollTimer = window.setTimeout(() => navigate('/dashboard'), 2500);
+                    }
                     return;
                 }
 
@@ -154,7 +161,9 @@ const Checkout = () => {
 
                 setCheckoutState({
                     type: 'pending',
-                    message: 'Płatność została przyjęta, ale webhook jeszcze kończy synchronizację. Sprawdź panel klienta za kilka sekund.'
+                    message: user
+                        ? 'Płatność została przyjęta. Aktualizujemy status zamówienia; potwierdzenie wyślemy e-mailem.'
+                        : 'Płatność została przyjęta. Aktualizujemy status zamówienia; potwierdzenie wyślemy e-mailem.'
                 });
             } catch (error) {
                 setCheckoutState({
@@ -170,7 +179,7 @@ const Checkout = () => {
             isActive = false;
             if (pollTimer) window.clearTimeout(pollTimer);
         };
-    }, [searchParams, user, clearCart, navigate, total, cart.length]);
+    }, [searchParams, user, loading, clearCart, navigate, total, cart.length]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -210,11 +219,6 @@ const Checkout = () => {
     };
 
     const handleStartCheckout = async () => {
-        if (!user) {
-            navigate('/login');
-            return;
-        }
-
         if (cart.length === 0) {
             setCheckoutState({
                 type: 'error',
@@ -253,7 +257,6 @@ const Checkout = () => {
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    userId: user.id,
                     items: cart.map((item) => ({
                         productId: item.id || item.productId,
                         quantity: item.quantity
@@ -321,12 +324,6 @@ const Checkout = () => {
         );
     };
 
-    useEffect(() => {
-        if (!loading && !user) {
-            navigate('/login', { replace: true });
-        }
-    }, [loading, navigate, user]);
-
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center px-6 py-12 text-center">
@@ -334,8 +331,6 @@ const Checkout = () => {
             </div>
         );
     }
-
-    if (!user) return null;
 
     return (
         <div className="min-h-screen px-6 py-12">
@@ -367,20 +362,20 @@ const Checkout = () => {
                         {step === 1 && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="fullName" placeholder="Imię i nazwisko" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="email" placeholder="Adres e-mail" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="fullName" label="Imię i nazwisko" placeholder="np. Jan Kowalski" autoComplete="name" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="email" label="Adres e-mail" type="email" placeholder="np. jan@example.com" autoComplete="email" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="country" placeholder="Kraj" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="city" placeholder="Miasto" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="country" label="Kraj" placeholder="Polska" autoComplete="country-name" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="city" label="Miasto" placeholder="np. Jelenia Góra" autoComplete="address-level2" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="postal_code" placeholder="Kod pocztowy (00-000)" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="street" placeholder="Ulica" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="postal_code" label="Kod pocztowy" placeholder="00-000" autoComplete="postal-code" inputMode="numeric" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="street" label="Ulica" placeholder="Nazwa ulicy" autoComplete="address-line1" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="house_number" placeholder="Numer domu" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="apartment_number" placeholder="Numer lokalu (opcjonalnie)" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="house_number" label="Numer domu" placeholder="np. 12" autoComplete="address-line2" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="apartment_number" label="Numer lokalu (opcjonalnie)" placeholder="np. 4" autoComplete="address-line3" required={false} formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
 
                                 <button
@@ -410,9 +405,10 @@ const Checkout = () => {
                                 </div>
 
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                    <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod rabatowy</label>
+                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod rabatowy</label>
                                     <div className="flex gap-2">
                                         <input
+                                            id="checkout-promo-code"
                                             value={promoCode}
                                             onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
                                             disabled={Boolean(appliedDiscount)}
@@ -570,20 +566,41 @@ const Checkout = () => {
     );
 };
 
-const InputField = ({ name, placeholder, formData, handleChange, errors }) => (
+const InputField = ({
+    name,
+    label,
+    placeholder,
+    type = 'text',
+    autoComplete,
+    inputMode,
+    required = true,
+    formData,
+    handleChange,
+    errors
+}) => (
     <div>
+        <label htmlFor={`checkout-${name}`} className="mb-2 block text-sm font-medium text-gray-200">
+            {label}{required ? ' *' : ''}
+        </label>
         <input
+            id={`checkout-${name}`}
             name={name}
+            type={type}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            required={required}
+            aria-invalid={Boolean(errors[name])}
+            aria-describedby={errors[name] ? `checkout-${name}-error` : undefined}
             value={formData[name]}
             onChange={handleChange}
             placeholder={placeholder}
-            className={`w-full rounded-xl border p-3 outline-none transition-colors focus:ring-1 ${errors[name]
+            className={`min-h-12 w-full rounded-xl border p-3 outline-none transition-colors focus:ring-1 ${errors[name]
                 ? 'border-red-500 bg-red-500/5 focus:border-red-500 focus:ring-red-500'
                 : 'border-white/10 bg-white/5 focus:border-primary focus:ring-primary'
                 }`}
         />
         {errors[name] && (
-            <p className="mt-1 ml-1 text-xs font-semibold text-red-500">{errors[name]}</p>
+            <p id={`checkout-${name}-error`} role="alert" className="mt-1 ml-1 text-xs font-semibold text-red-400">{errors[name]}</p>
         )}
     </div>
 );

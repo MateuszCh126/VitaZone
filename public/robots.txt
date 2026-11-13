@@ -10,4 +10,4 @@ Allow: /
 User-agent: CCBot
 Allow: /
 
-Sitemap: https://animalsshop.vercel.app/sitemap.xml
+Sitemap: https://vitazone.vercel.app/sitemap.xml

@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { motion } from 'framer-motion';
-import { Clock, Mail, MapPin, MessageSquareMore, Phone } from 'lucide-react';
+import { Mail, MessageSquareMore } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 import { Link } from 'react-router-dom';
 
@@ -8,23 +8,9 @@ const contactCards = [
   {
     title: 'Email do sklepu',
     value: 'Napisz do obsługi VitaZone',
-    description: 'Najlepsza opcja przy pytaniach o asortyment, dostępność i większe zamówienia.',
+    description: 'Pytania o asortyment, dostępność i zamówienia.',
     href: 'mailto:kontakt@animalsshop.pl',
     icon: Mail
-  },
-  {
-    title: 'Telefon',
-    value: '+48 123 456 789',
-    description: 'Kontakt w sprawie zamówień, dostawy i obsługi posprzedażowej w dni robocze.',
-    href: 'tel:+48123456789',
-    icon: Phone
-  },
-  {
-    title: 'Adres korespondencyjny',
-    value: 'ul. Terrarystyczna 10, 00-001 Warszawa',
-    description: 'Dane kontaktowe do korespondencji oraz formalnej obsługi sklepu.',
-    href: null,
-    icon: MapPin
   }
 ];
 
@@ -51,8 +37,7 @@ const Contact = () => {
               Kontakt
             </h1>
             <p className="mx-auto max-w-3xl text-neutral-400">
-              Jeśli potrzebujesz pomocy z wyborem gatunku, terrarium albo wyposażenia, napisz lub zadzwoń.
-              Odpowiadamy konkretnie i pomagamy dobrać rozwiązanie do planowanego terrarium.
+              Jeśli potrzebujesz pomocy z wyborem produktu lub zamówieniem, napisz do sklepu.
             </p>
           </div>
 
@@ -86,25 +71,6 @@ const Contact = () => {
             </div>
 
             <div className="space-y-6">
-              <div className="rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-8 shadow-xl backdrop-blur-sm">
-                <h2 className="mb-4 flex items-center gap-2 text-2xl font-semibold text-emerald-400">
-                  <Clock className="h-5 w-5" /> Godziny kontaktu
-                </h2>
-                <ul className="space-y-3 text-neutral-300">
-                  <li className="flex justify-between border-b border-neutral-700 pb-3">
-                    <span>Poniedziałek - piątek</span>
-                    <span>09:00 - 18:00</span>
-                  </li>
-                  <li className="flex justify-between border-b border-neutral-700 pb-3">
-                    <span>Sobota</span>
-                    <span>10:00 - 14:00</span>
-                  </li>
-                  <li className="flex justify-between">
-                    <span>Niedziela</span>
-                    <span className="text-neutral-500">Odpowiadamy mailowo</span>
-                  </li>
-                </ul>
-              </div>
 
               <div className="rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-8 shadow-xl backdrop-blur-sm">
                 <h2 className="mb-4 flex items-center gap-2 text-2xl font-semibold text-emerald-400">

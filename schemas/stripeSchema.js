@@ -17,8 +17,11 @@ const CheckoutShippingSchema = z.object({
 });
 
 export const CreateCheckoutSessionSchema = z.object({
-    userId: z.string().uuid('Invalid user ID'),
     items: z.array(CheckoutItemSchema).min(1, 'Checkout must include at least one item'),
     shipping: CheckoutShippingSchema,
     discountCode: z.string().min(3).max(50).optional().nullable()
+});
+
+export const CheckoutSessionStatusSchema = z.object({
+    sessionId: z.string().regex(/^cs(?:_test|_live)?_[A-Za-z0-9]+$/, 'Invalid checkout session ID')
 });

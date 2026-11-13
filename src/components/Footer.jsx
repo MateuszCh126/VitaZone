@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, MessageSquareMore, Phone } from 'lucide-react';
+import { Mail, MessageSquareMore } from 'lucide-react';
 import { FEATURED_CATEGORY_NAMES, STOREFRONT_CATEGORIES, getCategoryHref } from '../data/storefrontData';
 
 const featuredLinks = STOREFRONT_CATEGORIES.filter((category) => FEATURED_CATEGORY_NAMES.includes(category.name));
@@ -60,23 +60,12 @@ const Footer = () => {
             <h3 className="mb-6 font-bold text-white">Kontakt</h3>
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">
-                <MapPin size={16} className="mt-0.5 text-primary" />
-                <span>ul. Terrarystyczna 10, 00-001 Warszawa</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Phone size={16} className="mt-0.5 text-primary" />
-                <span>+48 123 456 789</span>
-              </li>
-              <li className="flex items-start gap-3">
                 <Mail size={16} className="mt-0.5 text-primary" />
                 <a href="mailto:kontakt@animalsshop.pl" className="transition-colors hover:text-primary">
                   Napisz do sklepu
                 </a>
               </li>
             </ul>
-            <p className="mt-6 text-xs leading-relaxed text-gray-500">
-              Zwierzęta wysyłamy wyłącznie w bezpiecznych oknach logistycznych. Akcesoria i pokarm nadajemy szybciej, zwykle w 24-48 h.
-            </p>
           </div>
         </div>
 

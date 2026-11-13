@@ -76,8 +76,7 @@ const TermsAndConditions = () => {
                 <FileText className="h-6 w-6" /> 6. Kontakt
               </h2>
               <p className="leading-relaxed text-neutral-300">
-              W sprawach dotyczących sklepu, zamówień i dokumentów prosimy o kontakt mailowy
-                lub telefonicznie pod numerem +48 123 456 789.
+              W sprawach dotyczących sklepu, zamówień i dokumentów prosimy o kontakt przez aktualny kanał wskazany na stronie kontaktowej.
               </p>
             </section>
           </div>

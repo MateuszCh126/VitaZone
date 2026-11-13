@@ -375,10 +375,10 @@ export const findAllOrders = async () => {
             o.shipping_address_json,
             o.created_at,
             CAST(o.total_amount_cents AS FLOAT) / 100 AS total_amount,
-            u.email AS user_email,
+            COALESCE(u.email, o.shipping_address_json->>'email') AS user_email,
             ${buildOrderItemsAggregate(schemaSupport)}
         FROM orders o
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN order_items oi ON o.id = oi.order_id
         LEFT JOIN products p ON oi.product_id = p.id
         GROUP BY o.id, u.email
@@ -401,12 +401,12 @@ export const findAdminOrderById = async (orderId) => {
             o.shipping_address_json,
             o.created_at,
             CAST(o.total_amount_cents AS FLOAT) / 100 AS total_amount,
-            u.email AS user_email,
+            COALESCE(u.email, o.shipping_address_json->>'email') AS user_email,
             u.first_name,
             u.last_name,
             ${buildOrderItemsAggregate(schemaSupport)}
         FROM orders o
-        JOIN users u ON o.user_id = u.id
+        LEFT JOIN users u ON o.user_id = u.id
         LEFT JOIN order_items oi ON o.id = oi.order_id
         LEFT JOIN products p ON oi.product_id = p.id
         WHERE o.id = $1

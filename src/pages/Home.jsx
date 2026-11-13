@@ -237,17 +237,17 @@ const Home = () => {
 
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
-                to="/shop"
+                to="/shop?category=Terraria%20i%20zestawy"
                 className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-primary px-6 py-3.5 font-bold text-black transition-all duration-300 hover:bg-white sm:w-auto sm:px-8 sm:py-4"
               >
-                Przejdź do katalogu
+                Urządzam pierwsze terrarium
                 <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
-                to="/about"
+                to="/shop?journey=existing"
                 className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-white/20 px-6 py-3.5 font-bold text-white transition-all duration-300 hover:bg-white/5 sm:w-auto sm:px-8 sm:py-4"
               >
-                Poznaj VitaZone
+                Mam już zwierzę
               </Link>
             </div>
           </div>
@@ -351,7 +351,7 @@ const Home = () => {
           <div className="mb-10 flex flex-col gap-4 sm:mb-12 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
               <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Polecane na start</p>
-              <h2 className="text-3xl font-bold text-white sm:text-4xl">Najczęściej wybierane produkty</h2>
+              <h2 className="text-3xl font-bold text-white sm:text-4xl">Wybrane pozycje z katalogu</h2>
             </div>
             <Link to="/shop" className="inline-flex items-center gap-2 text-primary transition-colors hover:text-white">
               Otwórz pełny katalog <ArrowRight size={16} />

@@ -36,7 +36,7 @@ const buildEmailShell = ({ title, intro, details, footer }) => `
   <div style="font-family:Arial,Helvetica,sans-serif;background:#07120d;padding:32px;color:#ecfdf5;">
     <div style="max-width:640px;margin:0 auto;background:#0b1611;border:1px solid rgba(45,242,154,0.18);border-radius:24px;overflow:hidden;">
       <div style="padding:24px 28px;border-bottom:1px solid rgba(255,255,255,0.08);">
-        <div style="font-size:12px;letter-spacing:0.35em;text-transform:uppercase;color:#34d399;font-weight:700;">AnimalsShop</div>
+        <div style="font-size:12px;letter-spacing:0.35em;text-transform:uppercase;color:#34d399;font-weight:700;">VitaZone</div>
         <h1 style="margin:14px 0 0;font-size:28px;line-height:1.2;color:#ffffff;">${title}</h1>
       </div>
       <div style="padding:28px;color:#d1fae5;line-height:1.65;font-size:15px;">
@@ -87,7 +87,7 @@ export const sendOrderPaidEmail = async (order) => {
 
     return sendEmail({
         to,
-        subject: `AnimalsShop: potwierdzenie opłacenia zamówienia #${orderNumber}`,
+        subject: `VitaZone: potwierdzenie opłacenia zamówienia #${orderNumber}`,
         html: buildEmailShell({
             title: `Zamówienie #${orderNumber} zostało opłacone`,
             intro: `Cześć ${fullName}, otrzymaliśmy płatność i przekazaliśmy zamówienie do dalszej realizacji.`,
@@ -100,7 +100,7 @@ export const sendOrderPaidEmail = async (order) => {
                 <ul style="margin:10px 0 0;padding-left:20px;">${buildItemsHtml(order.items)}</ul>
               </div>
             `,
-            footer: 'Jeśli masz pytania o realizację, odpisz na tę wiadomość albo skontaktuj się z nami przez kontakt@animalsshop.pl.'
+            footer: 'Jeśli masz pytania o realizację, odpisz na tę wiadomość.'
         })
     });
 };
@@ -115,7 +115,7 @@ export const sendOrderStatusEmail = async (order, previousStatus) => {
 
     return sendEmail({
         to,
-        subject: `AnimalsShop: aktualizacja zamówienia #${orderNumber}`,
+        subject: `VitaZone: aktualizacja zamówienia #${orderNumber}`,
         html: buildEmailShell({
             title: `Status zamówienia #${orderNumber}: ${nextLabel}`,
             intro: `Twoje zamówienie zmieniło status z „${previousLabel}” na „${nextLabel}”.`,

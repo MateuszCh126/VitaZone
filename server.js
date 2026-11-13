@@ -79,7 +79,7 @@ app.use('/api', globalLimiter);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', verifyToken, userRoutes);
-app.use('/api/stripe', verifyToken, createStripeRoutes({ orderLimiter }));
+app.use('/api/stripe', createStripeRoutes({ orderLimiter }));
 app.use('/api/orders', verifyToken, createOrderRoutes({ orderLimiter }));
 app.use('/api/admin', adminLimiter, verifyAdmin, adminRoutes);
 app.use('/api/discounts', createDiscountRoutes({ discountValidationLimiter }));
