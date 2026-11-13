@@ -27,4 +27,3 @@ describe('Checkout guest flow', () => {
         expect(screen.getByLabelText(/Adres e-mail/)).toBeInTheDocument();
     });
 });
-

@@ -1,6 +1,6 @@
 # VitaZone
 
-Production-hardened storefront for exotic animals and terrarium accessories.
+React storefront for terrarium equipment and exotic animal products.
 
 ## Stack
 
