@@ -1,12 +1,9 @@
 import React, { useEffect, useState } from 'react';
 import {
   ArrowRight,
-  CheckCircle2,
-  MessageCircleMore,
   Search,
   ShieldCheck,
   ShoppingBag,
-  Thermometer,
   Warehouse
 } from 'lucide-react';
 import { Link, useNavigate } from 'react-router-dom';
@@ -22,42 +19,19 @@ const featuredCategories = STOREFRONT_CATEGORIES.filter((category) => FEATURED_C
 
 const valueCards = [
   {
-    title: 'Starannie dobrane gatunki',
-    description: 'Oferta skupia się na zwierzętach i konfiguracjach, które można prowadzić stabilnie w codziennej opiece.',
-    icon: ShieldCheck
-  },
-  {
-    title: 'Kompletna oferta do terrarium',
-    description: 'Terraria, oświetlenie, podłoża, dekoracje i pokarm są zebrane w jednym, spójnym katalogu.',
-    icon: Warehouse
-  },
-  {
-    title: 'Wyposażenie dobrane do warunków',
-    description: 'Łatwiej dobrać temperaturę, UVB i elementy potrzebne do bezpiecznej, odpowiedzialnej opieki.',
-    icon: Thermometer
-  }
-];
-
-const storeHighlights = [
-  {
-    title: 'Przemyślany katalog',
-    description: 'Zwierzęta, terraria i akcesoria podzielone na czytelne, praktyczne działy.',
-    icon: Warehouse
-  },
-  {
-    title: 'Zakup bez chaosu',
-    description: 'Szybciej połączysz gatunek, terrarium i wyposażenie w jeden sensowny koszyk.',
+    title: 'Dane konkretnego produktu',
+    description: 'Na karcie sprawdzisz opis, cenę i dostępność wybranej pozycji.',
     icon: Search
   },
   {
-    title: 'Bezpieczna płatność',
-    description: 'Checkout działa przez Stripe, a płatność odbywa się na stronie Stripe.',
-    icon: ShieldCheck
+    title: 'Osobne działy asortymentu',
+    description: 'Przeglądaj terraria, ogrzewanie i oświetlenie, podłoża, dekoracje oraz pokarm.',
+    icon: Warehouse
   },
   {
-    title: 'Wsparcie przed zakupem',
-    description: 'FAQ i czat pomagają dobrać pierwszy zestaw albo spokojnie rozbudować obecne terrarium.',
-    icon: MessageCircleMore
+    title: 'Wybór pozostaje po Twojej stronie',
+    description: 'Otwórz szczegóły produktu lub porównaj działy. Skróty pomagają zacząć, nie narzucają zestawu.',
+    icon: ShoppingBag
   }
 ];
 
@@ -187,15 +161,12 @@ const Home = () => {
 
         <div className="container relative z-10 mx-auto px-4 py-16 sm:px-6 sm:py-20">
           <div className="max-w-4xl">
-            <p className="mb-3 text-xs font-semibold uppercase tracking-[0.28em] text-primary/80 sm:mb-4 sm:text-sm sm:tracking-[0.35em]">
-              VitaZone
-            </p>
-            <h1 className="mb-6 text-4xl font-black tracking-tighter text-white sm:text-5xl md:text-7xl lg:text-8xl">
+            <h1 className="mb-6 text-4xl font-black tracking-[-0.03em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
               Terrarystyka bez przypadku.
               <span className="block text-primary">Zwierzęta, terraria i wyposażenie w jednym miejscu.</span>
             </h1>
             <p className="mb-8 max-w-2xl text-base leading-relaxed text-gray-300 sm:text-lg md:text-xl">
-              VitaZone łączy zwierzęta egzotyczne, terraria i akcesoria potrzebne do stworzenia spójnego, bezpiecznego terrarium.
+              Przeglądaj zwierzęta egzotyczne, terraria i akcesoria terrarystyczne.
             </p>
 
             <div className="relative z-20 mb-6 max-w-xl sm:mb-8">
@@ -208,7 +179,7 @@ const Home = () => {
                   onChange={(event) => setSearchQuery(event.target.value)}
                   placeholder="Szukaj gatunku, np. gekon, pyton, aksolotl"
                   autoComplete="off"
-                  aria-label="Wpisz zapytanie"
+                  aria-label="Szukaj produktu lub gatunku"
                   className="w-full rounded-full border border-white/20 bg-white/10 py-3.5 pl-12 pr-5 text-white shadow-xl transition-all placeholder:text-gray-400 focus:border-primary focus:outline-none focus:ring-1 focus:ring-primary sm:py-4 sm:pr-6"
                 />
               </form>
@@ -217,18 +188,14 @@ const Home = () => {
                 <div className="absolute left-0 right-0 top-full mt-2 max-h-72 overflow-hidden overflow-y-auto rounded-2xl border border-white/10 bg-black/80 shadow-2xl backdrop-blur-xl">
                   <ul>
                     {suggestions.map((suggestion) => (
-                      <li
-                        key={suggestion}
-                        onClick={() => {
+                      <li key={suggestion}><button type="button" onClick={() => {
                           setSearchQuery(suggestion);
                           navigate(`/shop?search=${encodeURIComponent(suggestion)}`);
                           setSuggestions([]);
-                        }}
-                        className="group flex cursor-pointer items-center justify-between px-4 py-3 text-gray-200 transition-colors hover:bg-white/10 sm:px-6"
-                      >
+                        }} className="group flex min-h-11 w-full items-center justify-between px-4 py-3 text-left text-gray-200 transition-colors hover:bg-white/10 focus-visible:bg-white/10 sm:px-6">
                         <span>{suggestion}</span>
                         <ArrowRight size={14} className="text-primary opacity-0 transition-opacity group-hover:opacity-100" />
-                      </li>
+                      </button></li>
                     ))}
                   </ul>
                 </div>
@@ -254,30 +221,13 @@ const Home = () => {
         </div>
       </section>
 
-      <section className="border-y border-white/10 bg-white/5 py-8 sm:py-10">
-        <div className="container mx-auto grid gap-6 px-4 sm:grid-cols-2 sm:px-6 xl:grid-cols-4">
-          {storeHighlights.map((highlight) => {
-            const Icon = highlight.icon;
-            return (
-              <div key={highlight.title} className="rounded-2xl border border-white/5 bg-black/30 px-5 py-4 sm:px-6 sm:py-5">
-                <div className="mb-4 flex h-11 w-11 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                  <Icon size={20} />
-                </div>
-                <p className="text-lg font-bold text-white">{highlight.title}</p>
-                <p className="mt-2 text-sm leading-relaxed text-gray-400">{highlight.description}</p>
-              </div>
-            );
-          })}
-        </div>
-      </section>
-
       <section className="relative bg-bg-secondary py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mb-10 flex flex-col gap-6 sm:mb-16 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <h2 className="mb-3 text-3xl font-bold sm:text-4xl">Kategorie, które prowadzą od gatunku do gotowego terrarium</h2>
+              <h2 className="mb-3 text-3xl font-bold sm:text-4xl">Wybierz dział asortymentu</h2>
               <p className="text-gray-400">
-                Podzieliliśmy ofertę tak, by łatwiej dobrać zwierzę, terrarium, ogrzewanie, dekoracje i pokarm w jednym zamówieniu.
+                Przeglądaj kategorie i sprawdź informacje przy konkretnym produkcie.
               </p>
             </div>
             <Link to="/shop" className="inline-flex items-center gap-2 text-primary transition-colors hover:text-white">
@@ -289,7 +239,7 @@ const Home = () => {
             {featuredCategories.map((category) => (
               <div
                 key={category.slug}
-                className="group overflow-hidden rounded-3xl border border-white/10 bg-black/30"
+                className="group overflow-hidden rounded-card border border-white/10 bg-black/30"
               >
                 <Link to={getCategoryHref(category.name)} className="block h-full">
                   <div className="relative h-60 overflow-hidden sm:h-72">
@@ -300,13 +250,10 @@ const Home = () => {
                       alt={category.name}
                       loading="lazy"
                       decoding="async"
-                      className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-110"
+                      className="h-full w-full object-cover transition-transform duration-standard group-hover:scale-[1.03]"
                     />
                     <div className="absolute inset-0 bg-gradient-to-t from-black/90 via-black/20 to-transparent"></div>
                     <div className="absolute inset-x-0 bottom-0 p-5 sm:p-6">
-                      <span className="mb-2 block text-xs font-semibold uppercase tracking-[0.3em] text-primary/80">
-                        {category.shortLabel}
-                      </span>
                       <h3 className="text-2xl font-bold text-white sm:text-3xl">{category.name}</h3>
                     </div>
                   </div>
@@ -322,35 +269,31 @@ const Home = () => {
 
       <section className="py-16 sm:py-24">
         <div className="container mx-auto px-4 sm:px-6">
-          <div className="mb-10 max-w-2xl sm:mb-14">
-            <h2 className="mb-3 text-3xl font-bold tracking-tight sm:text-4xl">Oferta, która ułatwia dobry wybór</h2>
-            <p className="text-gray-400">
-              Od pierwszego wejścia łatwiej zawęzisz wybór i dobierzesz produkty pasujące do gatunku oraz warunków utrzymania.
-            </p>
-          </div>
-
-          <div className="grid gap-6 sm:gap-8 md:grid-cols-3">
-            {valueCards.map((card) => {
-              const Icon = card.icon;
-              return (
-                <div key={card.title} className="rounded-3xl border border-white/10 bg-white/[0.03] p-6 sm:p-8">
-                  <div className="mb-6 flex h-14 w-14 items-center justify-center rounded-2xl bg-primary/10 text-primary">
-                    <Icon size={28} />
+          <div className="grid gap-10 border-t border-white/10 pt-10 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16 lg:pt-14">
+            <div className="max-w-md">
+              <h2 className="text-3xl font-bold tracking-tight text-white sm:text-4xl">Najpierw jasne informacje.</h2>
+              <p className="mt-4 leading-relaxed text-gray-300">Sprawdź szczegóły produktu i wybierz dział, od którego chcesz zacząć.</p>
+              <Link to="/shop" className="mt-6 inline-flex min-h-11 items-center gap-2 font-semibold text-primary underline underline-offset-4 hover:text-white">Przejdź do katalogu <ArrowRight size={16} /></Link>
+            </div>
+            <div className="divide-y divide-white/10">
+              {valueCards.map((card) => {
+                const Icon = card.icon;
+                return (
+                  <div key={card.title} className="grid gap-3 py-5 sm:grid-cols-[2.5rem_1fr] sm:gap-5">
+                    <Icon size={21} aria-hidden="true" className="mt-1 text-primary" />
+                    <div><h3 className="text-lg font-semibold text-white">{card.title}</h3><p className="mt-1.5 max-w-2xl text-sm leading-relaxed text-gray-400">{card.description}</p></div>
                   </div>
-                  <h3 className="mb-3 text-xl font-bold text-white sm:text-2xl">{card.title}</h3>
-                  <p className="text-sm leading-relaxed text-gray-400">{card.description}</p>
-                </div>
-              );
-            })}
+                );
+              })}
+            </div>
           </div>
-        </div>
+          </div>
       </section>
 
       <section className="pb-16 sm:pb-24">
         <div className="container mx-auto px-4 sm:px-6">
           <div className="mb-10 flex flex-col gap-4 sm:mb-12 md:flex-row md:items-end md:justify-between">
             <div className="max-w-2xl">
-              <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Polecane na start</p>
               <h2 className="text-3xl font-bold text-white sm:text-4xl">Wybrane pozycje z katalogu</h2>
             </div>
             <Link to="/shop" className="inline-flex items-center gap-2 text-primary transition-colors hover:text-white">
@@ -411,23 +354,7 @@ const Home = () => {
             <div className="grid gap-8 md:grid-cols-[1.4fr_1fr] md:items-center">
               <div>
                 <h2 className="mb-4 text-3xl font-bold text-white sm:text-4xl">Potrzebujesz wsparcia przed zakupem?</h2>
-                <p className="mb-6 max-w-2xl text-gray-300">
-                  Sprawdź FAQ albo napisz na czacie. Pomożemy dobrać gatunek, terrarium i najważniejsze elementy wyposażenia.
-                </p>
-                <div className="flex flex-col gap-3 text-sm text-gray-200 sm:flex-row sm:flex-wrap">
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2">
-                    <CheckCircle2 size={16} className="text-primary" />
-                    Dobór pierwszego gatunku
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2">
-                    <CheckCircle2 size={16} className="text-primary" />
-                    Lista wyposażenia
-                  </span>
-                  <span className="inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2">
-                    <CheckCircle2 size={16} className="text-primary" />
-                    Zasady dostawy
-                  </span>
-                </div>
+                <p className="mb-6 max-w-2xl text-gray-300">FAQ opisuje zakupy, dostawę i zwroty. Czat pomaga znaleźć informacje o ofercie, ale nie zastępuje porady weterynaryjnej.</p>
               </div>
               <div className="flex flex-col gap-4 md:items-end">
                 <Link to="/faq" className="inline-flex w-full items-center justify-center rounded-full bg-primary px-8 py-4 font-bold text-black transition-colors hover:bg-white sm:w-auto">

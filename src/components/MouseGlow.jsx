@@ -2,35 +2,27 @@ import React, { useEffect } from 'react';
 import { motion, useSpring, useMotionValue } from 'framer-motion';
 
 const MouseGlow = () => {
-    const mouseX = useMotionValue(0);
-    const mouseY = useMotionValue(0);
-
-    const springConfig = { damping: 25, stiffness: 100 };
+    const mouseX = useMotionValue(typeof window === 'undefined' ? 0 : window.innerWidth / 2);
+    const mouseY = useMotionValue(typeof window === 'undefined' ? 0 : window.innerHeight / 2);
+    const springConfig = { damping: 30, stiffness: 80, mass: 0.8 };
     const x = useSpring(mouseX, springConfig);
     const y = useSpring(mouseY, springConfig);
 
     useEffect(() => {
-        // Mobile Optimization: Disable mouse tracking logic
-        if (window.innerWidth < 768) return;
-
-        const handleMouseMove = (e) => {
-            mouseX.set(e.clientX);
-            mouseY.set(e.clientY);
+        if (!window.matchMedia('(min-width: 768px) and (pointer: fine)').matches) return undefined;
+        const handlePointerMove = (event) => {
+            mouseX.set(event.clientX);
+            mouseY.set(event.clientY);
         };
-
-        window.addEventListener('mousemove', handleMouseMove);
-        return () => window.removeEventListener('mousemove', handleMouseMove);
+        window.addEventListener('pointermove', handlePointerMove, { passive: true });
+        return () => window.removeEventListener('pointermove', handlePointerMove);
     }, [mouseX, mouseY]);
 
     return (
         <motion.div
-            style={{
-                x,
-                y,
-                translateX: '-50%',
-                translateY: '-50%',
-            }}
-            className="hidden md:block fixed top-0 left-0 w-[600px] h-[600px] bg-primary/20 rounded-full blur-[140px] pointer-events-none z-0 mix-blend-screen opacity-60"
+            aria-hidden="true"
+            style={{ x, y, translateX: '-50%', translateY: '-50%' }}
+            className="pointer-events-none fixed left-0 top-0 z-0 hidden h-[320px] w-[320px] rounded-full bg-primary/10 blur-[105px] md:block"
         />
     );
 };

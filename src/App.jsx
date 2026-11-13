@@ -11,7 +11,6 @@ import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 
 const MouseGlow = lazyWithRetry(() => import('./components/MouseGlow'));
-const Particles = lazyWithRetry(() => import('./components/Particles'));
 const CookieBanner = lazyWithRetry(() => import('./components/CookieBanner'));
 const ChatWidget = lazyWithRetry(() => import('./components/ChatWidget'));
 const VercelInsights = lazyWithRetry(() => import('./components/VercelInsights'));
@@ -137,7 +136,6 @@ function App() {
               {deferredUi.ambientEffects && (
                 <React.Suspense fallback={null}>
                   <MouseGlow />
-                  <Particles />
                 </React.Suspense>
               )}
               {deferredUi.cookieBanner && (

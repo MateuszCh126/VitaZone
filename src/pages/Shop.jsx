@@ -343,7 +343,7 @@ const ProductCard = ({ product, index, addToCart, newProductThreshold }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.985 }}
       transition={{ duration: 0.22 }}
-      className="group overflow-hidden rounded-3xl border border-white/5 bg-bg-secondary transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+      className="group overflow-hidden rounded-card border border-white/5 bg-bg-secondary transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
     >
       <div className="relative h-72 overflow-hidden">
         <Link to={`/product/${product.id}`} className="block h-full w-full">
@@ -385,7 +385,7 @@ const ProductCard = ({ product, index, addToCart, newProductThreshold }) => {
             addToCart(product);
           }}
           aria-label={`Dodaj produkt ${product.name} do koszyka`}
-          className="absolute bottom-4 right-4 z-10 translate-y-4 rounded-full bg-white p-3 text-black opacity-0 shadow-xl transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-primary"
+          className="absolute bottom-4 right-4 z-10 min-h-11 min-w-11 translate-y-0 rounded-full bg-white p-3.5 text-black opacity-100 shadow-xl transition-all duration-quick hover:bg-primary md:translate-y-4 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
         >
           <ShoppingBag size={18} aria-hidden="true" />
         </button>

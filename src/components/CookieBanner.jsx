@@ -38,7 +38,7 @@ const CookieBanner = () => {
     <AnimatePresence>
       {isVisible && (
         <motion.section initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
-          role="dialog" aria-labelledby="cookie-title" aria-describedby="cookie-description"
+          role="region" aria-label="Ustawienia cookies" aria-describedby={showDetails ? undefined : "cookie-description"}
           className="fixed bottom-0 left-0 right-0 z-50 p-4">
           <div className="mx-auto max-w-6xl rounded-2xl border border-neutral-700 bg-neutral-950 p-5 shadow-2xl md:p-7">
             {!showDetails ? (
@@ -48,7 +48,7 @@ const CookieBanner = () => {
                   <div>
                     <h2 id="cookie-title" className="text-xl font-bold text-white">Ustawienia prywatności</h2>
                     <p id="cookie-description" className="mt-2 max-w-2xl text-sm text-neutral-300">
-                      Niezbędne elementy działają zawsze. Analityka Vercel jest uruchamiana tylko po zgodzie. Możesz ją zaakceptować lub odrzucić.{' '}
+                      Niezbędne elementy działają zawsze. Narzędzia analityczne Vercel uruchamiają się tylko po zgodzie. Możesz ją zaakceptować lub odrzucić.{' '}
                       <Link to="/cookies" className="text-emerald-300 underline underline-offset-4">Szczegóły w polityce cookies</Link>.
                     </p>
                   </div>
@@ -56,7 +56,7 @@ const CookieBanner = () => {
                 <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
                   <button type="button" onClick={() => saveConsent(false)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2.5 font-semibold text-white hover:bg-neutral-800">Odrzuć analitykę</button>
                   <button type="button" onClick={() => setShowDetails(true)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2.5 font-medium text-neutral-200 hover:bg-neutral-800">Dostosuj</button>
-                  <button type="button" onClick={() => saveConsent(true)} className="min-h-11 rounded-lg bg-emerald-600 px-5 py-2.5 font-semibold text-white hover:bg-emerald-500">Akceptuj analitykę</button>
+                  <button type="button" onClick={() => saveConsent(true)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2.5 font-semibold text-white hover:bg-neutral-800">Akceptuj analitykę</button>
                 </div>
               </div>
             ) : (
@@ -77,7 +77,7 @@ const CookieBanner = () => {
                 </div>
                 <div className="mt-5 flex flex-col justify-end gap-2 border-t border-neutral-800 pt-4 sm:flex-row">
                   <button type="button" onClick={() => saveConsent(false)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2 font-semibold text-white hover:bg-neutral-800">Odrzuć analitykę</button>
-                  <button type="button" onClick={() => saveConsent(analytics)} className="min-h-11 rounded-lg bg-emerald-600 px-5 py-2 font-semibold text-white hover:bg-emerald-500">Zapisz wybór</button>
+                  <button type="button" onClick={() => saveConsent(analytics)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2 font-semibold text-white hover:bg-neutral-800">Zapisz wybór</button>
                 </div>
               </div>
             )}

@@ -198,7 +198,7 @@ const ChatWidget = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={isOpen ? 'Zamknij czat' : 'Otwórz czat'}
                 type="button"
-                className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-[0_0_20px_rgba(250,204,21,0.3)] transition-colors hover:bg-white sm:h-14 sm:w-14"
+                className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-glow transition-colors hover:bg-white sm:h-14 sm:w-14"
             >
                 {isOpen ? <X size={24} strokeWidth={2.5} /> : <MessageCircle size={24} strokeWidth={2.5} />}
 
