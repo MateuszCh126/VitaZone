@@ -82,4 +82,20 @@ describe('Stripe payment retry webhook handling', () => {
         expect(mocks.releasePendingOrder).toHaveBeenCalledWith('order-demo-1', 'cs_test_expired123456');
         expect(res.body).toEqual({ received: true });
     });
+
+    it('releases the reservation when Stripe cancels the PaymentIntent', async () => {
+        mocks.constructEvent.mockReturnValue({
+            type: 'payment_intent.canceled',
+            data: { object: { id: 'pi_demo_canceled', metadata: { orderId: 'order-demo-1' } } }
+        });
+        const res = makeResponse();
+
+        await handleStripeWebhook({
+            headers: { 'stripe-signature': 'sig_demo' },
+            body: Buffer.from('event')
+        }, res);
+
+        expect(mocks.releasePendingOrder).toHaveBeenCalledWith('order-demo-1', 'pi_demo_canceled');
+        expect(res.body).toEqual({ received: true });
+    });
 });

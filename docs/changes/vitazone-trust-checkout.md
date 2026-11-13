@@ -22,7 +22,7 @@ Zmiany wypchnięte na gałęzi `codex/vitazone-trust-checkout`; [PR #1](https://
 
 ## Weryfikacja
 
-- `pnpm test -- --run` — 24 testy w 7 plikach przeszły, w tym testy webhooka potwierdzające, że pojedyncza nieudana próba płatności nie zwalnia rezerwacji, a wygaśnięcie Checkout Session ją zwalnia.
+- `pnpm test -- --run` — 25 testów w 7 plikach przeszło, w tym testy webhooka potwierdzające, że pojedyncza nieudana próba płatności nie zwalnia rezerwacji, a wygaśnięcie sesji Checkout i anulowanie PaymentIntent ją zwalniają.
 - `pnpm build` — przeszedł; Vite zgłasza przestarzałą bazę Browserslist (11 miesięcy).
 - `pnpm lint` — przeszedł bez błędów i ostrzeżeń.
 - `pnpm check:secrets` — przeszedł.
