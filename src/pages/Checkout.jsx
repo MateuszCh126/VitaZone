@@ -181,7 +181,7 @@ const Checkout = () => {
                 if (data.checkoutStatus === 'expired') {
                     setCheckoutState({
                         type: 'expired',
-                        message: 'Sesja płatności wygasła. Stock został zwolniony, możesz rozpocząć checkout ponownie.'
+                        message: 'Sesja płatności wygasła, a rezerwacja produktów została zwolniona. Sprawdź dostępność i spróbuj ponownie.'
                     });
                     return;
                 }
@@ -391,16 +391,16 @@ const Checkout = () => {
 
                 <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Bezpieczna kasa</h1>
+                        <h1 className="text-3xl font-bold">Finalizacja zamówienia</h1>
                         <p className="mt-2 text-sm text-gray-400">
-                            Finalizacja zamówienia odbywa się w Stripe Checkout. Dane karty wpisujesz wyłącznie w infrastrukturze Stripe.
+                            Dane karty wpiszesz na stronie Stripe Checkout. Sklep nie wyświetla formularza karty.
                         </p>
                     </div>
                     <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-4 md:block">
                         <div className="flex items-center gap-2 text-sm font-bold text-primary">
-                            <ShieldCheck size={16} /> Stripe + HTTPS
+                            <ShieldCheck size={16} /> Płatność przez Stripe
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">Platnosc przebiega na zabezpieczonej stronie Stripe.</div>
+                        <div className="mt-1 text-xs text-gray-400">Dane karty podasz na stronie Stripe Checkout.</div>
                     </div>
                 </div>
 
@@ -452,7 +452,7 @@ const Checkout = () => {
                                         Bezpieczna płatność w Stripe Checkout
                                     </div>
                                     <p className="mt-2 text-sm text-gray-400">
-                                        Po kliknięciu przycisku przejdziesz do hostowanej strony Stripe, gdzie opłacisz zamówienie kartą lub inną metodą aktywną na koncie.
+                                        Po kliknięciu przycisku przejdziesz do Stripe Checkout. Dostępne metody płatności zobaczysz na następnej stronie.
                                     </p>
                                 </div>
 
@@ -563,7 +563,7 @@ const Checkout = () => {
 
                                 <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                                     <ShieldCheck size={14} />
-                                    Bezpieczne szyfrowane polaczenie
+                                    Płatność obsługuje Stripe Checkout
                                 </div>
                             </motion.div>
                         )}
