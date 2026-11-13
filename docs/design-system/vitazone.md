@@ -41,6 +41,7 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 - Kategoria: fotografia, gradient u dołu tylko dla kontrastu, tytuł jako link i neutralny opis. Promień 16 px. Zoom obrazu tylko 1.03 w 220 ms; kliknięcie prowadzi do kategorii.
 - Produkt: cały tytuł/zdjęcie prowadzą do szczegółów. Przycisk koszyka ma nazwę dostępną dla czytnika. Na dotyku jest stale widoczny; na desktopie pokazuje się po hover albo focus-within.
 - Nie renderuj badge popularności, opinii, dopasowania gatunkowego ani „dobrego na start” bez zweryfikowanego, produktowego źródła.
+- JSON-LD `Product` może zawierać wyłącznie dane pokazane na karcie i potwierdzone przez API: nazwę, opis, zdjęcia, cenę z `price_cents` i dostępność ze stanu magazynowego. Nie mapuj technicznego ID na SKU; jeśli brakuje wymaganej ceny lub zdjęcia, pomiń schema. Przed osadzeniem danych w `<script>` escapuj znaki HTML.
 
 ### Inputy i filtry
 
@@ -63,7 +64,7 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 
 ## Dostępność i przegląd ręczny
 
-Build/testy kodu nie zastępują sprawdzenia wyrenderowanego widoku. Na lokalnym Vite z mockowanym API demo obejrzano zrzuty strony głównej (1440 px, normalny i ograniczony ruch), listingu (390 px), karty produktu (1440 i 390 px), koszyka oraz checkoutu (390 px). Playwright przeszedł 11 scenariuszy, w tym zakup gościa, walidację checkoutu i przekazanie fokusu między krokami, focus management ustawień cookies, menu mobilne, etykiety i błędy formularzy oraz koszyk. Nowy scenariusz sprawdza reflow ścieżki zakupowej przy 720 i 360 px bez poziomego przewijania; nie zastępuje on rzeczywistego powiększenia 200%. Nie sprawdzono fizycznych urządzeń, czytnika ekranu ani pełnej ręcznej nawigacji klawiaturą.
+Build/testy kodu nie zastępują sprawdzenia wyrenderowanego widoku. Na lokalnym Vite z mockowanym API demo obejrzano zrzuty strony głównej (1440 px, normalny i ograniczony ruch), listingu (390 px), karty produktu (1440 i 390 px), koszyka oraz checkoutu (390 px). Playwright przeszedł 12 scenariuszy, w tym zakup gościa, walidację checkoutu i przekazanie fokusu między krokami, focus management ustawień cookies, menu mobilne, etykiety i błędy formularzy oraz koszyk. Scenariusz reflow sprawdza ścieżkę zakupową przy 720 i 360 px bez poziomego przewijania; nie zastępuje on rzeczywistego powiększenia 200%. Nie sprawdzono fizycznych urządzeń, czytnika ekranu ani pełnej ręcznej nawigacji klawiaturą.
 
 Przed końcowym odbiorem sprawdzić homepage, listing, produkt, koszyk i checkout przy 360, 768 i 1440 px; powiększenie 200%; tab/shift-tab/enter/space; widoczność fokusu; screen reader; kontrast; reduced motion; brak hover na dotyku; długie polskie nazwy i stany pustego listingu. Zrzuty robione na mockach potwierdzają lokalne renderowanie, nie rzeczywiste dane produktu ani backend.
 

@@ -7,6 +7,8 @@ import { useCart } from '../context/CartContext';
 import { getOptimizedImageUrl, getSrcSet } from '../utils/imageUtils';
 import { getProductBadges } from '../utils/productBadges';
 import { trackEvent } from '../utils/analytics';
+import { serializeJsonLd } from '../utils/jsonLd';
+import { buildProductSchema } from '../utils/productSchema';
 
 const liveAnimalCategories = new Set([
   'Jaszczurki i gekony',
@@ -97,29 +99,19 @@ const ProductDetail = () => {
   const imageUrls = product.image_urls?.length ? product.image_urls : ['/hero-bg.webp'];
   const currentImage = imageUrls[currentImageIndex];
 
-  const structuredData = {
-    '@context': 'https://schema.org/',
-    '@type': 'Product',
-    name: product.name,
-    image: imageUrls[0],
-    description: product.description,
-    sku: product.id,
-    offers: {
-      '@type': 'Offer',
-      url: window.location.href,
-      priceCurrency: 'PLN',
-      price: product.price,
-      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
-    }
-  };
+  const canonicalUrl = `https://vitazone.vercel.app/product/${product.id}`;
+  const structuredData = buildProductSchema(product, {
+    canonicalUrl,
+    imageBaseUrl: 'https://vitazone.vercel.app'
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-12">
       <Helmet>
         <title>{`${product.name} | ${product.category_name} | VitaZone`}</title>
         <meta name="description" content={product.description?.substring(0, 160)} />
-        <link rel="canonical" href={`https://vitazone.vercel.app/product/${product.id}`} />
-        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <link rel="canonical" href={canonicalUrl} />
+        {structuredData && <script type="application/ld+json">{serializeJsonLd(structuredData)}</script>}
       </Helmet>
 
       <Link to="/shop" className="mb-6 inline-flex items-center gap-2 text-gray-400 transition-colors hover:text-white sm:mb-8">

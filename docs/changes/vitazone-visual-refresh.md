@@ -32,6 +32,7 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 - Płatności pozostają w hostowanym Stripe Checkout z dynamicznymi metodami konta (bez listy metod zakodowanej na stałe); dodano webhooki dla asynchronicznego sukcesu i niepowodzenia. Gotowość BLIK/P24 oraz przewoźników i wymagania kont opisuje [osobny przegląd integracji](../research/vitazone-payments-shipping-readiness.md).
 - Dodano wyłączony bez tokenu adapter sandbox Furgonetki do pobrania usług, kalkulacji i utworzenia szkicu paczki dla akcesoriów. Ma allowlistę hostów i fail-closed klasyfikację kategorii, która odrzuca produkty ze zwierzętami, owadami lub nieznaną kategorią. Adapter nie jest podłączony do checkoutu ani webhooka, nie zamawia etykiet i nie stanowi aktywnej metody dostawy. Warunki i wymagane dane opisuje [przegląd integracji](../research/vitazone-payments-shipping-readiness.md).
 - Wartość zdarzenia `purchase` pochodzi teraz z `amount_total` zwróconego przez Stripe dla opłaconej sesji, a nie z sumy koszyka po stronie przeglądarki; zdarzenia rozpoczęcia checkoutu nie wysyłają szacowanej kwoty z klienta. Endpoint nadal nie zwraca gościowi identyfikatora zamówienia ani danych profilu.
+- Dane `Product` JSON-LD pochodzą z aktualnie wyświetlanego produktu, używają ceny w groszach z API, jego rzeczywistych zdjęć i stanu magazynowego. Schema pomija brakujące zdjęcie/cenę i nie przedstawia ID rekordu jako SKU. Tekst jest escapowany przed wstawieniem do tagu `<script>`.
 - Dodano `MotionConfig` respektujący systemowe ograniczenie ruchu dla animacji Framer Motion; dostosowano także copy prawne/FAQ, żeby nie orzekało zbiorczego wyjątku zwrotów dla żywych zwierząt.
 - Zabezpieczono demo seed i synchronizację fikcyjnego katalogu: działają wyłącznie po jawnej zgodzie w środowisku nieprodukcyjnym; baza zdalna wymaga dodatkowego opt-in. Polityki prawne wyświetlają stan roboczy do czasu uzupełnienia faktów i akceptacji.
 - Ustawienia analityki można ponownie otworzyć ze stopki; poprawiono etykietę pola czatu, zapowiedź nowych wiadomości, obsługę reduced motion w scrollowaniu oraz semantykę i fokus mobilnego menu. Koszyk otrzymał obsługę dialogu, Escape, pułapkę fokusu i przywrócenie fokusu.
@@ -46,7 +47,7 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — 54 testy w 12 plikach przeszły na finalnym drzewie, w tym dwa testy galerii produktu, 13 testów adaptera na mockach HTTP oraz testy webhooków dla błędnej próby, wygaśnięcia sesji i anulowania PaymentIntent.
+- `pnpm test -- --run` — 59 testów w 13 plikach przeszło na aktualnym drzewie, w tym walidacja i bezpieczna serializacja Product JSON-LD, testy galerii produktu, testy adaptera na mockach HTTP oraz webhooki dla błędnej próby, wygaśnięcia sesji i anulowania PaymentIntent.
 - `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
 - `pnpm lint` — przeszedł bez błędów; poprawiono import `process` w konfiguracji Playwright. Pierwsza równoległa próba uruchomiona podczas E2E zakończyła się błędem odczytu tworzonego katalogu `test-results`; ponowne uruchomienie po zakończeniu E2E przeszło.
 - `pnpm check:secrets` — przeszedł.
