@@ -1,6 +1,6 @@
 ---
 title: "VitaZone: trust and guest checkout"
-status: implemented-locally-awaiting-owner-facts-and-review
+status: draft-pr-open-awaiting-owner-facts-and-review
 owner: Codex
 updated: 2026-11-13
 ---
@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## Zakres i status
 
-Zmiany przygotowane lokalnie na gałęzi `codex/vitazone-trust-checkout`, na podstawie bieżącego stanu repozytorium `MateuszCh126/VitaZone`. Nie scalono, nie wypchnięto ani nie wdrożono.
+Zmiany wypchnięte na gałęzi `codex/vitazone-trust-checkout`; [PR #1](https://github.com/MateuszCh126/VitaZone/pull/1) jest otwarty jako draft do `main`. Nie scalono ani nie wdrożono.
 
 - Checkout: dopuszczono gościa w API i UI. Serwer wiąże konto wyłącznie z sesją uwierzytelnioną, a klient nie przesyła `userId`. Odpowiedź publicznego sprawdzenia sesji ograniczona do statusu płatności; nie zwraca identyfikatora zamówienia ani jego historii. Id sesji przyjmowane w body POST zamiast ścieżki GET. Webhook pozostaje osobnym mechanizmem finalizacji. Admin listuje zamówienia gości przez adres ze snapshotu wysyłki.
 - Checkout UI: etykiety, autocomplete, typ e-mail, błędy przy polach, zakup bez logowania i bez przekierowania do panelu po zakupie gościa.
