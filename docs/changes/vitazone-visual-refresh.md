@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## Zakres
 
-Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazone-trust-checkout` (`d9a3adf`) i jest teraz zsynchronizowana z jej aktualnym commitem `a9fd2d1`; [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
+Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazone-trust-checkout` (`d9a3adf`) i jest teraz zsynchronizowana z jej aktualnym commitem `005de10`; [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
 
 ## Wykonane
 
@@ -42,7 +42,7 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — 47 testów w 10 plikach przeszło na finalnym drzewie, w tym 11 testów adaptera na mockach HTTP.
+- `pnpm test -- --run` — 49 testów w 11 plikach przeszło na finalnym drzewie, w tym testy adaptera na mockach HTTP i test webhooka dla ponawianej płatności.
 - `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
 - `pnpm lint` — 0 błędów; poprawiono import `process` w konfiguracji Playwright, brak ostrzeżeń.
 - `pnpm check:secrets` — przeszedł.
