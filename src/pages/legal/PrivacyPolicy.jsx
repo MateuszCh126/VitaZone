@@ -51,6 +51,16 @@ const PrivacyPolicy = () => {
             </section>
 
             <section className="space-y-3">
+              <h2 className="text-xl font-semibold text-emerald-400">Dane dostawy i odbiorcy</h2>
+              <p className="leading-relaxed text-neutral-300">
+                Gdy prosisz o sprawdzenie kosztu dostawy, dane potrzebne do wyceny — imię i nazwisko, e-mail, telefon,
+                adres oraz wymiary i masę paczki — mogą zostać przekazane do Furgonetki jako pośrednika wyceny.
+                Po złożeniu zamówienia dane niezbędne do doręczenia mogą zostać przekazane wybranemu przewoźnikowi.
+                Zakres usług i podmiotów trzeba sprawdzić przed włączeniem tej funkcji w sklepie.
+              </p>
+            </section>
+
+            <section className="space-y-3">
               <h2 className="text-xl font-semibold text-emerald-400">Prawa użytkownika</h2>
               <p className="leading-relaxed text-neutral-300">
                 Użytkownik ma prawo do dostępu do swoich danych, ich sprostowania, ograniczenia przetwarzania,

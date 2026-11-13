@@ -8,6 +8,7 @@ const CheckoutItemSchema = z.object({
 const CheckoutShippingSchema = z.object({
     fullName: z.string().min(2, 'Full name is required'),
     email: z.string().email('Valid email is required'),
+    phone: z.string().min(6, 'Valid phone number is required').max(30),
     country: z.string().min(2, 'Country is required'),
     city: z.string().min(2, 'City is required'),
     postal_code: z.string().regex(/^\d{2}-\d{3}$/, 'Postal code must use the format 00-000'),
@@ -19,6 +20,8 @@ const CheckoutShippingSchema = z.object({
 export const CreateCheckoutSessionSchema = z.object({
     items: z.array(CheckoutItemSchema).min(1, 'Checkout must include at least one item'),
     shipping: CheckoutShippingSchema,
+    deliveryMethod: z.enum(['inpost', 'dpd']),
+    expectedShippingAmountCents: z.number().int().min(0),
     discountCode: z.string().min(3).max(50).optional().nullable()
 });
 

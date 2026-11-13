@@ -12,10 +12,7 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../utils/config';
-import { DEFAULT_SHIPPING_AMOUNT_CENTS } from '../../shared/commerce.js';
 import { trackEvent } from '../utils/analytics';
-
-const SHIPPING_AMOUNT = DEFAULT_SHIPPING_AMOUNT_CENTS / 100;
 
 const Checkout = () => {
     const {
@@ -36,6 +33,10 @@ const Checkout = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
+    const [shippingQuotes, setShippingQuotes] = useState([]);
+    const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('');
+    const [shippingQuoteError, setShippingQuoteError] = useState('');
+    const [isQuotingShipping, setIsQuotingShipping] = useState(false);
     const [errors, setErrors] = useState({});
     const [checkoutState, setCheckoutState] = useState({
         type: 'idle',
@@ -46,6 +47,7 @@ const Checkout = () => {
     const [formData, setFormData] = useState({
         fullName: user?.full_name || user?.name || '',
         email: user?.email || '',
+        phone: user?.phone || '',
         country: user?.country || '',
         city: user?.city || '',
         postal_code: user?.postalCode || '',
@@ -59,6 +61,7 @@ const Checkout = () => {
             ...current,
             fullName: current.fullName || user?.full_name || user?.name || '',
             email: current.email || user?.email || '',
+            phone: current.phone || user?.phone || '',
             country: current.country || user?.country || '',
             city: current.city || user?.city || '',
             postal_code: current.postal_code || user?.postalCode || '',
@@ -70,9 +73,11 @@ const Checkout = () => {
 
     const subtotal = useMemo(() => cartTotal, [cartTotal]);
     const discountValue = useMemo(() => (appliedDiscount ? appliedDiscount.amount / 100 : 0), [appliedDiscount]);
+    const selectedDelivery = shippingQuotes.find((quote) => quote.method === selectedDeliveryMethod);
+    const shippingAmount = selectedDelivery ? selectedDelivery.amountCents / 100 : 0;
     const total = useMemo(
-        () => Math.max(subtotal + SHIPPING_AMOUNT - discountValue, 0),
-        [subtotal, discountValue]
+        () => selectedDelivery ? Math.max(subtotal + shippingAmount - discountValue, 0) : null,
+        [subtotal, shippingAmount, discountValue, selectedDelivery]
     );
 
     useEffect(() => {
@@ -124,7 +129,7 @@ const Checkout = () => {
                         const trackedPurchaseKey = `purchase:${sessionId}`;
                         if (!window.sessionStorage.getItem(trackedPurchaseKey)) {
                             trackEvent('purchase', {
-                                value: total,
+                                ...(Number.isFinite(total) ? { value: total } : {}),
                                 currency: 'PLN',
                                 itemCount: cart.length
                             });
@@ -184,6 +189,9 @@ const Checkout = () => {
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormData((current) => ({ ...current, [name]: value }));
+        setShippingQuotes([]);
+        setSelectedDeliveryMethod('');
+        setShippingQuoteError('');
         if (errors[name]) {
             setErrors((current) => ({ ...current, [name]: null }));
         }
@@ -198,6 +206,8 @@ const Checkout = () => {
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             nextErrors.email = 'Wpisz poprawny adres e-mail';
         }
+        if (!formData.phone.trim()) nextErrors.phone = 'Numer telefonu jest wymagany do dostawy';
+        else if (formData.phone.replace(/\D/g, '').length < 6) nextErrors.phone = 'Wpisz poprawny numer telefonu';
         if (!formData.country.trim()) nextErrors.country = 'Kraj jest wymagany';
         if (!formData.city.trim()) nextErrors.city = 'Miasto jest wymagane';
         if (!formData.postal_code.trim()) {
@@ -212,10 +222,39 @@ const Checkout = () => {
         return Object.keys(nextErrors).length === 0;
     };
 
-    const handleNextStep = () => {
+    const handleNextStep = async () => {
         if (!validateShipping()) return;
-        setStep(2);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        if (shippingQuotes.length > 0) {
+            if (!selectedDeliveryMethod) {
+                setShippingQuoteError('Wybierz metodę dostawy.');
+                return;
+            }
+            setStep(2);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+            return;
+        }
+
+        setIsQuotingShipping(true);
+        setShippingQuoteError('');
+        try {
+            const response = await fetch(`${API_BASE}/api/shipping/quotes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    items: cart.map((item) => ({ productId: item.id || item.productId, quantity: item.quantity })),
+                    shipping: formData
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Nie udało się obliczyć kosztu dostawy.');
+            if (!data.quotes?.length) throw new Error('Brak dostępnych metod dostawy dla tego adresu.');
+            setShippingQuotes(data.quotes);
+        } catch (error) {
+            setShippingQuoteError(error.message || 'Nie udało się obliczyć kosztu dostawy.');
+        } finally {
+            setIsQuotingShipping(false);
+        }
     };
 
     const handleStartCheckout = async () => {
@@ -237,6 +276,12 @@ const Checkout = () => {
                 type: 'error',
                 message: 'Musisz potwierdzić pełnoletność oraz akceptację zasad wydania żywych zwierząt opisanych w regulaminie.'
             });
+            return;
+        }
+
+        if (!selectedDeliveryMethod) {
+            setCheckoutState({ type: 'error', message: 'Najpierw wybierz i sprawdź metodę dostawy.' });
+            setStep(1);
             return;
         }
 
@@ -262,11 +307,21 @@ const Checkout = () => {
                         quantity: item.quantity
                     })),
                     shipping: formData,
+                    deliveryMethod: selectedDeliveryMethod,
+                    expectedShippingAmountCents: selectedDelivery.amountCents,
                     discountCode: appliedDiscount?.code || null
                 })
             });
 
             const data = await response.json();
+            if (response.status === 409 && data.code === 'SHIPPING_QUOTE_CHANGED') {
+                setShippingQuotes(Array.isArray(data.quotes) ? data.quotes : []);
+                setSelectedDeliveryMethod('');
+                setShippingQuoteError('Cena została zaktualizowana. Sprawdź dostępną metodę i ponownie zatwierdź dostawę.');
+                setStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
             if (!response.ok) {
                 throw new Error(data.error || 'Nie udało się rozpocząć płatności Stripe');
             }
@@ -364,6 +419,7 @@ const Checkout = () => {
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <InputField name="fullName" label="Imię i nazwisko" placeholder="np. Jan Kowalski" autoComplete="name" formData={formData} handleChange={handleChange} errors={errors} />
                                     <InputField name="email" label="Adres e-mail" type="email" placeholder="np. jan@example.com" autoComplete="email" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="phone" label="Telefon do dostawy" type="tel" placeholder="np. 500 600 700" autoComplete="tel" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
                                     <InputField name="country" label="Kraj" placeholder="Polska" autoComplete="country-name" formData={formData} handleChange={handleChange} errors={errors} />
@@ -378,11 +434,37 @@ const Checkout = () => {
                                     <InputField name="apartment_number" label="Numer lokalu (opcjonalnie)" placeholder="np. 4" autoComplete="address-line3" required={false} formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
 
+                                {shippingQuotes.length > 0 && (
+                                    <fieldset className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+                                        <legend className="px-2 font-bold">Wybierz dostawę</legend>
+                                        {shippingQuotes.map((quote) => (
+                                            <label key={quote.method} className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 p-4">
+                                                <span className="flex items-center gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="deliveryMethod"
+                                                        value={quote.method}
+                                                        checked={selectedDeliveryMethod === quote.method}
+                                                        onChange={() => {
+                                                            setSelectedDeliveryMethod(quote.method);
+                                                            setShippingQuoteError('');
+                                                        }}
+                                                    />
+                                                    <span className="font-semibold">{quote.label}</span>
+                                                </span>
+                                                <span className="font-bold">{(quote.amountCents / 100).toFixed(2)} zł</span>
+                                            </label>
+                                        ))}
+                                        <p className="text-xs text-gray-400">Koszt pochodzi z aktualnej wyceny przewoźnika i zostanie ponownie sprawdzony przed płatnością.</p>
+                                    </fieldset>
+                                )}
+                                {shippingQuoteError && <p role="alert" className="text-sm text-red-400">{shippingQuoteError}</p>}
                                 <button
                                     onClick={handleNextStep}
-                                    className="mt-6 w-full rounded-xl bg-primary py-4 font-bold text-black transition-colors hover:bg-white"
+                                    disabled={isQuotingShipping}
+                                    className="mt-6 w-full rounded-xl bg-primary py-4 font-bold text-black transition-colors hover:bg-white disabled:opacity-60"
                                 >
-                                    Przejdź do płatności
+                                    {isQuotingShipping ? 'Sprawdzanie dostawy...' : shippingQuotes.length ? 'Przejdź do płatności' : 'Sprawdź metody i koszt dostawy'}
                                 </button>
                             </motion.div>
                         )}
@@ -481,7 +563,7 @@ const Checkout = () => {
                                     </button>
                                     <button
                                         onClick={handleStartCheckout}
-                                        disabled={!isAgreed || isSubmitting}
+                                        disabled={!isAgreed || isSubmitting || !selectedDeliveryMethod}
                                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 font-bold text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {isSubmitting ? (
@@ -544,7 +626,7 @@ const Checkout = () => {
                                             Dostawa kurierska
                                         </span>
                                     }
-                                    value={`${SHIPPING_AMOUNT.toFixed(2)} zł`}
+                                    value={selectedDelivery ? `${shippingAmount.toFixed(2)} zł` : 'Wybierz metodę'}
                                 />
                                 {appliedDiscount && (
                                     <SummaryRow
@@ -555,7 +637,7 @@ const Checkout = () => {
                                 )}
                                 <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xl font-bold text-primary">
                                     <span>Razem</span>
-                                    <span>{total.toFixed(2)} zł</span>
+                                    <span>{Number.isFinite(total) ? `${total.toFixed(2)} zł` : 'Wyceń dostawę'}</span>
                                 </div>
                             </div>
                         </div>

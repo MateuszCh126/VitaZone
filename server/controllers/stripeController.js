@@ -5,6 +5,8 @@ import { CheckoutSessionStatusSchema, CreateCheckoutSessionSchema } from '../../
 import * as orderRepo from '../../repositories/orderRepository.js';
 import { ORDER_STATUS } from '../../shared/orderStatus.js';
 import { sendOrderPaidEmail } from '../services/emailService.js';
+import * as productRepo from '../../repositories/productRepository.js';
+import { createFurgonetkaGateway, getShippingQuotes, resolveReviewedShippingQuote } from '../services/shippingService.js';
 
 const stripe = env.STRIPE_SECRET_KEY
     ? new Stripe(env.STRIPE_SECRET_KEY, { apiVersion: '2026-02-25.clover' })
@@ -100,14 +102,15 @@ const buildLineItems = (order) => {
         });
     }
 
-    if (env.ORDER_SHIPPING_CENTS > 0) {
+    const shippingAmountCents = order.shipping_address_json?.delivery?.amount_cents;
+    if (Number.isSafeInteger(shippingAmountCents) && shippingAmountCents > 0) {
         lineItems.push({
             price_data: {
                 currency: env.STRIPE_CURRENCY,
                 product_data: {
-                    name: 'Dostawa kurierska'
+                    name: order.shipping_address_json.delivery.method === 'inpost' ? 'Dostawa InPost' : 'Dostawa DPD'
                 },
-                unit_amount: env.ORDER_SHIPPING_CENTS
+                unit_amount: shippingAmountCents
             },
             quantity: 1
         });
@@ -161,6 +164,28 @@ export const createCheckoutSession = async (req, res) => {
 
         const validatedData = CreateCheckoutSessionSchema.parse(req.body);
         const userId = req.user?.id || null;
+        const productIds = [...new Set(validatedData.items.map((item) => item.productId))];
+        const shippingProducts = await productRepo.getShippingProductsByIds(productIds);
+        const deliveryQuotes = await getShippingQuotes({
+            items: validatedData.items,
+            shipping: validatedData.shipping,
+            products: shippingProducts,
+            gateway: createFurgonetkaGateway({ env })
+        });
+        const deliveryReview = resolveReviewedShippingQuote({
+            quotes: deliveryQuotes,
+            method: validatedData.deliveryMethod,
+            expectedAmountCents: validatedData.expectedShippingAmountCents
+        });
+        if (deliveryReview.changed) {
+            res.set('Cache-Control', 'no-store');
+            return res.status(409).json({
+                error: 'Koszt dostawy się zmienił. Sprawdź aktualną cenę i ponownie ją zatwierdź.',
+                code: 'SHIPPING_QUOTE_CHANGED',
+                quotes: deliveryQuotes.map(({ method, label, amountCents, currency }) => ({ method, label, amountCents, currency }))
+            });
+        }
+        const selectedDelivery = deliveryReview.quote;
 
         const createdOrder = await orderRepo.createOrder({
             userId,
@@ -169,15 +194,19 @@ export const createCheckoutSession = async (req, res) => {
             items: validatedData.items,
             fullName: validatedData.shipping.fullName,
             email: validatedData.shipping.email,
+            phone: validatedData.shipping.phone,
             country: validatedData.shipping.country,
             city: validatedData.shipping.city,
             postalCode: validatedData.shipping.postal_code,
             street: validatedData.shipping.street,
             houseNumber: validatedData.shipping.house_number,
             apartmentNumber: validatedData.shipping.apartment_number || null,
+            deliveryMethod: selectedDelivery.method,
+            deliveryProvider: selectedDelivery.provider,
+            deliveryServiceId: selectedDelivery.providerServiceId,
             discountCode: validatedData.discountCode,
             initialStatus: ORDER_STATUS.PAYMENT_PENDING,
-            shippingAmountCents: env.ORDER_SHIPPING_CENTS
+            shippingAmountCents: selectedDelivery.amountCents
         });
 
         orderId = createdOrder.id;
@@ -232,6 +261,9 @@ export const createCheckoutSession = async (req, res) => {
         if (error.code === 'STRIPE_NOT_CONFIGURED') {
             return res.status(503).json({ error: 'Płatności Stripe Checkout nie są skonfigurowane' });
         }
+        if (error.statusCode && String(error.code || '').startsWith('SHIPPING_')) {
+            return res.status(error.statusCode).json({ error: error.message, code: error.code });
+        }
 
         const badRequestPatterns = [
             'Nie znaleziono',
@@ -241,6 +273,8 @@ export const createCheckoutSession = async (req, res) => {
             'Discount code not yet active',
             'Discount code expired',
             'Discount usage limit reached',
+            'Żywe zwierzęta nie są obsługiwane',
+            'Ta kategoria nie jest obsługiwana przez standardową wysyłkę InPost/DPD.',
             'Kwota zamówienia musi być większa niż zero',
             'Zamówienie zostało utworzone, ale nie udało się go odczytać'
         ];

@@ -53,7 +53,8 @@ const createOrderRoutes = ({ orderLimiter }) => {
                 'Invalid or inactive discount code',
                 'Discount code not yet active',
                 'Discount code expired',
-                'Discount usage limit reached'
+                'Discount usage limit reached',
+                'Żywe zwierzęta nie są obsługiwane'
             ];
             if (badRequestPatterns.some((pattern) => error.message.includes(pattern))) {
                 return res.status(400).json({ error: error.message });
