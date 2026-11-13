@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
@@ -15,6 +15,7 @@ const loginSchema = z.object({
 const Login = () => {
     const { login } = useAuth();
     const navigate = useNavigate();
+    const location = useLocation();
     const [serverError, setServerError] = useState('');
     const [isLoading, setIsLoading] = useState(false);
 
@@ -31,7 +32,8 @@ const Login = () => {
         setIsLoading(true);
         try {
             await login(data.email, data.password);
-            navigate('/dashboard');
+            const returnTo = location.state?.from;
+            navigate(typeof returnTo === 'string' && returnTo.startsWith('/') && !returnTo.startsWith('//') ? returnTo : '/dashboard');
         } catch (err) {
             setServerError(err.message);
         } finally {
@@ -108,7 +110,7 @@ const Login = () => {
                 </form>
 
                 <p className="text-center text-sm text-gray-500 mt-8">
-                    Nie masz konta? <Link to="/register" className="text-primary cursor-pointer hover:underline">Zarejestruj się</Link>
+                    Nie masz konta? <Link to="/register" state={{ from: location.state?.from }} className="text-primary cursor-pointer hover:underline">Zarejestruj się</Link>
                 </p>
             </motion.div>
         </div>

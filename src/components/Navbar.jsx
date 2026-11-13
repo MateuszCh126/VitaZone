@@ -10,6 +10,7 @@ const CartDrawer = lazyWithRetry(() => import('./CartDrawer'));
 const navigationLinks = [
   { to: '/', label: 'Start', end: true },
   { to: '/shop', label: 'Asortyment' },
+  { to: '/terrarium', label: 'Projektuj terrarium' },
   { to: '/about', label: 'O nas' },
   { to: '/faq', label: 'FAQ' },
   { to: '/contact', label: 'Kontakt' }

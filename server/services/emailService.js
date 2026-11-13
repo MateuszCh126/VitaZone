@@ -131,3 +131,44 @@ export const sendOrderStatusEmail = async (order, previousStatus) => {
         })
     });
 };
+
+export const sendTerrariumProjectSubmittedEmail = async (projectId) => {
+    const to = env.TERRARIUM_ADMIN_EMAIL;
+    if (!to) return { skipped: true };
+
+    const projectUrl = `${env.PUBLIC_APP_URL.replace(/\/$/, '')}/admin?tab=terrarium&project=${encodeURIComponent(projectId)}`;
+    return sendEmail({
+        to,
+        subject: 'VitaZone: nowe zgłoszenie projektu terrarium',
+        html: buildEmailShell({
+            title: 'Nowy projekt terrarium',
+            intro: 'Klient przesłał konfigurację do sprawdzenia i wyceny.',
+            details: `<p><a href="${projectUrl}" style="color:#34d399;">Otwórz zgłoszenie w panelu</a></p>`,
+            footer: 'Link prowadzi do panelu administracyjnego i wymaga aktywnej sesji administratora.'
+        })
+    });
+};
+
+export const sendTerrariumQuoteAvailableEmail = async ({ projectId, email, totalCents, expiresAt }) => {
+    if (!email || !email.includes('@')) return null;
+    const dashboardUrl = `${env.PUBLIC_APP_URL.replace(/\/$/, '')}/dashboard?tab=terrarium`;
+    const total = (Number(totalCents) / 100).toFixed(2);
+    const expiry = expiresAt ? new Date(expiresAt).toLocaleDateString('pl-PL') : null;
+
+    return sendEmail({
+        to: email,
+        subject: 'VitaZone: oferta na Twoje terrarium jest gotowa',
+        html: buildEmailShell({
+            title: 'Oferta na terrarium jest gotowa',
+            intro: `Przygotowaliśmy ofertę do projektu #${projectId.slice(0, 8).toUpperCase()}.`,
+            details: `
+              <div style="margin:24px 0;padding:18px;border-radius:18px;background:rgba(255,255,255,0.03);border:1px solid rgba(255,255,255,0.08);">
+                <p style="margin:0 0 10px;"><strong>Suma produktów:</strong> ${total} zł</p>
+                ${expiry ? `<p style="margin:0;">Oferta ważna do: ${expiry}</p>` : ''}
+              </div>
+              <p><a href="${dashboardUrl}" style="color:#34d399;">Otwórz projekt w panelu klienta</a></p>
+            `,
+            footer: 'Sprawdź konfigurację i zaakceptuj ofertę, aby przejść do płatności.'
+        })
+    });
+};

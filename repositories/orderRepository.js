@@ -2,6 +2,7 @@ import * as db from '../server/scripts/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_SHIPPING_AMOUNT_CENTS } from '../shared/commerce.js';
 import { ORDER_STATUS } from '../shared/orderStatus.js';
+import { MAX_DATABASE_CENTS, resolveOrderItemPriceCents } from '../shared/terrarium.js';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 let orderSchemaSupportPromise = null;
@@ -169,10 +170,15 @@ export const createOrder = async (orderData) => {
         houseNumber,
         apartmentNumber,
         idempotencyKey,
+        priceSnapshot = null,
         discountCode,
         initialStatus = ORDER_STATUS.PENDING,
         shippingAmountCents = DEFAULT_SHIPPING_AMOUNT_CENTS
     } = orderData;
+
+    if (priceSnapshot && (!Array.isArray(priceSnapshot) || priceSnapshot.length !== items.length)) {
+        throw new Error('Snapshot cen nie odpowiada pozycjom zamówienia');
+    }
 
     const orderId = uuidv4();
     const client = await db.poolInstance.connect();
@@ -225,11 +231,12 @@ export const createOrder = async (orderData) => {
                         throw new Error(`Brak wystarczającej ilości produktu ${product.name}`);
                     }
 
-                    itemsSubtotalCents += product.price_cents * item.quantity;
+                    const priceAtPurchaseCents = resolveOrderItemPriceCents(product, item, priceSnapshot);
+                    itemsSubtotalCents += priceAtPurchaseCents * item.quantity;
                     verifiedItems.push({
                         productId: item.productId,
                         quantity: item.quantity,
-                        priceAtPurchaseCents: product.price_cents,
+                        priceAtPurchaseCents,
                         productNameSnapshot: product.name,
                         taxRateSnapshot: product.tax_rate
                     });
@@ -243,6 +250,9 @@ export const createOrder = async (orderData) => {
                 const discountAmountCents = calculateDiscountAmountCents(activeDiscount, itemsSubtotalCents);
                 const finalTotalCents = itemsSubtotalCents + shippingAmountCents - discountAmountCents;
 
+                if (!Number.isSafeInteger(finalTotalCents) || finalTotalCents > MAX_DATABASE_CENTS) {
+                    throw new Error('Kwota zamówienia przekracza zakres zapisywany w groszach');
+                }
                 if (finalTotalCents <= 0) {
                     throw new Error('Kwota zamówienia musi być większa niż zero');
                 }

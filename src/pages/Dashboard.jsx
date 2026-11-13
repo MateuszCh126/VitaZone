@@ -2,14 +2,16 @@
 import { motion, AnimatePresence } from 'framer-motion';
 import { API_BASE } from '../utils/config';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
-import { Package, User, Settings, LogOut, AlertOctagon, Save, ShieldCheck } from 'lucide-react';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
+import { Package, User, Settings, LogOut, AlertOctagon, Save, ShieldCheck, Box } from 'lucide-react';
 import { ORDER_STATUS } from '../../shared/orderStatus.js';
+import TerrariumProjectsPanel from '../components/terrarium/TerrariumProjectsPanel.jsx';
 
 const Dashboard = () => {
     const { user, logout, updateProfile, loading } = useAuth();
     const navigate = useNavigate();
-    const [activeTab, setActiveTab] = useState('overview');
+    const [searchParams] = useSearchParams();
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'terrarium' ? 'terrarium' : 'overview');
 
     // Settings Form State
     const [formData, setFormData] = useState({
@@ -169,6 +171,12 @@ const Dashboard = () => {
                                 <Package size={18} /> Moje zamówienia
                             </button>
                             <button
+                                onClick={() => setActiveTab('terrarium')}
+                                className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${activeTab === 'terrarium' ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:text-white'}`}
+                            >
+                                <Box size={18} /> Projekty terrarium
+                            </button>
+                            <button
                                 onClick={() => setActiveTab('settings')}
                                 className={`w-full flex items-center gap-3 p-3 rounded-lg transition-colors ${activeTab === 'settings' ? 'bg-primary/10 text-primary' : 'text-gray-400 hover:text-white'}`}
                             >
@@ -290,6 +298,17 @@ const Dashboard = () => {
                                         </div>
                                     </div>
                                 ))}
+                            </motion.div>
+                        )}
+
+                        {activeTab === 'terrarium' && (
+                            <motion.div
+                                key="terrarium"
+                                initial={{ opacity: 0, y: 10 }}
+                                animate={{ opacity: 1, y: 0 }}
+                                exit={{ opacity: 0, y: -10 }}
+                            >
+                                <TerrariumProjectsPanel />
                             </motion.div>
                         )}
 

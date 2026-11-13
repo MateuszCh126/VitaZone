@@ -6,9 +6,10 @@ import { API_BASE } from '../utils/config';
 const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories }) => {
     // Destructure errors from formState
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
-        defaultValues: { imageUrls: [] }
+        defaultValues: { imageUrls: [], specsJson: '{}' }
     });
     const [uploading, setUploading] = React.useState(false);
+    const [specsError, setSpecsError] = React.useState('');
 
     const handleFileUpload = async (e) => {
         const files = e.target.files;
@@ -56,20 +57,35 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
             setValue('categoryId', editingProduct.category_id);
             setValue('imageUrls', editingProduct.image_urls || []);
             setValue('species', editingProduct.species || '');
+            setValue('specsJson', JSON.stringify(editingProduct.specs || {}, null, 2));
         } else {
-            reset({ imageUrls: [] });
+            reset({ imageUrls: [], specsJson: '{}' });
         }
+        setSpecsError('');
     }, [editingProduct, isOpen, reset, setValue]);
 
     if (!isOpen) return null;
 
     const onFormSubmit = (data) => {
+        let specs;
+        try {
+            specs = JSON.parse(data.specsJson || '{}');
+            if (!specs || typeof specs !== 'object' || Array.isArray(specs)) {
+                throw new Error('Specyfikacja musi być obiektem JSON.');
+            }
+        } catch {
+            setSpecsError('Wpisz poprawny obiekt JSON. Nie zapisaliśmy zmian.');
+            return;
+        }
+        setSpecsError('');
         const payload = {
             ...data,
             price: parseFloat(data.price),
             stock: parseInt(data.stock),
-            imageUrls: data.imageUrls || [] // Use array from form
+            imageUrls: data.imageUrls || [],
+            specs
         };
+        delete payload.specsJson;
         onSubmit(payload);
     };
 
@@ -152,6 +168,23 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                             </select>
                             {errors.categoryId && <span className="text-red-500 text-xs">{errors.categoryId.message}</span>}
                         </div>
+                    </div>
+
+                    <div className="space-y-2">
+                        <label className="text-sm text-gray-400" htmlFor="product-specs-json">Specyfikacja SKU (JSON)</label>
+                        <textarea
+                            id="product-specs-json"
+                            {...register('specsJson')}
+                            rows={8}
+                            spellCheck="false"
+                            placeholder={'{\n  "terrariumDesigner": {\n    "role": "element",\n    "dimensionsMm": { "width": 120, "height": 80, "depth": 100 },\n    "allowedMountSurfaces": ["floor"],\n    "model": { "url": "/models/terrarium/SKU.glb", "version": "1" }\n  }\n}'}
+                            className="w-full rounded-lg border border-white/10 bg-black/50 p-3 font-mono text-xs leading-5 text-gray-200 outline-none focus:border-primary/50"
+                            aria-describedby="product-specs-help"
+                        />
+                        <p id="product-specs-help" className="text-xs leading-5 text-gray-500">
+                            Wymiary konfiguratora zapisuj jako liczby całkowite w mm pod `terrariumDesigner.dimensionsMm`; dodaj lokalny model w `terrariumDesigner.model` i dozwolone powierzchnie.
+                        </p>
+                        {specsError && <p role="alert" className="text-xs text-red-400">{specsError}</p>}
                     </div>
 
                     <div className="space-y-2">

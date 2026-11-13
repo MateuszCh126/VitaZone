@@ -14,6 +14,7 @@ import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../utils/config';
 import { DEFAULT_SHIPPING_AMOUNT_CENTS } from '../../shared/commerce.js';
 import { trackEvent } from '../utils/analytics';
+import { readCheckoutReturn } from '../utils/checkoutSession.js';
 
 const SHIPPING_AMOUNT = DEFAULT_SHIPPING_AMOUNT_CENTS / 100;
 
@@ -76,10 +77,9 @@ const Checkout = () => {
     );
 
     useEffect(() => {
-        const sessionId = searchParams.get('session_id');
-        const checkoutCancelled = searchParams.get('checkout') === 'cancelled';
+        const { sessionId, isTerrarium, wasCancelled } = readCheckoutReturn(searchParams);
 
-        if (checkoutCancelled) {
+        if (wasCancelled) {
             setCheckoutState({
                 type: 'cancelled',
                 message: 'Płatność została przerwana. Koszyk i dane dostawy nadal czekają na Ciebie.'
@@ -114,7 +114,7 @@ const Checkout = () => {
                 }
 
                 if (data.paymentStatus === 'paid') {
-                    if (!didClearCartRef.current) {
+                    if (!isTerrarium && !didClearCartRef.current) {
                         didClearCartRef.current = true;
                         const trackedPurchaseKey = `purchase:${sessionId}`;
                         if (!window.sessionStorage.getItem(trackedPurchaseKey)) {

@@ -1,6 +1,7 @@
 import { z } from 'zod';
+import { TerrariumDesignerProductSchema } from '../shared/terrarium.js';
 
-export const ProductSchema = z.object({
+const ProductFieldsSchema = z.object({
     name: z.string().min(3, "Name must be at least 3 characters"),
     species: z.string().optional(),
     description: z.string().optional(),
@@ -12,7 +13,25 @@ export const ProductSchema = z.object({
     is_active: z.boolean().optional()
 });
 
-export const ProductUpdateSchema = ProductSchema.partial();
+const validateTerrariumSpecs = (data, context) => {
+    const designerConfig = data.specs?.terrariumDesigner;
+    if (designerConfig === undefined) return;
+
+    const parsed = TerrariumDesignerProductSchema.safeParse(designerConfig);
+    if (!parsed.success) {
+        for (const issue of parsed.error.issues) {
+            context.addIssue({
+                code: 'custom',
+                path: ['specs', 'terrariumDesigner', ...issue.path],
+                message: issue.message
+            });
+        }
+    }
+};
+
+export const ProductSchema = ProductFieldsSchema.superRefine(validateTerrariumSpecs);
+
+export const ProductUpdateSchema = ProductFieldsSchema.partial().superRefine(validateTerrariumSpecs);
 
 export const ToggleActiveSchema = z.object({
     isActive: z.boolean()

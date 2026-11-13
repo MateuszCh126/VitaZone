@@ -1,7 +1,7 @@
 ﻿import React, { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { useAuth } from '../context/AuthContext';
-import { useNavigate, Link } from 'react-router-dom';
+import { useNavigate, useSearchParams, Link } from 'react-router-dom';
 import {
     LayoutDashboard,
     ShoppingBag,
@@ -16,21 +16,24 @@ import {
     Search,
     Filter,
     Eye,
-    EyeOff
+    EyeOff,
+    Box
 } from 'lucide-react';
 import { API_BASE } from '../utils/config';
 import ProductModal from '../components/ProductModal';
 import AdminDiscounts from '../components/admin/AdminDiscounts';
+import AdminTerrariumProjects from '../components/admin/AdminTerrariumProjects.jsx';
 import { ORDER_STATUS, PROCESSING_ORDER_STATUSES } from '../../shared/orderStatus.js';
 
 const AdminDashboard = () => {
     const { user, loading: authLoading } = useAuth();
     const navigate = useNavigate();
+    const [searchParams] = useSearchParams();
     const [stats, setStats] = useState(null);
     const [orders, setOrders] = useState([]);
     const [products, setProducts] = useState([]);
     const [users, setUsers] = useState([]);
-    const [activeTab, setActiveTab] = useState('orders');
+    const [activeTab, setActiveTab] = useState(searchParams.get('tab') === 'terrarium' ? 'terrarium' : 'orders');
     const [isLoading, setIsLoading] = useState(true);
     const [isProductModalOpen, setIsProductModalOpen] = useState(false);
     const [editingProduct, setEditingProduct] = useState(null);
@@ -280,6 +283,7 @@ const AdminDashboard = () => {
                     <TabButton active={activeTab === 'inventory'} onClick={() => setActiveTab('inventory')} icon={<Package size={18} />} label="Magazyn" />
                     <TabButton active={activeTab === 'users'} onClick={() => setActiveTab('users')} icon={<Users size={18} />} label="Użytkownicy" />
                     <TabButton active={activeTab === 'discounts'} onClick={() => setActiveTab('discounts')} icon={<TrendingUp size={18} />} label="Kupony" />
+                    <TabButton active={activeTab === 'terrarium'} onClick={() => setActiveTab('terrarium')} icon={<Box size={18} />} label="Projekty terrarium" />
                 </div>
 
                 {/* Main Content Area */}
@@ -598,6 +602,7 @@ const AdminDashboard = () => {
                             </motion.div>
                         )}
                         {activeTab === 'discounts' && <AdminDiscounts />}
+                        {activeTab === 'terrarium' && <AdminTerrariumProjects />}
                     </AnimatePresence>
                 </div>
             </div>

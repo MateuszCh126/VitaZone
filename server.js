@@ -16,6 +16,7 @@ import createStripeRoutes from './routes/stripeRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import userRoutes from './routes/userRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
+import terrariumRoutes from './routes/terrariumRoutes.js';
 
 import { handleStripeWebhook } from './server/controllers/stripeController.js';
 import { errorHandler } from './server/middleware/errorHandler.js';
@@ -82,6 +83,7 @@ app.use('/api/users', verifyToken, userRoutes);
 app.use('/api/stripe', verifyToken, createStripeRoutes({ orderLimiter }));
 app.use('/api/orders', verifyToken, createOrderRoutes({ orderLimiter }));
 app.use('/api/admin', adminLimiter, verifyAdmin, adminRoutes);
+app.use('/api/terrarium', terrariumRoutes);
 app.use('/api/discounts', createDiscountRoutes({ discountValidationLimiter }));
 app.use('/api/chat', chatLimiter, chatRoutes);
 app.use('/api/upload', verifyAdmin, uploadLimiter, uploadRoutes);

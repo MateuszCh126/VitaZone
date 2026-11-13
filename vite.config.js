@@ -54,6 +54,7 @@ export default defineConfig({
   test: {
     environment: 'jsdom',
     setupFiles: './src/tests/setup.js',
+    include: ['tests/unit/**/*.test.js', 'tests/integration/**/*.test.js', 'src/**/*.test.{js,jsx}'],
     globals: true,
     coverage: {
       provider: 'v8',
