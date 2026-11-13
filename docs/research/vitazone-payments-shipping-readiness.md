@@ -17,7 +17,7 @@ updated: 2026-11-13
 
 Sklep już tworzy hostowaną sesję Stripe Checkout bez przypinania `payment_method_types`. API Stripe pozwala wtedy na dynamiczny wybór metod aktywnych w ustawieniach płatności konta. Nie ma potrzeby budować osobnej formularzowej integracji P24/BLIK w przeglądarce. BLIK jest dokumentowany dla klientów z Polski i PLN oraz Stripe Checkout; wymaga dostępności na koncie. [Stripe Checkout](https://docs.stripe.com/payments/checkout) · [Stripe BLIK](https://docs.stripe.com/payments/blik) · [Stripe API: `payment_method_types`](https://docs.stripe.com/api/checkout/sessions/object)
 
-P24 wymaga osobnej weryfikacji kwalifikowalności firmy i konta. Stripe opublikował zmienione wymagania onboardingowe dla nowych włączeń P24 od 6 sierpnia 2026 r.; obejmują ograniczenia typów podmiotów i wymagane dane firmy/strony. Użytkownik powinien najpierw sprawdzić Dashboard lub support Stripe — kod nie może obejść ich weryfikacji. [Wymagania Stripe dla P24](https://support.stripe.com/questions/przelewy24-%28p24%29-onboarding-requirements?locale=en-GB)
+P24 wymaga osobnej weryfikacji kwalifikowalności firmy i konta. Dla nowych włączeń od 6 sierpnia 2026 r. Stripe ogranicza kwalifikujące się typy podmiotów (m.in. wyklucza jednoosobową działalność) i wymaga na stronie danych prawnych firmy, zasad zwrotów i polityki prywatności. Wymienia też „dietary supplements” wśród kategorii o ograniczonej dostępności. Ponieważ VitaZone oferuje pokarm i suplementy dla zwierząt, nie zakładamy, że P24 zostanie zatwierdzone ani jak Stripe sklasyfikuje tę ofertę — trzeba uzyskać potwierdzenie od Stripe dla konkretnego podmiotu i katalogu przed komunikowaniem tej metody klientom. Karty i BLIK pozostają osobnymi metodami; ich aktywność również zależy od konfiguracji/kwalifikacji konta. [Wymagania Stripe dla P24](https://support.stripe.com/questions/przelewy24-%28p24%29-onboarding-requirements?locale=en-GB) · [Stripe BLIK](https://docs.stripe.com/payments/blik)
 
 Kod obsługuje już webhooki `checkout.session.completed`, `checkout.session.expired` oraz zdarzenia PaymentIntent. Dodano obsługę `checkout.session.async_payment_succeeded` i `checkout.session.async_payment_failed`, aby opłacenie lub zwolnienie rezerwacji następowało według podpisanego zdarzenia Stripe. Dodany test kontraktowy potwierdza, że sesja nie ogranicza listy metod na sztywno, a dwa kolejne testy sprawdzają opóźnione powodzenie i niepowodzenie. Nie przeprowadzono płatności w sandboxie ani przez konto produkcyjne.
 
@@ -59,7 +59,7 @@ Do czasu potwierdzenia wyboru Furgonetki lub innego agregatora, założenia kont
 
 ## Następne kroki
 
-1. W Stripe Dashboard sprawdzić dostępność i aktywować karty, BLIK, a dla P24 zakończyć wymagany onboarding.
+1. W Stripe Dashboard sprawdzić dostępność i aktywować karty oraz BLIK. Dla P24 najpierw potwierdzić kwalifikowalność podmiotu i klasyfikację suplementów dla zwierząt ze Stripe; nie obiecywać P24, dopóki metoda nie zostanie zatwierdzona i aktywowana.
 2. Wysłuchać/wykonać pełny sandbox dla każdej metody: powodzenie, anulowanie, opóźnione potwierdzenie, niepowodzenie, wygaśnięcie i webhook ponowiony.
 3. Porównać Apaczkę i Furgonetkę dla akcesoriów; wybrać brokera lub zawrzeć umowę bezpośrednią, założyć konto i uzyskać sandbox, taryfy, dane punktów oraz warunki paczek/zwrotów.
 4. Dla Furgonetki zarejestrować OAuth app, uzgodnić bezpieczne trwałe miejsce na rotujące tokeny i skonfigurować sandbox. Nie przekazywać sekretów w repozytorium ani czacie.

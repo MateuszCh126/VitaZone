@@ -13,7 +13,7 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 
 ## Wykonane
 
-- Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% do 320×320 px, `primary/10`, blur 105 px i bez screen blend.
+- Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% do 320×320 px, `primary/10`, blur 105 px i bez screen blend; po uwagach z przeglądu zmniejszono je dalej do 144×144 px, `primary/5`, blur 48 px.
 - Usunięto stale animowaną warstwę cząsteczek z `App`; nieużywany komponent usunięto.
 - Podmieniono niedziałający adres zdjęcia okładkowego kategorii „Węże”; poprawiono też obraz i datę przykładowego produktu używanego przez testy, aby lokalny podgląd nie przedstawiał błędnego zdjęcia ani fałszywej etykiety nowości.
 - Zredukowano motion zoomu zdjęć do 1.03/220 ms.
