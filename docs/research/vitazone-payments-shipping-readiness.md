@@ -34,7 +34,9 @@ Są to alternatywy, które warto porównać — nadal wymagają założenia kont
 
 Dodano credential-gated adapter `server/services/shipping/furgonetkaClient.js`, domyślnie kierujący do oficjalnego sandboxu. Obsługuje pobranie usług i kalkulację ceny oraz tworzy wyłącznie szkic paczki — nie zamawia przewozu, podjazdu ani etykiety. Dopuszcza przewoźników `inpost`/`dpd`, a tworzenie paczki blokuje, jeśli serwer nie przekaże rozpoznanej kategorii akcesorium. Kod nie jest podłączony do API checkoutu, katalogu ani webhooka płatności i nie wykonuje żadnych requestów bez tokenu.
 
-To punkt startowy do weryfikacji z kontem sandbox, a nie aktywna metoda dostawy. Token OAuth Furgonetki musi być wydany poza repozytorium i przekazany przez sekret środowiska. Dalsza integracja wymaga zaufanego mapowania kategorii po stronie serwera, telefonu odbiorcy, danych i wymiarów/wagi przesyłki, wyboru konkretnej usługi, taryfy, snapshotu zamówienia oraz testów anulowania i ponowień. Nie zamawiać etykiety przed potwierdzonym webhookiem płatności.
+To punkt startowy do weryfikacji z kontem sandbox, a nie aktywna metoda dostawy. Obecny kod przyjmuje statyczny `FURGONETKA_ACCESS_TOKEN`; nie implementuje OAuth ani odnawiania tokenów, więc taki token nie jest gotową konfiguracją produkcyjną. Oficjalny OAuth wymaga zarejestrowanej aplikacji (`Client ID`/`Client Secret`); token access z authorization-code jest ważny 30 dni, a refresh token jest jednorazowy, zwracany ponownie po każdym odświeżeniu i ważny do 3 miesięcy. Integracja produkcyjna musi bezpiecznie przechowywać i atomowo rotować odświeżany token, obsłużyć równoległe żądania i ponowną autoryzację po wygaśnięciu. Nie wybierać `client_credentials` w ciemno — dokumentacja podaje dla niego 60-minutowy token bez możliwości odświeżenia; dostęp do usług nadawczych trzeba potwierdzić dla konta. [Oficjalna dokumentacja OAuth2](https://furgonetka.pl/api/oauth)
+
+Dalsza integracja wymaga zaufanego mapowania kategorii po stronie serwera, telefonu odbiorcy, danych i wymiarów/wagi przesyłki, wyboru konkretnej usługi i taryfy oraz snapshotu zamówienia. Przed produkcją trzeba przetestować walidację paczki, utworzenie rekordu w stanie oczekującym, osobne zamówienie przewozu, anulowanie, ponowienia i obsługę asynchronicznego statusu. Nie zamawiać etykiety ani przewozu przed potwierdzonym webhookiem płatności.
 
 ### Ograniczenia wysyłki żywych zwierząt
 
@@ -60,4 +62,5 @@ Do czasu potwierdzenia wyboru Furgonetki lub innego agregatora, założenia kont
 1. W Stripe Dashboard sprawdzić dostępność i aktywować karty, BLIK, a dla P24 zakończyć wymagany onboarding.
 2. Wysłuchać/wykonać pełny sandbox dla każdej metody: powodzenie, anulowanie, opóźnione potwierdzenie, niepowodzenie, wygaśnięcie i webhook ponowiony.
 3. Porównać Apaczkę i Furgonetkę dla akcesoriów; wybrać brokera lub zawrzeć umowę bezpośrednią, założyć konto i uzyskać sandbox, taryfy, dane punktów oraz warunki paczek/zwrotów.
-4. Dopiero wtedy implementować wybór usługi, kalkulację kosztu, zapis shipment reference i automatyczne tworzenie etykiety po zdarzeniu płatności.
+4. Dla Furgonetki zarejestrować OAuth app, uzgodnić bezpieczne trwałe miejsce na rotujące tokeny i skonfigurować sandbox. Nie przekazywać sekretów w repozytorium ani czacie.
+5. Dopiero po potwierdzeniu konta i specyfikacji produktu implementować wybór usługi, kalkulację kosztu, zapis shipment reference i idempotentne zamawianie przewozu po zdarzeniu płatności.
