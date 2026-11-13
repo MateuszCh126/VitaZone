@@ -35,7 +35,9 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 - Dodano `MotionConfig` respektujący systemowe ograniczenie ruchu dla animacji Framer Motion; dostosowano także copy prawne/FAQ, żeby nie orzekało zbiorczego wyjątku zwrotów dla żywych zwierząt.
 - Zabezpieczono demo seed i synchronizację fikcyjnego katalogu: działają wyłącznie po jawnej zgodzie w środowisku nieprodukcyjnym; baza zdalna wymaga dodatkowego opt-in. Polityki prawne wyświetlają stan roboczy do czasu uzupełnienia faktów i akceptacji.
 - Ustawienia analityki można ponownie otworzyć ze stopki; poprawiono etykietę pola czatu, zapowiedź nowych wiadomości, obsługę reduced motion w scrollowaniu oraz semantykę i fokus mobilnego menu. Koszyk otrzymał obsługę dialogu, Escape, pułapkę fokusu i przywrócenie fokusu.
+- Po zapisaniu zgody cookies fokus wraca do trwałego przycisku ustawień prywatności, także po pierwszej decyzji z banera.
 - Checkout używa jasnego nagłówka „Finalizacja zamówienia”, nie obiecuje niepotwierdzonej listy metod przed przejściem do Stripe i pokazuje polskie komunikaty o wygaśnięciu rezerwacji.
+- Bieżący krok checkoutu ma semantyczne `aria-current="step"`; numery kroków są dekoracyjne dla czytnika ekranu.
 - Galeria produktu ma nazwaną sekcję, ogłasza bieżące zdjęcie czytnikom ekranu i pozwala przełączać je strzałkami klawiatury bez utraty fokusu; zdjęcia nie zmieniają się automatycznie.
 - Profil użytkownika nie jest już trwale kopiowany do `localStorage`; istniejący klucz `exotic_user` jest usuwany, a sesję przy odświeżeniu odtwarza endpoint `/api/auth/me` z cookie. Adres pozostaje dostępny w pamięci aplikacji do uzupełnienia checkoutu.
 - Zdarzenie wyszukiwania przekazuje do analityki długość frazy zamiast jej treści, aby nie wysyłać tekstu wpisanego przez klienta do zewnętrznej analityki.

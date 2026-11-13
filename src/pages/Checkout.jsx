@@ -407,8 +407,8 @@ const Checkout = () => {
                 <div className="flex flex-col gap-12 lg:flex-row">
                     <div className="flex-1">
                         <div className="mb-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>1</div>
-                            <h2 ref={deliveryHeadingRef} tabIndex={-1} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 1 ? 'text-white' : 'text-gray-400'}`}>Dane dostawy</h2>
+                            <div aria-hidden="true" className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>1</div>
+                            <h2 ref={deliveryHeadingRef} tabIndex={-1} aria-current={step === 1 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 1 ? 'text-white' : 'text-gray-400'}`}>Dane dostawy</h2>
                         </div>
 
                         {step === 1 && (
@@ -440,8 +440,8 @@ const Checkout = () => {
                         )}
 
                         <div className="mb-8 mt-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>2</div>
-                            <h2 ref={paymentHeadingRef} tabIndex={-1} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 2 ? 'text-white' : 'text-gray-400'}`}>Płatność</h2>
+                            <div aria-hidden="true" className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>2</div>
+                            <h2 ref={paymentHeadingRef} tabIndex={-1} aria-current={step === 2 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 2 ? 'text-white' : 'text-gray-400'}`}>Płatność</h2>
                         </div>
 
                         {step === 2 && (

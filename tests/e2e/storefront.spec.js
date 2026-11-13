@@ -130,6 +130,7 @@ test.describe('VitaZone storefront (demo data)', () => {
     await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
 
     await expect(page.getByRole('heading', { name: 'Finalizacja zamówienia' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dane dostawy' })).toHaveAttribute('aria-current', 'step');
     await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
     await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');
     await expect(page.getByText('15.00 zł')).toBeVisible();
@@ -144,6 +145,7 @@ test.describe('VitaZone storefront (demo data)', () => {
     await page.getByLabel('Numer domu').fill('1');
     await page.getByRole('main').getByRole('button', { name: 'Przejdź do płatności' }).click();
     await expect(page.getByRole('heading', { name: 'Płatność' })).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Płatność' })).toHaveAttribute('aria-current', 'step');
     await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
     await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toBeFocused();
     await expect(page.getByText('Potwierdź wymagane oświadczenie, aby przejść do płatności.', { exact: true })).toBeVisible();
@@ -178,6 +180,7 @@ test.describe('VitaZone storefront (demo data)', () => {
     await page.getByRole('button', { name: 'Odrzuć analitykę' }).click();
 
     await expect(page.getByRole('region', { name: 'Ustawienia cookies' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Ustawienia prywatności' })).toBeFocused();
     const consent = await page.evaluate(() => JSON.parse(localStorage.getItem('cookie_consent_v1')));
     expect(consent).toMatchObject({ necessary: true, analytics: false });
     expect(consent).not.toHaveProperty('marketing');

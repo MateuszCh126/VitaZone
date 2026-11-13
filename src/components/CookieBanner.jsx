@@ -55,8 +55,10 @@ const CookieBanner = () => {
     setIsVisible(false);
     const focusReturnTarget = openerRef.current;
     openerRef.current = null;
-    if (focusReturnTarget?.isConnected) {
-      window.requestAnimationFrame(() => focusReturnTarget.focus());
+    const fallbackFocusTarget = document.getElementById('cookie-settings-trigger');
+    const target = focusReturnTarget?.isConnected ? focusReturnTarget : fallbackFocusTarget;
+    if (target instanceof HTMLElement) {
+      window.requestAnimationFrame(() => target.focus());
     }
     try {
       await fetch(`${API_BASE}/api/consent`, {

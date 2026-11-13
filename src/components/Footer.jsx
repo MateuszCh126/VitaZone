@@ -52,7 +52,7 @@ const Footer = () => {
               <li><Link to="/privacy" className="transition-colors hover:text-primary">Polityka prywatności</Link></li>
               <li><Link to="/terms" className="transition-colors hover:text-primary">Regulamin</Link></li>
               <li><Link to="/cookies" className="transition-colors hover:text-primary">Cookies</Link></li>
-              <li><button type="button" onClick={() => window.dispatchEvent(new Event('open_cookie_settings'))} className="text-left transition-colors hover:text-primary">Ustawienia prywatności</button></li>
+              <li><button id="cookie-settings-trigger" type="button" onClick={() => window.dispatchEvent(new Event('open_cookie_settings'))} className="rounded-sm text-left transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4">Ustawienia prywatności</button></li>
               <li><Link to="/withdrawal" className="transition-colors hover:text-primary">Odstąpienie od umowy</Link></li>
             </ul>
           </div>
