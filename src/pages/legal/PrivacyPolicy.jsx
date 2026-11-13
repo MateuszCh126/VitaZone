@@ -56,10 +56,11 @@ const PrivacyPolicy = () => {
             <section className="space-y-3">
               <h2 className="text-xl font-semibold text-emerald-400">Dane dostawy i odbiorcy</h2>
               <p className="leading-relaxed text-neutral-300">
-                Gdy prosisz o sprawdzenie kosztu dostawy, dane potrzebne do wyceny — imię i nazwisko, e-mail, telefon,
-                adres oraz wymiary i masę paczki — mogą zostać przekazane do Furgonetki jako pośrednika wyceny.
-                Po złożeniu zamówienia dane niezbędne do doręczenia mogą zostać przekazane wybranemu przewoźnikowi.
-                Zakres usług i podmiotów trzeba sprawdzić przed włączeniem tej funkcji w sklepie.
+                Podczas wyceny dostawy Furgonetka otrzymuje imię i nazwisko, e-mail, telefon, adres oraz wymiary i masę
+                paczki wyliczone na podstawie produktów — w celu obliczenia kosztu i dostępności usługi. Sklep nie tworzy
+                obecnie przesyłek ani etykiet i nie przekazuje danych przewoźnikowi w ramach nadania. Przed uruchomieniem
+                tej funkcji właściciel powinien potwierdzić role podmiotów, podstawę prawną, retencję, umowy oraz pełną
+                informację dla klientów.
               </p>
             </section>
 

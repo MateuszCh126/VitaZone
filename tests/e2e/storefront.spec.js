@@ -138,6 +138,8 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(page.getByRole('heading', { name: 'Dane dostawy' })).toHaveAttribute('aria-current', 'step');
     await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
     await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');
+    await expect(page.getByText(/Przy wycenie kosztu dostawy Furgonetka otrzyma dane odbiorcy/)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Informacje o danych' })).toHaveAttribute('href', '/privacy');
     await page.getByLabel('Imię i nazwisko').fill('Jan Kowalski');
     await page.getByLabel('Adres e-mail').fill('jan@example.com');
     await page.getByLabel('Telefon do dostawy').fill('500600700');

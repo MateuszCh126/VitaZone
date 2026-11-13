@@ -1,6 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
 import {
     AlertCircle,
     Check,
@@ -449,6 +449,11 @@ const Checkout = () => {
                                     <InputField name="house_number" label="Numer domu" placeholder="np. 12" autoComplete="address-line2" formData={formData} handleChange={handleChange} errors={errors} />
                                     <InputField name="apartment_number" label="Numer lokalu (opcjonalnie)" placeholder="np. 4" autoComplete="address-line3" required={false} formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
+
+                                <p className="text-xs leading-relaxed text-gray-400">
+                                    Przy wycenie kosztu dostawy Furgonetka otrzyma dane odbiorcy z formularza i parametry paczki.{' '}
+                                    <Link to="/privacy" className="text-primary underline underline-offset-2 hover:text-white">Informacje o danych</Link>
+                                </p>
 
                                 {shippingQuotes.length > 0 && (
                                     <fieldset className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-5">
