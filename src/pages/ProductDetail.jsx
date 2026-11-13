@@ -64,6 +64,17 @@ const ProductDetail = () => {
     setCurrentImageIndex((previous) => (previous === 0 ? product.image_urls.length - 1 : previous - 1));
   };
 
+  const handleGalleryKeyDown = (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nextImage();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      previousImage();
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center sm:px-6">
@@ -116,13 +127,27 @@ const ProductDetail = () => {
       </Link>
 
       <div className="grid grid-cols-1 gap-8 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
-          <div className="group relative h-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-bg-secondary shadow-2xl sm:h-[420px] sm:rounded-[2rem] lg:h-[520px]">
+        <div
+          className="space-y-4"
+          role="region"
+          aria-label={`Zdjęcia produktu ${product.name}`}
+          onKeyDown={handleGalleryKeyDown}
+        >
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Zdjęcie {currentImageIndex + 1} z {imageUrls.length}: {product.name}
+          </p>
+          <div
+            id="product-gallery-slide"
+            className="group relative h-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-bg-secondary shadow-2xl sm:h-[420px] sm:rounded-[2rem] lg:h-[520px]"
+            role="group"
+            aria-roledescription="slajd"
+            aria-label={`Zdjęcie ${currentImageIndex + 1} z ${imageUrls.length}`}
+          >
             <img
               src={getOptimizedImageUrl(currentImage, 1400)}
               srcSet={getSrcSet(currentImage)}
               sizes="(max-width: 1024px) 100vw, 55vw"
-              alt={`${product.name} - zdjęcie ${currentImageIndex + 1}`}
+              alt={`${product.name}, zdjęcie ${currentImageIndex + 1} z ${imageUrls.length}`}
               width="1400"
               height="1050"
               fetchPriority="high"
@@ -133,16 +158,20 @@ const ProductDetail = () => {
             {imageUrls.length > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={previousImage}
                   className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:left-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-                  aria-label="Poprzednie zdjęcie"
+                  aria-label={`Poprzednie zdjęcie produktu ${product.name}`}
+                  aria-controls="product-gallery-slide"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
+                  type="button"
                   onClick={nextImage}
                   className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:right-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
-                  aria-label="Następne zdjęcie"
+                  aria-label={`Następne zdjęcie produktu ${product.name}`}
+                  aria-controls="product-gallery-slide"
                 >
                   <ChevronRight size={24} />
                 </button>
@@ -155,10 +184,10 @@ const ProductDetail = () => {
               {imageUrls.map((imageUrl, index) => (
                 <button
                   key={`${imageUrl}-${index}`}
-                  onClick={() => setCurrentImageIndex(index)}
-                  aria-label={`Pokaż zdjęcie ${index + 1} produktu ${product.name}`}
-                  aria-pressed={index === currentImageIndex}
                   type="button"
+                  onClick={() => setCurrentImageIndex(index)}
+                  aria-label={`Pokaż zdjęcie ${index + 1} z ${imageUrls.length} produktu ${product.name}`}
+                  aria-pressed={index === currentImageIndex}
                   className={`overflow-hidden rounded-2xl border ${
                     index === currentImageIndex ? 'border-primary' : 'border-white/10'
                   }`}

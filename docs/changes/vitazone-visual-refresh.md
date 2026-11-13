@@ -36,6 +36,7 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 - Zabezpieczono demo seed i synchronizację fikcyjnego katalogu: działają wyłącznie po jawnej zgodzie w środowisku nieprodukcyjnym; baza zdalna wymaga dodatkowego opt-in. Polityki prawne wyświetlają stan roboczy do czasu uzupełnienia faktów i akceptacji.
 - Ustawienia analityki można ponownie otworzyć ze stopki; poprawiono etykietę pola czatu, zapowiedź nowych wiadomości, obsługę reduced motion w scrollowaniu oraz semantykę i fokus mobilnego menu. Koszyk otrzymał obsługę dialogu, Escape, pułapkę fokusu i przywrócenie fokusu.
 - Checkout używa jasnego nagłówka „Finalizacja zamówienia”, nie obiecuje niepotwierdzonej listy metod przed przejściem do Stripe i pokazuje polskie komunikaty o wygaśnięciu rezerwacji.
+- Galeria produktu ma nazwaną sekcję, ogłasza bieżące zdjęcie czytnikom ekranu i pozwala przełączać je strzałkami klawiatury bez utraty fokusu; zdjęcia nie zmieniają się automatycznie.
 - Profil użytkownika nie jest już trwale kopiowany do `localStorage`; istniejący klucz `exotic_user` jest usuwany, a sesję przy odświeżeniu odtwarza endpoint `/api/auth/me` z cookie. Adres pozostaje dostępny w pamięci aplikacji do uzupełnienia checkoutu.
 - Zdarzenie wyszukiwania przekazuje do analityki długość frazy zamiast jej treści, aby nie wysyłać tekstu wpisanego przez klienta do zewnętrznej analityki.
 - Dodano osobny przegląd polskich obowiązków konsumenckich, prywatności oraz handlu zwierzętami i listę pytań blokujących publikację: [przegląd prawny](../research/vitazone-polish-consumer-law-review.md). To lista do weryfikacji z właścicielem i prawnikiem, nie zatwierdzenie regulaminu.
@@ -43,7 +44,7 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — 52 testy w 11 plikach przeszło na finalnym drzewie, w tym testy adaptera (13 przypadków) na mockach HTTP i testy webhooków dla błędnej próby, wygaśnięcia sesji oraz anulowania PaymentIntent.
+- `pnpm test -- --run` — 54 testy w 12 plikach przeszły na finalnym drzewie, w tym dwa testy galerii produktu, 13 testów adaptera na mockach HTTP oraz testy webhooków dla błędnej próby, wygaśnięcia sesji i anulowania PaymentIntent.
 - `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
 - `pnpm lint` — przeszedł bez błędów; poprawiono import `process` w konfiguracji Playwright. Pierwsza równoległa próba uruchomiona podczas E2E zakończyła się błędem odczytu tworzonego katalogu `test-results`; ponowne uruchomienie po zakończeniu E2E przeszło.
 - `pnpm check:secrets` — przeszedł.

@@ -129,7 +129,7 @@ test.describe('VitaZone storefront (demo data)', () => {
     await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
     await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Bezpieczna kasa' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Finalizacja zamówienia' })).toBeVisible();
     await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
     await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');
     await expect(page.getByText('15.00 zł')).toBeVisible();
