@@ -1,6 +1,6 @@
 ---
 title: "VitaZone: trust and guest checkout"
-status: implemented-locally-awaiting-owner-facts-and-review
+status: draft-pr-open-awaiting-owner-facts-and-review
 owner: Codex
 updated: 2026-11-13
 ---
@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## Zakres i status
 
-Zmiany przygotowane lokalnie na gałęzi `codex/vitazone-trust-checkout`, na podstawie bieżącego stanu repozytorium `MateuszCh126/VitaZone`. Nie scalono, nie wypchnięto ani nie wdrożono.
+Zmiany wypchnięte na gałęzi `codex/vitazone-trust-checkout`; [PR #1](https://github.com/MateuszCh126/VitaZone/pull/1) jest otwarty jako draft do `main`. Nie scalono ani nie wdrożono.
 
 - Checkout: dopuszczono gościa w API i UI. Serwer wiąże konto wyłącznie z sesją uwierzytelnioną, a klient nie przesyła `userId`. Odpowiedź publicznego sprawdzenia sesji ograniczona do statusu płatności; nie zwraca identyfikatora zamówienia ani jego historii. Id sesji przyjmowane w body POST zamiast ścieżki GET. Webhook pozostaje osobnym mechanizmem finalizacji. Admin listuje zamówienia gości przez adres ze snapshotu wysyłki.
 - Checkout UI: etykiety, autocomplete, typ e-mail, błędy przy polach, zakup bez logowania i bez przekierowania do panelu po zakupie gościa.
@@ -22,11 +22,11 @@ Zmiany przygotowane lokalnie na gałęzi `codex/vitazone-trust-checkout`, na pod
 
 ## Weryfikacja
 
-- `pnpm test -- --run` — 22 testy przeszły przed ostatnimi kosmetycznymi poprawkami tekstowymi i rozpoczęciem rozdzielania etapów; uruchomić ponownie na finalnym drzewie.
-- `pnpm build` — build przeszedł przed ostatnimi kosmetycznymi poprawkami.
-- `pnpm lint` — 0 błędów, 5 ostrzeżeń: 4 istniejące odwołania do `process` w `playwright.config.js` oraz brak `loading` w dependencies hooku Checkout (poprawiony po uruchomieniu, wymaga ponownego lint).
+- `pnpm test -- --run` — 22 testy w 6 plikach przeszły.
+- `pnpm build` — przeszedł; Vite zgłasza przestarzałą bazę Browserslist (11 miesięcy).
+- `pnpm lint` — przeszedł bez błędów i ostrzeżeń.
 - `pnpm check:secrets` — przeszedł.
-- `pnpm test:e2e` — nie wystartował: projekt nie ma `DATABASE_URL` i `JWT_SECRET`, a Vite próbuje nasłuchiwać na `0.0.0.0:5173` i dostaje `EACCES`. Nie odnotowano wyników Playwright.
+- `PLAYWRIGHT_PORT=4174 pnpm test:e2e` (PowerShell: ustawiono `$env:PLAYWRIGHT_PORT='4174'`) — 3/3 scenariusze Playwright przeszły na fixture demo: strona główna, wyszukiwanie/listing → produkt → koszyk oraz wysłanie/odpowiedź demonstracyjna czatu. Runner uruchamia Vite lokalnie na `127.0.0.1`, więc nie wymaga `DATABASE_URL` ani `JWT_SECRET`. To nie sprawdza prawdziwego backendu, płatności Stripe ani webhooków.
 
 ## Otwarte zależności
 
@@ -35,3 +35,8 @@ Zmiany przygotowane lokalnie na gałęzi `codex/vitazone-trust-checkout`, na pod
 - Checkout Stripe nie został przetestowany end-to-end z rzeczywistą transakcją w trybie testowym; brak konfiguracji środowiska wymaganej przez dev server. Webhook, ponowienia, wygaśnięcie/rezerwacja i niedostępny stan magazynu wymagają odrębnego testu integracyjnego.
 - Link do e-maila `kontakt@animalsshop.pl` i branding nadawcy `RESEND_FROM_EMAIL` wymagają potwierdzenia przed publikacją.
 - Konfiguracja sieciowa pozwala na właściwą origin allowlist oraz webhook; zmiana nie była wdrażana.
+
+## Status przeglądu
+
+- PR #1 pozostaje otwarty jako draft; brak scalania i wdrożenia.
+- Runner Playwright działa lokalnie na loopbackie i używa wyłącznie mocków demo; prawdziwa transakcja i webhook Stripe pozostają niezweryfikowane.
