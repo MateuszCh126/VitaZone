@@ -78,6 +78,16 @@ export const getPublicProductById = async (id) => {
     return result.rows[0];
 };
 
+export const getShippingProductsByIds = async (ids) => {
+    const result = await db.query(`
+        SELECT p.id, p.specs, c.slug AS category_slug
+        FROM products p
+        JOIN categories c ON p.category_id = c.id
+        WHERE p.id = ANY($1::uuid[]) AND p.is_active = true
+    `, [ids]);
+    return result.rows;
+};
+
 export const createProduct = async (productData) => {
     const { name, species, description, price, stock, categoryId, imageUrls, specs, taxRate } = productData;
     const priceCents = Math.round(price * 100);

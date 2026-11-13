@@ -404,6 +404,12 @@ const AdminDashboard = () => {
                                                             <p>{order.shipping_address_json.country}, {order.shipping_address_json.city}</p>
                                                             <p>{order.shipping_address_json.street} {order.shipping_address_json.house_number} {order.shipping_address_json.apartment_number && `/ ${order.shipping_address_json.apartment_number}`}</p>
                                                             <p>{order.shipping_address_json.postal_code}</p>
+                                                            {order.shipping_address_json.phone && <p>Telefon: {order.shipping_address_json.phone}</p>}
+                                                            {order.shipping_address_json.delivery?.method && (
+                                                                <p className="mt-2 text-primary">
+                                                                    {order.shipping_address_json.delivery.method === 'inpost' ? 'InPost' : 'DPD'} · {(order.shipping_address_json.delivery.amount_cents / 100).toFixed(2)} zł
+                                                                </p>
+                                                            )}
                                                         </div>
                                                     ) : (
                                                         <p className="text-gray-500 italic">Brak adresu</p>
@@ -669,6 +675,14 @@ const AdminDashboard = () => {
                                                     {selectedOrderDetails.shipping_address_json.apartment_number ? ` / ${selectedOrderDetails.shipping_address_json.apartment_number}` : ''}
                                                 </div>
                                                 <div>{selectedOrderDetails.shipping_address_json.postal_code}</div>
+                                                {selectedOrderDetails.shipping_address_json.phone && (
+                                                    <div>Telefon do dostawy: {selectedOrderDetails.shipping_address_json.phone}</div>
+                                                )}
+                                                {selectedOrderDetails.shipping_address_json.delivery?.method && (
+                                                    <div className="text-primary">
+                                                        Dostawa: {selectedOrderDetails.shipping_address_json.delivery.method === 'inpost' ? 'InPost' : 'DPD'} · {(selectedOrderDetails.shipping_address_json.delivery.amount_cents / 100).toFixed(2)} zł
+                                                    </div>
+                                                )}
                                                 {selectedOrderDetails.shipping_address_json.email && (
                                                     <div className="text-gray-400">Email do kontaktu: {selectedOrderDetails.shipping_address_json.email}</div>
                                                 )}

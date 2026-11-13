@@ -5,6 +5,8 @@ const mocks = vi.hoisted(() => ({
     stripeCreate: vi.fn(),
     stripeRetrieve: vi.fn(),
     stripeConstructEvent: vi.fn(),
+    getShippingProductsByIds: vi.fn(),
+    getShippingQuotes: vi.fn(),
     createOrder: vi.fn(),
     findById: vi.fn(),
     attachPaymentReference: vi.fn(),
@@ -39,6 +41,19 @@ vi.mock('../../repositories/orderRepository.js', () => ({
     releasePendingOrder: mocks.releasePendingOrder,
     markOrderPaidWithTransition: mocks.markOrderPaidWithTransition
 }));
+vi.mock('../../repositories/productRepository.js', () => ({
+    getShippingProductsByIds: mocks.getShippingProductsByIds
+}));
+vi.mock('../../server/services/shippingService.js', () => ({
+    createFurgonetkaGateway: vi.fn(() => ({})),
+    getShippingQuotes: mocks.getShippingQuotes,
+    resolveReviewedShippingQuote: ({ quotes, method, expectedAmountCents }) => {
+        const quote = quotes.find((item) => item.method === method);
+        return quote && quote.amountCents === expectedAmountCents
+            ? { changed: false, quote }
+            : { changed: true, quote: null };
+    }
+}));
 vi.mock('../../server/services/emailService.js', () => ({ sendOrderPaidEmail: mocks.sendOrderPaidEmail }));
 
 const { createCheckoutSession, getCheckoutSessionStatus, handleStripeWebhook } = await import('../../server/controllers/stripeController.js');
@@ -46,6 +61,7 @@ const { createCheckoutSession, getCheckoutSessionStatus, handleStripeWebhook } =
 const shipping = {
     fullName: 'Jan Kowalski',
     email: 'jan@example.com',
+    phone: '500600700',
     country: 'Polska',
     city: 'Jelenia Góra',
     postal_code: '58-500',
@@ -75,11 +91,13 @@ describe('Stripe checkout controller contract', () => {
         mocks.stripeCreate.mockResolvedValue({ id: 'cs_test_demo1234567890', url: 'https://checkout.stripe.test/demo' });
         mocks.stripeConstructEvent.mockReturnValue({ type: 'unhandled.test', data: { object: {} } });
         mocks.attachPaymentReference.mockResolvedValue(undefined);
+        mocks.getShippingProductsByIds.mockResolvedValue([{ id: '00000000-0000-4000-8000-000000000001', category_slug: 'akcesoria', specs: {} }]);
+        mocks.getShippingQuotes.mockResolvedValue([{ method: 'inpost', label: 'InPost', amountCents: 1200, currency: 'pln', provider: 'furgonetka', providerServiceId: 7 }]);
     });
 
     it('creates a guest order without accepting browser-supplied identity', async () => {
         const req = {
-            body: { items: [{ productId: '00000000-0000-4000-8000-000000000001', quantity: 1 }], shipping,
+            body: { items: [{ productId: '00000000-0000-4000-8000-000000000001', quantity: 1 }], shipping, deliveryMethod: 'inpost', expectedShippingAmountCents: 1200,
                 userId: '00000000-0000-4000-8000-000000000099' },
             headers: { origin: 'http://localhost:5173' }
         };
@@ -102,7 +120,7 @@ describe('Stripe checkout controller contract', () => {
         const res = makeResponse();
         await createCheckoutSession({
             user: { id: 'user-authenticated-1' },
-            body: { items: [{ productId: '00000000-0000-4000-8000-000000000001', quantity: 1 }], shipping },
+            body: { items: [{ productId: '00000000-0000-4000-8000-000000000001', quantity: 1 }], shipping, deliveryMethod: 'inpost', expectedShippingAmountCents: 1200 },
             headers: {}
         }, res);
 
@@ -118,7 +136,7 @@ describe('Stripe checkout controller contract', () => {
         const res = makeResponse();
 
         await createCheckoutSession({
-            body: { items: [{ productId: '00000000-0000-4000-8000-000000000001', quantity: 1 }], shipping },
+            body: { items: [{ productId: '00000000-0000-4000-8000-000000000001', quantity: 1 }], shipping, deliveryMethod: 'inpost', expectedShippingAmountCents: 1200 },
             headers: {}
         }, res);
 

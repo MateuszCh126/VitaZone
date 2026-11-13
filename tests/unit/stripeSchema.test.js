@@ -6,12 +6,15 @@ const checkout = {
     shipping: {
         fullName: 'Jan Kowalski',
         email: 'jan@example.com',
+        phone: '500600700',
         country: 'Polska',
         city: 'Jelenia Góra',
         postal_code: '58-500',
         street: 'Testowa',
         house_number: '1'
-    }
+    },
+    deliveryMethod: 'inpost',
+    expectedShippingAmountCents: 1234
 };
 
 describe('CreateCheckoutSessionSchema', () => {
@@ -34,6 +37,27 @@ describe('CreateCheckoutSessionSchema', () => {
             shipping: { ...checkout.shipping, email: 'invalid' }
         }).success).toBe(false);
         expect(CreateCheckoutSessionSchema.safeParse({ ...checkout, items: [] }).success).toBe(false);
+    });
+
+    it('requires a server-requoted supported delivery method and strips browser quote fields', () => {
+        expect(CreateCheckoutSessionSchema.safeParse({
+            ...checkout,
+            deliveryMethod: undefined
+        }).success).toBe(false);
+
+        const parsed = CreateCheckoutSessionSchema.parse({
+            ...checkout,
+            deliveryMethod: 'dpd',
+            expectedShippingAmountCents: 1,
+            shippingAmountCents: 1,
+            serviceId: 'browser-controlled',
+            deliveryProvider: 'browser-controlled'
+        });
+        expect(parsed.deliveryMethod).toBe('dpd');
+        expect(parsed).not.toHaveProperty('shippingAmountCents');
+        expect(parsed).not.toHaveProperty('serviceId');
+        expect(parsed).not.toHaveProperty('deliveryProvider');
+        expect(parsed.expectedShippingAmountCents).toBe(1);
     });
 });
 

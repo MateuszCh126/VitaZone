@@ -116,6 +116,11 @@ test.describe('VitaZone storefront (demo data)', () => {
 
   test('completes the guest checkout handoff without trusting browser identity', async ({ page }) => {
     let checkoutPayload;
+    await page.route('**/api/shipping/quotes', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ quotes: [{ method: 'inpost', label: 'InPost', amountCents: 1500, currency: 'pln' }] })
+    }));
     await page.route('**/api/stripe/create-checkout-session', async (route) => {
       checkoutPayload = route.request().postDataJSON();
       await route.fulfill({
@@ -129,33 +134,37 @@ test.describe('VitaZone storefront (demo data)', () => {
     await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
     await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Finalizacja zamówienia' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Bezpieczna kasa' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Dane dostawy' })).toHaveAttribute('aria-current', 'step');
     await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
     await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');
-    await expect(page.getByText('15.00 zł')).toBeVisible();
-    await page.getByRole('main').getByRole('button', { name: 'Przejdź do płatności' }).click();
-    await expect(page.getByLabel('Imię i nazwisko')).toBeFocused();
     await page.getByLabel('Imię i nazwisko').fill('Jan Kowalski');
     await page.getByLabel('Adres e-mail').fill('jan@example.com');
+    await page.getByLabel('Telefon do dostawy').fill('500600700');
     await page.getByLabel('Kraj').fill('Polska');
     await page.getByLabel('Miasto').fill('Warszawa');
-    await page.getByLabel('Kod pocztowy').fill('00001');
+    await page.getByLabel('Kod pocztowy').fill('00-001');
     await page.getByLabel('Ulica').fill('Testowa');
     await page.getByLabel('Numer domu').fill('1');
+    await page.getByRole('main').getByRole('button', { name: 'Sprawdź metody i koszt dostawy' }).click();
+    await page.getByRole('radio', { name: /InPost/ }).check();
+    await expect(page.getByRole('group').getByText('15.00 zł')).toBeVisible();
     await page.getByRole('main').getByRole('button', { name: 'Przejdź do płatności' }).click();
     await expect(page.getByRole('heading', { name: 'Płatność' })).toBeFocused();
     await expect(page.getByRole('heading', { name: 'Płatność' })).toHaveAttribute('aria-current', 'step');
     await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
     await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toBeFocused();
-    await expect(page.getByText('Potwierdź wymagane oświadczenie, aby przejść do płatności.', { exact: true })).toBeVisible();
+    await expect(page.getByText('Zaznacz to oświadczenie, aby przejść do płatności.', { exact: true })).toBeVisible();
+    await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toHaveAttribute('aria-invalid', 'true');
     await page.getByLabel(/Oświadczam, że mam ukończone 18 lat/).check();
     await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
 
     await expect(page).toHaveURL(/\/mock-stripe-checkout$/);
     expect(checkoutPayload).toMatchObject({
       items: [{ productId: demoProduct.id, quantity: 1 }],
-      shipping: { email: 'jan@example.com', postal_code: '00-001' }
+      shipping: { email: 'jan@example.com', phone: '500600700', postal_code: '00-001' },
+      deliveryMethod: 'inpost',
+      expectedShippingAmountCents: 1500
     });
     expect(checkoutPayload).not.toHaveProperty('userId');
   });

@@ -2,6 +2,8 @@ import * as db from '../server/scripts/db.js';
 import { v4 as uuidv4 } from 'uuid';
 import { DEFAULT_SHIPPING_AMOUNT_CENTS } from '../shared/commerce.js';
 import { ORDER_STATUS } from '../shared/orderStatus.js';
+import { LIVE_ANIMAL_CATEGORY_SLUGS, STANDARD_PARCEL_CATEGORY_SLUGS } from '../server/services/shippingService.js';
+import { buildDeliverySnapshot } from '../server/services/shippingSnapshot.js';
 
 const sleep = (ms) => new Promise(resolve => setTimeout(resolve, ms));
 let orderSchemaSupportPromise = null;
@@ -46,21 +48,33 @@ const calculateDiscountAmountCents = (discount, subtotalCents) => {
 const buildAddressSnapshot = ({
     fullName,
     email,
+    phone,
     country,
     city,
     postalCode,
     street,
     houseNumber,
-    apartmentNumber
+    apartmentNumber,
+    deliveryMethod,
+    shippingAmountCents,
+    deliveryProvider,
+    deliveryServiceId
 }) => ({
     full_name: fullName || null,
     email: email || null,
+    phone: phone || null,
     country,
     city,
     postal_code: postalCode,
     street,
     house_number: houseNumber,
-    apartment_number: apartmentNumber || null
+    apartment_number: apartmentNumber || null,
+    delivery: deliveryMethod ? buildDeliverySnapshot({
+        method: deliveryMethod,
+        amountCents: shippingAmountCents,
+        provider: deliveryProvider,
+        serviceId: deliveryServiceId
+    }) : null
 });
 
 const buildOrderItemsAggregate = (schemaSupport) => {
@@ -162,12 +176,16 @@ export const createOrder = async (orderData) => {
         items,
         fullName,
         email,
+        phone,
         country,
         city,
         postalCode,
         street,
         houseNumber,
         apartmentNumber,
+        deliveryMethod = null,
+        deliveryProvider = null,
+        deliveryServiceId = null,
         idempotencyKey,
         discountCode,
         initialStatus = ORDER_STATUS.PENDING,
@@ -211,7 +229,11 @@ export const createOrder = async (orderData) => {
 
                 for (const item of items) {
                     const stockCheck = await client.query(
-                        'SELECT stock, price_cents, name, tax_rate, is_active FROM products WHERE id = $1 FOR UPDATE',
+                        `SELECT p.stock, p.price_cents, p.name, p.tax_rate, p.is_active, c.slug AS category_slug
+                         FROM products p
+                         JOIN categories c ON c.id = p.category_id
+                         WHERE p.id = $1
+                         FOR UPDATE OF p`,
                         [item.productId]
                     );
 
@@ -220,6 +242,12 @@ export const createOrder = async (orderData) => {
                     const product = stockCheck.rows[0];
                     if (!product.is_active) {
                         throw new Error(`Produkt ${product.name} jest niedostępny`);
+                    }
+                    if (LIVE_ANIMAL_CATEGORY_SLUGS.has(product.category_slug)) {
+                        throw new Error('Żywe zwierzęta nie są obsługiwane przez wysyłkę kurierską InPost/DPD.');
+                    }
+                    if (deliveryMethod && !STANDARD_PARCEL_CATEGORY_SLUGS.has(product.category_slug)) {
+                        throw new Error('Ta kategoria nie jest obsługiwana przez standardową wysyłkę InPost/DPD.');
                     }
                     if (product.stock < item.quantity) {
                         throw new Error(`Brak wystarczającej ilości produktu ${product.name}`);
@@ -250,12 +278,17 @@ export const createOrder = async (orderData) => {
                 const addressSnapshot = buildAddressSnapshot({
                     fullName,
                     email,
+                    phone,
                     country,
                     city,
                     postalCode,
                     street,
                     houseNumber,
-                    apartmentNumber
+                    apartmentNumber,
+                    deliveryMethod,
+                    shippingAmountCents,
+                    deliveryProvider,
+                    deliveryServiceId
                 });
 
                 const orderResult = await client.query(`
