@@ -374,6 +374,10 @@ export const handleStripeWebhook = async (req, res) => {
             }
 
             case 'payment_intent.payment_failed':
+                // Checkout can keep the session open for another payment attempt.
+                // Release the reservation only when the Checkout Session itself ends.
+                break;
+
             case 'payment_intent.canceled': {
                 const paymentIntent = event.data.object;
                 const orderId = paymentIntent.metadata?.orderId;
