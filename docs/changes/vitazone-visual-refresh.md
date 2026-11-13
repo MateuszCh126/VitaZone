@@ -9,7 +9,7 @@ updated: 2026-11-13
 
 ## Zakres
 
-Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazone-trust-checkout` (`d9a3adf`) i jest teraz zsynchronizowana z jej aktualnym commitem `005de10`; [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
+Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazone-trust-checkout` (`d9a3adf`) i jest teraz zsynchronizowana z jej aktualnym commitem `ec6d6be`; [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft do gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
 
 ## Wykonane
 
