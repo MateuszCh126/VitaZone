@@ -42,7 +42,7 @@ Gałąź `codex/vitazone-visual-refresh` wyrosła z implementacji `codex/vitazon
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — 50 testów w 11 plikach przeszło na finalnym drzewie, w tym testy adaptera na mockach HTTP i testy webhooków dla błędnej próby, wygaśnięcia sesji oraz anulowania PaymentIntent.
+- `pnpm test -- --run` — 52 testy w 11 plikach przeszło na finalnym drzewie, w tym testy adaptera (13 przypadków) na mockach HTTP i testy webhooków dla błędnej próby, wygaśnięcia sesji oraz anulowania PaymentIntent.
 - `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
 - `pnpm lint` — przeszedł bez błędów; poprawiono import `process` w konfiguracji Playwright. Pierwsza równoległa próba uruchomiona podczas E2E zakończyła się błędem odczytu tworzonego katalogu `test-results`; ponowne uruchomienie po zakończeniu E2E przeszło.
 - `pnpm check:secrets` — przeszedł.

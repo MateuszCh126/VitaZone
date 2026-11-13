@@ -42,6 +42,19 @@ const assertSupportedCarrier = (carrier) => {
     }
 };
 
+const assertBrokerService = (services, carrier, serviceId) => {
+    const matches = Array.isArray(services)
+        && services.some((service) => (
+            String(service?.id) === String(serviceId)
+            && service?.service?.toLowerCase() === carrier
+            && service?.owner === 'furgonetka'
+        ));
+
+    if (!matches) {
+        throw new TypeError('Selected service is not an active Furgonetka service for the requested carrier');
+    }
+};
+
 export const createFurgonetkaClient = ({
     accessToken,
     baseUrl = DEFAULT_SANDBOX_URL,
@@ -75,8 +88,15 @@ export const createFurgonetkaClient = ({
     return Object.freeze({
         listServices: () => request('/account/services'),
 
-        calculatePrice: ({ carrier, package: packageData, serviceIds }) => {
+        calculatePrice: async ({ carrier, package: packageData, serviceIds }) => {
             assertSupportedCarrier(carrier);
+            if (!Array.isArray(serviceIds) || serviceIds.length === 0) {
+                throw new TypeError('At least one carrier service is required to calculate a price');
+            }
+            const { services = [] } = await request('/account/services');
+            for (const serviceId of serviceIds) assertBrokerService(services, carrier, serviceId);
+            assertBrokerService(services, carrier, packageData?.service_id);
+
             return request('/packages/calculate-price', {
                 method: 'POST',
                 version: API_VERSIONS.package,
@@ -87,9 +107,16 @@ export const createFurgonetkaClient = ({
             });
         },
 
-        createAccessoryPackage: ({ carrier, items, package: packageData }) => {
+        createAccessoryPackage: async ({ carrier, items, package: packageData }) => {
             assertSupportedCarrier(carrier);
             assertAccessoriesOnly(items);
+            const { services = [] } = await request('/account/services');
+            assertBrokerService(services, carrier, packageData?.service_id);
+            await request('/packages/validate', {
+                method: 'POST',
+                version: API_VERSIONS.package,
+                body: packageData
+            });
             return request('/packages', {
                 method: 'POST',
                 version: API_VERSIONS.package,
