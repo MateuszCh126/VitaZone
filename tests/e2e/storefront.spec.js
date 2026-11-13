@@ -105,6 +105,15 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
   });
 
+  test('does not show live-animal withdrawal guidance in an accessory-only cart', async ({ page }) => {
+    await page.goto(`/product/${demoProduct.id}`);
+    await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+
+    await expect(page.getByText(/Przed zakupem żywego zwierzęcia/)).toHaveCount(0);
+    await expect(page.getByText(/dla żywych zwierząt nie obowiązuje standardowy zwrot/)).toHaveCount(0);
+  });
+
   test('completes the guest checkout handoff without trusting browser identity', async ({ page }) => {
     let checkoutPayload;
     await page.route('**/api/stripe/create-checkout-session', async (route) => {

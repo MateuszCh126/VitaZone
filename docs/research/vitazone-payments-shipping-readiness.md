@@ -30,6 +30,12 @@ Brak własnych umów bezpośrednio z InPost/DPD nie musi blokować wysyłki **ak
 
 Są to alternatywy, które warto porównać — nadal wymagają założenia konta u agregatora, konfiguracji rozliczeń, akceptacji jego aktualnych warunków oraz otrzymania kluczy/API. Nie utworzono kont ani nie aktywowano usług. Nie ustawiono cen w checkoutcie na podstawie reklamowanych stawek „od”.
 
+### Adapter Furgonetki — przygotowany, jeszcze niepodłączony
+
+Dodano credential-gated adapter `server/services/shipping/furgonetkaClient.js`, domyślnie kierujący do oficjalnego sandboxu. Obsługuje pobranie usług i kalkulację ceny oraz tworzy wyłącznie szkic paczki — nie zamawia przewozu, podjazdu ani etykiety. Dopuszcza przewoźników `inpost`/`dpd`, a tworzenie paczki blokuje, jeśli serwer nie przekaże rozpoznanej kategorii akcesorium. Kod nie jest podłączony do API checkoutu, katalogu ani webhooka płatności i nie wykonuje żadnych requestów bez tokenu.
+
+To punkt startowy do weryfikacji z kontem sandbox, a nie aktywna metoda dostawy. Token OAuth Furgonetki musi być wydany poza repozytorium i przekazany przez sekret środowiska. Dalsza integracja wymaga zaufanego mapowania kategorii po stronie serwera, telefonu odbiorcy, danych i wymiarów/wagi przesyłki, wyboru konkretnej usługi, taryfy, snapshotu zamówienia oraz testów anulowania i ponowień. Nie zamawiać etykiety przed potwierdzonym webhookiem płatności.
+
 ### Ograniczenia wysyłki żywych zwierząt
 
 - Zasady InPost zakazują w sieci przewozu żywych i martwych zwierząt, w tym owadów. [InPost — zasady pakowania, obowiązujące od 16.03.2026](https://inpost.pl/sites/default/files/docs/regulaminy/zasady-przygotowania-i-pakowania-przesylek-inpost-obowiazujacy-od-16032026-2268544.pdf)
@@ -45,9 +51,9 @@ Jeżeli właściciel wybierze umowę bezpośrednią po jej zawarciu i otrzymaniu
 - [InPost Developers](https://developers.inpost-group.com/) — REST API dla przesyłek/etykiet i tracking; [Geowidget](https://developers.inpost-group.com/geowidget-integration) dla wyboru punktu odbioru.
 - [DPD Polska Web Services](https://www.dpd.com/pl/pl/oferta-dla-firm/rozwiazania-it-dpd-polska/implementacja-wtyczek-web-service-dpd-polska/) — usługi przewozowe, etykiety i tracking; dokumentacja API jest osobna od DPD Online: [Swagger](https://dpdservices.dpd.com.pl/swagger-ui/index.html).
 
-W kodzie obecnie nie ma wyboru przewoźnika/punktu odbioru, kodu punktu, numeru przesyłki, etykiety, API tracking ani refundowania etykiet. Przed właściwym wdrożeniem trzeba zaprojektować cenniki i usługi po stronie serwera, snapshot wybranego przewoźnika i usługi przy zamówieniu, idempotentne tworzenie przesyłek po potwierdzonej płatności, ponowienia/błędy, anulowanie i zwroty oraz bezpieczne przechowywanie danych nadawcy/kluczy. Nie uruchamiać wysyłki na podstawie samego przekierowania klienta z Checkout.
+W kodzie nadal nie ma wyboru przewoźnika/punktu odbioru, kodu punktu, numeru przesyłki, etykiety, API tracking ani refundowania etykiet. Adapter nie jest jeszcze zintegrowany z fulfillmentem. Przed właściwym wdrożeniem trzeba zaprojektować cenniki i usługi po stronie serwera, snapshot wybranego przewoźnika i usługi przy zamówieniu, idempotentne tworzenie przesyłek po potwierdzonej płatności, ponowienia/błędy, anulowanie i zwroty oraz bezpieczne przechowywanie danych nadawcy/kluczy. Nie uruchamiać wysyłki na podstawie samego przekierowania klienta z Checkout.
 
-Do czasu wyboru agregatora lub zawarcia umowy bezpośredniej i otrzymania danych testowych nie dodano nieprawdziwych metod dostawy ani atrapowych cen. Punktów odbioru nie oferować dla żywych zwierząt. Właściciel powinien wybrać usługę dla akcesoriów, sprawdzić rzeczywiste ceny i zasięg oraz dostarczyć dostęp sandbox przez bezpieczne środowisko; osobno potwierdzić dostawę żywych zwierząt.
+Do czasu potwierdzenia wyboru Furgonetki lub innego agregatora, założenia konta i otrzymania danych testowych nie dodano nieprawdziwych metod dostawy ani atrapowych cen. Punktów odbioru nie oferować dla żywych zwierząt. Właściciel powinien potwierdzić wybór usługi dla akcesoriów, sprawdzić rzeczywiste ceny i zasięg oraz dostarczyć dostęp sandbox przez bezpieczne środowisko; osobno potwierdzić dostawę żywych zwierząt.
 
 ## Następne kroki
 
