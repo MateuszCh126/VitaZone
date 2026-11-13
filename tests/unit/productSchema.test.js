@@ -46,6 +46,13 @@ describe('buildProductSchema', () => {
     })).toBeNull();
   });
 
+  it.each(['', ' ', false, '0', null, undefined])('rejects malformed price value %s', (priceCents) => {
+    expect(buildProductSchema({ ...product, price_cents: priceCents }, {
+      canonicalUrl: 'https://vitazone.vercel.app/product/42',
+      imageBaseUrl: 'https://vitazone.vercel.app'
+    })).toBeNull();
+  });
+
   it('excludes unsafe image URLs and omits unavailable stock data', () => {
     const schema = buildProductSchema({
       ...product,
@@ -57,6 +64,15 @@ describe('buildProductSchema', () => {
     });
 
     expect(schema.image).toEqual(['https://vitazone.vercel.app/valid.webp']);
+    expect(schema.offers).not.toHaveProperty('availability');
+  });
+
+  it.each(['', ' ', false, '0', null, undefined])('does not infer stock status from malformed value %s', (stock) => {
+    const schema = buildProductSchema({ ...product, stock }, {
+      canonicalUrl: 'https://vitazone.vercel.app/product/42',
+      imageBaseUrl: 'https://vitazone.vercel.app'
+    });
+
     expect(schema.offers).not.toHaveProperty('availability');
   });
 });

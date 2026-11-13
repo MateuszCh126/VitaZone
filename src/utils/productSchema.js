@@ -16,10 +16,9 @@ export const buildProductSchema = (product, { canonicalUrl, imageBaseUrl }) => {
   const images = (Array.isArray(product.image_urls) ? product.image_urls : [])
     .map((imageUrl) => toPublicImageUrl(imageUrl, imageBaseUrl))
     .filter(Boolean);
-  const priceCents = Number(product.price_cents);
-  const hasPrice = product.price_cents !== null
-    && product.price_cents !== undefined
-    && Number.isInteger(priceCents)
+  const priceCents = product.price_cents;
+  const hasPrice = typeof priceCents === 'number'
+    && Number.isSafeInteger(priceCents)
     && priceCents >= 0;
 
   if (!images.length || !hasPrice) return null;
@@ -30,8 +29,8 @@ export const buildProductSchema = (product, { canonicalUrl, imageBaseUrl }) => {
     priceCurrency: 'PLN',
     price: (priceCents / 100).toFixed(2)
   };
-  const stock = Number(product.stock);
-  if (product.stock !== null && product.stock !== undefined && Number.isFinite(stock) && stock >= 0) {
+  const stock = product.stock;
+  if (typeof stock === 'number' && Number.isSafeInteger(stock) && stock >= 0) {
     offer.availability = stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock';
   }
 
