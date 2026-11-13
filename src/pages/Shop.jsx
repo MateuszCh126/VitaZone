@@ -119,6 +119,7 @@ const Shop = () => {
   }, [priceRange, products, searchQuery, selectedCategory]);
 
   const sortedProducts = useMemo(() => sortProducts(filteredProducts, sortBy), [filteredProducts, sortBy]);
+  const hasActiveFilters = selectedCategory !== 'Wszystkie' || Boolean(searchQuery) || priceRange < maxPrice;
 
   const clearFilters = () => {
     setLocalFilters({ token: paramToken, selectedCategory: 'Wszystkie', searchQuery: '' });
@@ -133,6 +134,7 @@ const Shop = () => {
         </h3>
         <input
           type="text"
+          aria-label="Szukaj produktu lub gatunku"
           placeholder="Szukaj produktu lub gatunku"
           value={searchQuery}
           onChange={(event) => handleSearchChange(event.target.value)}
@@ -148,6 +150,7 @@ const Shop = () => {
           {categories.map((category) => (
             <button
               key={category}
+              aria-pressed={selectedCategory === category}
               onClick={() => handleCategoryChange(category)}
               className={`rounded-2xl px-4 py-3 text-left text-sm transition-all ${
                 selectedCategory === category
@@ -167,6 +170,8 @@ const Shop = () => {
           <span className="text-sm font-mono text-primary">do {priceRange} zł</span>
         </div>
         <input
+          aria-label="Maksymalna cena produktu"
+          aria-valuetext={`Do ${priceRange} zł`}
           type="range"
           min="0"
           max={maxPrice}
@@ -174,7 +179,7 @@ const Shop = () => {
           onChange={(event) => setPriceRange(Number(event.target.value))}
           className="h-6 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-primary"
         />
-        <div className="mt-2 flex justify-between font-mono text-xs text-gray-500">
+        <div className="mt-2 flex justify-between font-mono text-xs text-gray-400">
           <span>0 zł</span>
           <span>{maxPrice} zł</span>
         </div>
@@ -192,7 +197,7 @@ const Shop = () => {
         </title>
         <meta
           name="description"
-          content="Przeglądaj ofertę VitaZone: zwierzęta egzotyczne, terraria oraz akcesoria do kompletnego i bezpiecznego setupu."
+          content="Przeglądaj katalog VitaZone: zwierzęta egzotyczne, terraria, ogrzewanie, oświetlenie, podłoża, dekoracje, pokarm i suplementy."
         />
       </Helmet>
 
@@ -217,18 +222,23 @@ const Shop = () => {
               {selectedCategory === 'Wszystkie' ? 'Sklep terrarystyczny VitaZone' : selectedCategory}
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-gray-400">
-              Zwierzęta egzotyczne, terraria i wyposażenie do gotowych setupów. Filtruj ofertę po kategorii, cenie lub nazwie produktu.
+              Zwierzęta egzotyczne, terraria i wyposażenie terrarystyczne. Filtruj ofertę po kategorii, cenie lub nazwie produktu.
             </p>
           </div>
           <div className="rounded-2xl border border-primary/20 bg-primary/8 px-5 py-4 text-sm text-gray-200">
-            <span className="font-semibold text-white">{filteredProducts.length}</span>{' '}
-            {getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])} po aktywnych filtrach
+            {catalogError ? 'Liczba produktów będzie widoczna po załadowaniu katalogu.' : <>
+              <span className="font-semibold text-white">{filteredProducts.length}</span>{' '}
+              {getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])}{' '}
+              {hasActiveFilters ? 'po wybranych filtrach' : 'w katalogu'}
+            </>}
           </div>
         </div>
       </section>
 
       <div className="mb-6 md:hidden">
         <button
+          aria-expanded={isFilterOpen}
+          aria-controls="mobile-product-filters"
           className="flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-white"
           onClick={() => setIsFilterOpen((current) => !current)}
         >
@@ -239,22 +249,20 @@ const Shop = () => {
       <div className="flex flex-col gap-12 md:flex-row md:items-start">
         <aside className="hidden w-72 flex-shrink-0 md:block">{renderFilters()}</aside>
 
-        <AnimatePresence>
-          {isFilterOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden md:hidden"
-            >
-              <div className="mb-6">{renderFilters()}</div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          id="mobile-product-filters"
+          initial={false}
+          animate={{ opacity: isFilterOpen ? 1 : 0, height: isFilterOpen ? 'auto' : 0 }}
+          aria-hidden={!isFilterOpen}
+          inert={!isFilterOpen}
+          className="overflow-hidden md:hidden"
+        >
+          <div className="mb-6">{renderFilters()}</div>
+        </motion.div>
 
         <div className="flex-1">
           {catalogError && (
-            <div className="mb-6 rounded-3xl border border-amber-500/20 bg-amber-500/10 px-6 py-5 text-sm text-amber-100">
+            <div role="alert" className="mb-6 rounded-3xl border border-amber-500/20 bg-amber-500/10 px-6 py-5 text-sm text-amber-100">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p>Nie udało się pobrać pełnej oferty. Spróbuj ponownie za moment.</p>
                 <button
@@ -272,7 +280,9 @@ const Shop = () => {
             {categories.slice(0, 6).map((category) => (
               <button
                 key={category}
+                type="button"
                 onClick={() => handleCategoryChange(category)}
+                aria-pressed={selectedCategory === category}
                 className={`rounded-full px-4 py-2 text-sm transition-all ${
                   selectedCategory === category
                     ? 'bg-primary text-black'
@@ -285,7 +295,9 @@ const Shop = () => {
           </div>
 
           <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-            <p className="text-sm text-gray-400" role="status" aria-live="polite">Znaleziono {filteredProducts.length} {getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])}</p>
+            <p className="text-sm text-gray-400" role="status" aria-live="polite">
+              {catalogError ? 'Wyniki pojawią się po ponownym pobraniu oferty.' : `Znaleziono ${filteredProducts.length} ${getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])}`}
+            </p>
             <label className="flex items-center gap-3 text-sm text-gray-300">Sortuj
               <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="min-h-11 rounded-xl border border-white/15 bg-bg-secondary px-3 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50">
                 <option value="catalog">Kolejność katalogu</option><option value="price-asc">Cena: od najniższej</option><option value="price-desc">Cena: od najwyższej</option><option value="newest">Najnowsze</option>
@@ -293,10 +305,10 @@ const Shop = () => {
             </label>
           </div>
           {(selectedCategory !== 'Wszystkie' || searchQuery || priceRange < maxPrice) && (
-            <div className="mb-5 flex flex-wrap items-center gap-2" aria-label="Aktywne filtry">
-              {selectedCategory !== 'Wszystkie' && <button type="button" onClick={() => handleCategoryChange('Wszystkie')} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">{selectedCategory} ×</button>}
-              {searchQuery && <button type="button" onClick={() => handleSearchChange('')} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Szukaj: {searchQuery} ×</button>}
-              {priceRange < maxPrice && <button type="button" onClick={() => setPriceRange(maxPrice)} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Do {priceRange} zł ×</button>}
+            <div className="mb-5 flex flex-wrap items-center gap-2" role="region" aria-label="Aktywne filtry">
+              {selectedCategory !== 'Wszystkie' && <button type="button" onClick={() => handleCategoryChange('Wszystkie')} className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">{selectedCategory} ×</button>}
+              {searchQuery && <button type="button" onClick={() => handleSearchChange('')} className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Szukaj: {searchQuery} ×</button>}
+              {priceRange < maxPrice && <button type="button" onClick={() => setPriceRange(maxPrice)} className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Do {priceRange} zł ×</button>}
               <button type="button" onClick={clearFilters} className="min-h-10 px-2 text-sm text-primary underline underline-offset-4">Wyczyść filtry</button>
             </div>
           )}
@@ -392,7 +404,7 @@ const ProductCard = ({ product, index, addToCart, newProductThreshold }) => {
       </div>
 
       <div className="p-5">
-        <p className="mb-2 text-xs uppercase tracking-[0.3em] text-gray-500">{product.species}</p>
+        <p className="mb-2 text-xs uppercase tracking-[0.3em] text-gray-400">{product.species}</p>
         <Link to={`/product/${product.id}`}>
           <h3 className="text-xl font-bold text-white transition-colors group-hover:text-primary">{product.name}</h3>
         </Link>

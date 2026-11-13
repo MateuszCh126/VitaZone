@@ -11,12 +11,12 @@ const sections = [
       {
         question: 'Jak wygląda wysyłka żywych zwierząt?',
         answer:
-          'Żywe zwierzęta wysyłamy wyłącznie w bezpiecznych oknach logistycznych, po wcześniejszym potwierdzeniu warunków i terminu. Chodzi o ograniczenie ryzyka w transporcie i utrzymanie właściwej temperatury.'
+          'Warunki i dostępność dostawy żywych zwierząt wymagają potwierdzenia dla konkretnej oferty przed zamówieniem. Ogólna informacja na stronie nie potwierdza terminu realizacji.'
       },
       {
         question: 'Jak szybko wysyłacie akcesoria i pokarm?',
         answer:
-          'Akcesoria, terraria, pokarm i suplementy nadajemy standardowo w 24-48 godzin roboczych, o ile produkt jest dostępny od ręki.'
+          'Nie podajemy jednego potwierdzonego terminu dla wszystkich produktów. Aktualne informacje o realizacji należy sprawdzić dla wybranej oferty przed płatnością.'
       },
       {
         question: 'Czy mogę zamówić kilka kategorii w jednym koszyku?',
@@ -46,14 +46,14 @@ const sections = [
     icon: RefreshCcw,
     items: [
       {
-        question: 'Czy mogę zwrócić akcesoria?',
+        question: 'Jakie zasady odstąpienia dotyczą zamówienia?',
         answer:
-          'Tak, dla zwykłych produktów obowiązują standardowe zasady odstąpienia od umowy. Szczegóły znajdziesz na stronie odstąpienia od umowy oraz w regulaminie.'
+          'Prawo odstąpienia przy zakupie online wynosi co do zasady 14 dni. Ustawa przewiduje wyjątki dla określonych sytuacji i towarów; nie potwierdzono jeszcze ich zastosowania dla wszystkich produktów w katalogu.'
       },
       {
         question: 'Czy żywe zwierzęta podlegają standardowemu zwrotowi?',
         answer:
-          'Nie w taki sam sposób jak zwykłe akcesoria. Przy żywych zwierzętach obowiązują ograniczenia wynikające z charakteru świadczenia i dobrostanu zwierzęcia.'
+          'Nie zakładamy automatycznego wyłączenia dla całej kategorii. Zastosowanie ustawowych wyjątków trzeba potwierdzić dla konkretnego produktu; ta informacja wymaga jeszcze akceptacji sprzedawcy i prawnika.'
       },
       {
         question: 'Jak zgłosić problem z zamówieniem?',

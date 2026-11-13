@@ -1,95 +1,273 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('VitaZone D2C Storefront E2E Tests', () => {
+const demoProduct = {
+  id: '00000000-0000-4000-8000-000000000001',
+  name: 'Terrarium demonstracyjne',
+  price: 249,
+  stock: 3,
+  category_name: 'Terraria i zestawy',
+  species: '',
+  description: 'Dane demonstracyjne używane wyłącznie w lokalnych testach interfejsu.',
+  image_urls: ['/hero-bg-1280.avif'],
+  is_active: true,
+  created_at: '2020-01-01T00:00:00.000Z'
+};
 
+test.describe('VitaZone storefront (demo data)', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to homepage first
-    await page.goto('/');
-    
-    // Inject cookie consent directly into localStorage to bypass the cookie banner
-    await page.evaluate(() => {
-      localStorage.setItem('cookie_consent', JSON.stringify({
-        necessary: true,
-        analytics: true,
-        marketing: true,
-        timestamp: new Date().toISOString()
-      }));
+    await page.addInitScript(() => {
+      if (!window.location.search.includes('consent-test')) {
+        localStorage.setItem('cookie_consent_v1', JSON.stringify({
+          necessary: true,
+          analytics: true,
+          timestamp: new Date().toISOString()
+        }));
+      }
     });
-    
-    // Reload or visit the page again to apply consent state
+
+    await page.route('**/api/auth/me', (route) => route.fulfill({ status: 401, json: { error: 'Unauthorized' } }));
+    await page.route('**/api/consent', (route) => route.fulfill({ status: 204, body: '' }));
+    await page.route('**/api/stripe/config', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ shippingAmountCents: 1500 })
+    }));
+    await page.route('**/api/products**', async (route) => {
+      const url = new URL(route.request().url());
+      const isProductDetail = url.pathname.endsWith(`/api/products/${demoProduct.id}`);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(isProductDetail ? demoProduct : [demoProduct])
+      });
+    });
+    await page.route('**/api/chat', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'To odpowiedź demonstracyjna oparta na informacjach z testowego katalogu.' })
+      });
+    });
+  });
+
+  test('shows both shopping journeys and the main heading', async ({ page }) => {
     await page.goto('/');
-  });
-  
-  test('should load the homepage and check elements', async ({ page }) => {
-    // Check navigation title / branding
-    const headerBranding = page.locator('header a, nav a').first();
-    await expect(headerBranding).toContainText(/VitaZone/i);
-    
-    // Check home page sections
-    const mainTitle = page.locator('h1');
-    await expect(mainTitle).toBeVisible();
+
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Urządzam pierwsze terrarium/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Mam już zwierzę/ })).toBeVisible();
   });
 
-  test('should navigate to shop and add a product to the cart', async ({ page }) => {
+  test('labels account fields and connects validation errors to their inputs', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByLabel('Adres email')).toBeVisible();
+    await expect(page.getByLabel('Hasło')).toBeVisible();
+
+    await page.goto('/register');
+    await expect(page.getByLabel('Imię')).toBeVisible();
+    await expect(page.getByLabel('Nazwisko')).toBeVisible();
+    await expect(page.getByLabel('Adres email')).toBeVisible();
+    await page.getByRole('button', { name: /Zarejestruj się/ }).click();
+
+    await expect(page.getByLabel('Nazwisko')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByLabel('Nazwisko')).toHaveAttribute('aria-describedby', 'register-last-name-error');
+    await expect(page.locator('#register-last-name-error')).toHaveAttribute('role', 'alert');
+    await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#register-age-error')).toHaveAttribute('role', 'alert');
+  });
+
+  test('finds a demo product, opens its details, and adds it to the cart', async ({ page }) => {
     await page.goto('/shop');
-    
-    // Search for an in-stock product (like "Gekon")
-    const searchInput = page.locator('input[placeholder*="Szukaj"]').first();
-    await expect(searchInput).toBeVisible();
-    await searchInput.fill('Gekon');
-    
-    // Click the details link of the filtered in-stock product card
-    const detailsLink = page.locator('text=Szczegóły →').first();
-    await expect(detailsLink).toBeVisible();
-    await detailsLink.click();
-    
-    // Wait for the product details page
-    await page.waitForURL(/\/product\/.+/);
-    
-    // Click the add to cart button (should be enabled for in-stock gecko)
-    const addToCartBtn = page.locator('button:has-text("Dodaj do koszyka")').first();
-    await expect(addToCartBtn).toBeVisible();
-    await expect(addToCartBtn).toBeEnabled();
-    await addToCartBtn.click();
-    
-    // Open the cart drawer manually by clicking the navbar shopping bag button
-    const cartNavBtn = page.locator('button[aria-label^="Otwórz koszyk"]').first();
-    await expect(cartNavBtn).toBeVisible();
-    await cartNavBtn.click();
-    
-    // Verify the cart drawer opens
-    const cartDrawerHeader = page.locator('h2:has-text("Koszyk"), h3:has-text("Koszyk"), :has-text("Twój koszyk")').first();
-    await expect(cartDrawerHeader).toBeVisible();
+    await page.locator('aside').getByPlaceholder('Szukaj produktu lub gatunku').fill('Terrarium demonstracyjne');
+
+    await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
+    await page.getByRole('link', { name: /Szczegóły/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/product/${demoProduct.id}`));
+    await expect(page.getByRole('heading', { name: demoProduct.name })).toBeVisible();
+    await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+    await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Twój koszyk/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: demoProduct.name, level: 3 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Zamknij koszyk' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Otwórz koszyk/ })).toBeFocused();
   });
 
-  test('should interact with the AI terrarium assistant', async ({ page }) => {
-    // Check if the chat widget trigger button is present
-    const chatTrigger = page.locator('button[aria-label*="czat"], button[aria-label*="Czat"]').first();
-    await expect(chatTrigger).toBeVisible();
-    
-    // Open the chat widget (Cookie banner is dismissed, so it should not block)
-    await chatTrigger.click();
-    
-    // Verify the assistant window is open
-    const chatTitle = page.locator('h3:has-text("Asystent terrarystyki")');
-    await expect(chatTitle).toBeVisible();
-    
-    // Send a message
-    const chatInput = page.locator('input[placeholder*="Napisz"], input[placeholder*="wiadomość"]').first();
-    const chatSubmitBtn = page.locator('button[aria-label="Wyślij wiadomość"]').first();
-    await expect(chatInput).toBeVisible();
-    await expect(chatSubmitBtn).toBeVisible();
-    
-    await chatInput.fill('Hi, recommend a reptile for a beginner');
-    await chatSubmitBtn.click();
-    
-    // Check that our message appears in the conversation list
-    const userMsg = page.locator('div:has-text("Hi, recommend a reptile for a beginner")').last();
-    await expect(userMsg).toBeVisible();
-    
-    // Wait for the assistant reply bubble (which has the .justify-start layout class) to appear
-    const assistantBubble = page.locator('.custom-scrollbar .justify-start').first();
-    await expect(assistantBubble).toBeVisible({ timeout: 15000 });
+  test('explains an empty search result and offers a direct filter reset', async ({ page }) => {
+    await page.goto('/shop');
+    await page.locator('aside').getByPlaceholder('Szukaj produktu lub gatunku').fill('fraza bez wyników');
+
+    await expect(page.getByRole('heading', { name: 'Brak produktów dla wybranych filtrów' })).toBeVisible();
+    await page.getByRole('button', { name: 'Wyczyść filtry' }).click();
+    await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
   });
 
+  test('completes the guest checkout handoff without trusting browser identity', async ({ page }) => {
+    let checkoutPayload;
+    await page.route('**/api/stripe/create-checkout-session', async (route) => {
+      checkoutPayload = route.request().postDataJSON();
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ sessionId: 'cs_test_demo1234567890', url: '/mock-stripe-checkout' })
+      });
+    });
+    await page.goto(`/product/${demoProduct.id}`);
+    await page.getByRole('button', { name: 'Dodaj produkt Terrarium demonstracyjne do koszyka' }).click();
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+    await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Bezpieczna kasa' })).toBeVisible();
+    await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
+    await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');
+    await expect(page.getByText('15.00 zł')).toBeVisible();
+    await page.getByRole('main').getByRole('button', { name: 'Przejdź do płatności' }).click();
+    await expect(page.getByLabel('Imię i nazwisko')).toBeFocused();
+    await page.getByLabel('Imię i nazwisko').fill('Jan Kowalski');
+    await page.getByLabel('Adres e-mail').fill('jan@example.com');
+    await page.getByLabel('Kraj').fill('Polska');
+    await page.getByLabel('Miasto').fill('Warszawa');
+    await page.getByLabel('Kod pocztowy').fill('00001');
+    await page.getByLabel('Ulica').fill('Testowa');
+    await page.getByLabel('Numer domu').fill('1');
+    await page.getByRole('main').getByRole('button', { name: 'Przejdź do płatności' }).click();
+    await expect(page.getByRole('heading', { name: 'Płatność' })).toBeFocused();
+    await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
+    await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toBeFocused();
+    await expect(page.getByText('Potwierdź wymagane oświadczenie, aby przejść do płatności.', { exact: true })).toBeVisible();
+    await page.getByLabel(/Oświadczam, że mam ukończone 18 lat/).check();
+    await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
+
+    await expect(page).toHaveURL(/\/mock-stripe-checkout$/);
+    expect(checkoutPayload).toMatchObject({
+      items: [{ productId: demoProduct.id, quantity: 1 }],
+      shipping: { email: 'jan@example.com', postal_code: '00-001' }
+    });
+    expect(checkoutPayload).not.toHaveProperty('userId');
+  });
+
+  test('explains the chat scope and displays its response', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Otwórz czat' }).click();
+
+    await expect(page.getByText('Informacje o ofercie sklepu')).toBeVisible();
+    await expect(page.getByText(/nie zastępuje lekarza weterynarii/)).toBeVisible();
+    await page.getByLabel('Wiadomość do asystenta').fill('Pokaż informacje o terrarium');
+    await page.getByRole('button', { name: 'Wyślij wiadomość' }).click();
+    await expect(page.getByText(/To odpowiedź demonstracyjna/)).toBeVisible();
+  });
+
+  test('stores a refusal of optional analytics', async ({ page }) => {
+    const optionalScriptRequests = [];
+    page.on('request', (request) => {
+      if (request.url().includes('va.vercel-scripts.com/v1/')) optionalScriptRequests.push(request.url());
+    });
+    await page.goto('/?consent-test');
+    await page.getByRole('button', { name: 'Odrzuć analitykę' }).click();
+
+    await expect(page.getByRole('region', { name: 'Ustawienia cookies' })).toHaveCount(0);
+    const consent = await page.evaluate(() => JSON.parse(localStorage.getItem('cookie_consent_v1')));
+    expect(consent).toMatchObject({ necessary: true, analytics: false });
+    expect(consent).not.toHaveProperty('marketing');
+    expect(optionalScriptRequests).toEqual([]);
+    await expect(page.locator('script[src*="vercel-scripts.com"]')).toHaveCount(0);
+  });
+
+  test('lets a visitor reopen privacy settings after saving a choice', async ({ page }) => {
+    await page.goto('/?consent-test');
+    await page.getByRole('button', { name: 'Odrzuć analitykę' }).click();
+    await page.getByRole('button', { name: 'Ustawienia prywatności' }).click();
+    await expect(page.getByRole('heading', { name: 'Ustawienia prywatności' })).toBeFocused();
+    await page.getByRole('button', { name: 'Wróć do wyboru zgody' }).click();
+    await expect(page.getByRole('button', { name: 'Odrzuć analitykę' })).toBeFocused();
+    await page.getByRole('button', { name: 'Dostosuj' }).click();
+    await expect(page.getByLabel(/Analityka Vercel/)).not.toBeChecked();
+    await page.getByLabel(/Analityka Vercel/).check();
+    await page.getByRole('button', { name: 'Zapisz wybór' }).click();
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('cookie_consent_v1'))?.analytics)).toBe(true);
+    await expect(page.getByRole('button', { name: 'Ustawienia prywatności' })).toBeFocused();
+  });
+
+  test('loads optional analytics scripts only after consent is accepted', async ({ page }) => {
+    const optionalScriptRequests = [];
+    page.on('request', (request) => {
+      if (request.url().includes('va.vercel-scripts.com/v1/')) optionalScriptRequests.push(request.url());
+    });
+    await page.route('https://va.vercel-scripts.com/v1/**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: 'window.__vercelConsentScriptLoaded = true;'
+    }));
+    await page.goto('/?consent-test');
+    await page.getByRole('button', { name: 'Akceptuj analitykę' }).click();
+
+    await expect.poll(() => optionalScriptRequests.length).toBe(2);
+    expect(optionalScriptRequests).toEqual(expect.arrayContaining([
+      expect.stringContaining('/v1/script.debug.js'),
+      expect.stringContaining('/v1/speed-insights/script.debug.js')
+    ]));
+  });
+
+  test('keeps the primary shopping choices visible on a narrow screen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+
+    await expect(page.getByRole('link', { name: /Urządzam pierwsze terrarium/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Mam już zwierzę/ })).toBeVisible();
+    const menuToggle = page.getByRole('button', { name: 'Otwórz menu' });
+    await expect(menuToggle).toHaveAttribute('aria-controls', 'mobile-navigation');
+    await expect(page.locator('#mobile-navigation')).toHaveAttribute('inert', '');
+    await menuToggle.click();
+    await expect(page.getByRole('dialog', { name: 'Menu główne' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Zamknij menu mobilne' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('link', { name: 'Logowanie' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Menu główne' })).toHaveCount(0);
+    await expect(menuToggle).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.goto('/shop');
+    await expect(page.getByText('1 produkt w katalogu')).toBeVisible();
+    const filterToggle = page.getByRole('button', { name: 'Pokaż filtry' });
+    await expect(filterToggle).toHaveAttribute('aria-controls', 'mobile-product-filters');
+    await expect(page.locator('#mobile-product-filters')).toHaveAttribute('inert', '');
+    await expect(filterToggle).toHaveAttribute('aria-expanded', 'false');
+    await filterToggle.click();
+    await expect(page.getByRole('button', { name: 'Ukryj filtry' })).toHaveAttribute('aria-expanded', 'true');
+    await page.locator('#mobile-product-filters').getByLabel('Szukaj produktu lub gatunku').fill('Terrarium demonstracyjne');
+    await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
+    await page.getByRole('link', { name: /Szczegóły/ }).click();
+    await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+    await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test('reflows shopping and checkout at 200-percent equivalent and phone widths', async ({ page }) => {
+    for (const width of [720, 360]) {
+      await page.setViewportSize({ width, height: 450 });
+      const hasNoHorizontalOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+      await page.goto('/shop');
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+      await page.getByRole('button', { name: 'Pokaż filtry' }).click();
+      await page.locator('#mobile-product-filters').getByLabel('Szukaj produktu lub gatunku').fill('Terrarium demonstracyjne');
+      await page.getByRole('link', { name: /Szczegóły/ }).click();
+      await expect(page.getByRole('heading', { name: demoProduct.name })).toBeVisible();
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+
+      await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+      await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+      await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toBeVisible();
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+      await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
+      await expect(page.getByRole('heading', { name: 'Podsumowanie zamówienia' })).toBeVisible();
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+    }
+  });
 });

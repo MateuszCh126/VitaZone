@@ -1,30 +1,30 @@
 ﻿import React from 'react';
 import { motion } from 'framer-motion';
-import { BadgeCheck, Leaf, ShieldCheck, Thermometer } from 'lucide-react';
+import { CreditCard, Search, ShoppingBag, Truck, Warehouse } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
 
 const pillars = [
   {
-    title: 'Dobór oparty na realnej opiece',
-    description: 'Stawiamy na gatunki i produkty, które da się prowadzić stabilnie w codziennej opiece.',
-    icon: ShieldCheck
+    title: 'Czytelny podział katalogu',
+    description: 'Osobne działy obejmują zwierzęta, terraria, ogrzewanie, oświetlenie, podłoża, dekoracje i pokarm.',
+    icon: Warehouse
   },
   {
-    title: 'Kompletna oferta w jednym miejscu',
-    description: 'Od wyboru gatunku po terrarium, źródło ciepła, UVB i pokarm.',
-    icon: Thermometer
+    title: 'Informacje przy produkcie',
+    description: 'Na karcie pozycji możesz sprawdzić opis, cenę i bieżącą dostępność.',
+    icon: Search
   },
   {
-    title: 'Oferta budowana pod jakość',
-    description: 'Katalog ma pomagać w wyborze i wspierać dobre warunki utrzymania.',
-    icon: BadgeCheck
+    title: 'Zakup bez zakładania konta',
+    description: 'Zamówienie złożysz jako gość. Zalogowani klienci mogą powiązać je ze swoim kontem.',
+    icon: ShoppingBag
   }
 ];
 
 const process = [
-  'Wybierasz gatunek lub wyposażenie dopasowane do planowanego terrarium.',
-  'Porównujesz produkty pod kątem warunków utrzymania, dostępności i budżetu.',
-  'Finalizujesz zamówienie w bezpiecznej bramce płatności i domykasz spójny zestaw.'
+  'Otwierasz kategorię, wyszukujesz produkt lub wybierasz jedną z dwóch ścieżek zakupowych.',
+  'Na karcie sprawdzasz opis, cenę i dostępność konkretnej pozycji.',
+  'Podajesz dane dostawy i przechodzisz do płatności obsługiwanej przez Stripe Checkout.'
 ];
 
 const About = () => {
@@ -34,7 +34,7 @@ const About = () => {
         <title>O sklepie | VitaZone</title>
         <meta
           name="description"
-          content="Poznaj VitaZone, sklep terrarystyczny online ze zwierzętami egzotycznymi, terrariami i akcesoriami do kompletnej aranżacji terrarium."
+            content="Informacje o katalogu VitaZone: zwierzęta egzotyczne, terraria, ogrzewanie, oświetlenie, podłoża, dekoracje i pokarm."
         />
       </Helmet>
 
@@ -48,7 +48,7 @@ const About = () => {
             O sklepie
           </motion.h1>
           <p className="mx-auto max-w-3xl text-xl leading-relaxed text-gray-400">
-            VitaZone to sklep terrarystyczny dla osób, które chcą dobrać zwierzę, terrarium i wyposażenie w jednym, czytelnym miejscu.
+            Katalog VitaZone obejmuje zwierzęta egzotyczne, terraria, ogrzewanie, oświetlenie, podłoża, dekoracje oraz pokarm.
           </p>
         </div>
       </section>
@@ -73,10 +73,10 @@ const About = () => {
       <section className="border-y border-white/10 bg-white/5 py-20">
         <div className="container mx-auto grid gap-10 px-6 lg:grid-cols-[1.1fr_0.9fr] lg:items-center">
           <div>
-            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Jak to działa</p>
-            <h2 className="mb-4 text-4xl font-bold text-white">Od wyboru gatunku do gotowego zestawu</h2>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Jak kupować</p>
+            <h2 className="mb-4 text-4xl font-bold text-white">Od wyszukiwania do płatności</h2>
             <p className="max-w-2xl text-gray-400">
-              Dzielimy ofertę na czytelne obszary: zwierzęta, terraria, ogrzewanie, dekoracje i pokarm. Dzięki temu szybciej dobierzesz wszystko do jednego terrarium.
+              Opis, cena i dostępność są przypisane do konkretnej karty produktu. Sprawdź je przed dodaniem pozycji do koszyka.
             </p>
           </div>
           <div className="rounded-[2rem] border border-white/10 bg-black/20 p-8">
@@ -94,27 +94,24 @@ const About = () => {
         </div>
       </section>
 
-      <section className="container mx-auto px-6 py-20">
-        <div className="rounded-[2rem] border border-primary/20 bg-primary/8 px-8 py-10 md:px-12">
-          <div className="grid gap-8 lg:grid-cols-[1fr_0.9fr] lg:items-center">
-            <div>
-              <div className="mb-4 inline-flex items-center gap-2 rounded-full border border-white/10 bg-black/20 px-4 py-2 text-sm text-gray-200">
-                <Leaf size={16} className="text-primary" />
-                Jakość, przejrzystość i odpowiedzialny dobór
+      <section className="container mx-auto px-6 py-16 sm:py-20">
+        <div className="grid gap-8 border-t border-white/10 pt-8 lg:grid-cols-[0.8fr_1.2fr] lg:gap-16">
+          <div>
+            <p className="mb-3 text-sm font-semibold uppercase tracking-[0.25em] text-primary">Przed płatnością</p>
+            <h2 className="text-3xl font-bold text-white sm:text-4xl">Sprawdź szczegóły i sumę zamówienia</h2>
+            <p className="mt-4 max-w-md leading-relaxed text-gray-400">Zobacz opis na karcie produktu, a koszt dostawy i łączną kwotę przed przekierowaniem do płatności.</p>
+          </div>
+          <div className="divide-y divide-white/10">
+            {[
+              { icon: Search, title: 'Karta produktu', description: 'Opis, cena i stan magazynowy wybranej pozycji.' },
+              { icon: Truck, title: 'Podsumowanie', description: 'Koszt dostawy i łączna kwota przed płatnością.' },
+              { icon: CreditCard, title: 'Płatność', description: 'Finalizacja zamówienia przez Stripe Checkout.' }
+            ].map((step) => (
+              <div key={step.title} className="grid gap-3 py-5 sm:grid-cols-[2.5rem_1fr] sm:gap-5">
+                {React.createElement(step.icon, { size: 21, 'aria-hidden': true, className: 'mt-1 text-primary' })}
+                <div><h3 className="text-lg font-semibold text-white">{step.title}</h3><p className="mt-1.5 text-sm leading-relaxed text-gray-400">{step.description}</p></div>
               </div>
-              <h2 className="mb-4 text-4xl font-bold text-white">Oferta zbudowana pod odpowiedzialną opiekę</h2>
-              <p className="text-gray-300">
-                W VitaZone stawiamy na ofertę, która pomaga dobrać odpowiednie warunki dla gatunku i spokojnie skompletować cały zestaw.
-              </p>
-            </div>
-            <div className="rounded-[2rem] border border-white/10 bg-black/20 p-8 text-sm leading-relaxed text-gray-300">
-              <p className="mb-4 font-semibold text-white">Co wyróżnia naszą ofertę:</p>
-              <ul className="space-y-3">
-                <li>Czytelny podział na zwierzęta, terraria, ogrzewanie, dekoracje i pokarm.</li>
-                <li>Opisy skupione na praktyce i warunkach utrzymania.</li>
-                <li>Produkty dobrane tak, by tworzyć spójne zestawy zakupowe.</li>
-              </ul>
-            </div>
+            ))}
           </div>
         </div>
       </section>

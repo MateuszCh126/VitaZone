@@ -152,7 +152,7 @@ const Dashboard = () => {
                                 {user?.name?.charAt(0) || 'U'}
                             </div>
                             <h2 className="text-lg font-bold">{user.name}</h2>
-                            <p className="text-xs text-gray-500">{user.email}</p>
+                            <p className="text-xs text-gray-400">{user.email}</p>
                         </div>
 
                         <nav className="space-y-1">
@@ -230,7 +230,7 @@ const Dashboard = () => {
                                     <div key={order.id} className="glass p-6 rounded-xl border border-white/5 flex flex-col gap-4">
                                         <div className="flex justify-between items-start border-b border-white/5 pb-4">
                                             <div>
-                                                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Zamówienie #{order.id.slice(0, 8)}</p>
+                                                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Zamówienie #{order.id.slice(0, 8)}</p>
                                                 <p className="text-sm font-bold text-gray-300">
                                                     {new Date(order.created_at).toLocaleDateString('pl-PL', {
                                                         year: 'numeric', month: 'long', day: 'numeric',
@@ -254,7 +254,7 @@ const Dashboard = () => {
                                                     <span className="text-gray-300">
                                                         <span className="text-primary font-bold">{item.quantity}x</span> {item.name || 'Produkt'}
                                                     </span>
-                                                    <span className="text-gray-500">{(item.price * item.quantity).toFixed(2)} zł</span>
+                                                    <span className="text-gray-400">{(item.price * item.quantity).toFixed(2)} zł</span>
                                                 </div>
                                             ))}
                                         </div>

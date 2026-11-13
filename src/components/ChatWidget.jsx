@@ -1,6 +1,6 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { API_BASE } from '../utils/config';
 
 const createMessage = (role, content) => ({
@@ -15,14 +15,11 @@ const ChatWidget = () => {
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
-
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-    };
+    const prefersReducedMotion = useReducedMotion();
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, isOpen]);
+        messagesEndRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    }, [messages, isOpen, prefersReducedMotion]);
 
     const handleInputChange = (event) => {
         setInput(event.target.value);
@@ -90,10 +87,12 @@ const ChatWidget = () => {
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0, y: 20, scale: 0.95 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+                        role="region"
+                        aria-labelledby="chat-title"
                         className="glass flex h-[min(70vh,32rem)] max-h-[calc(100svh-5.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl sm:h-[500px] sm:w-[400px]"
                     >
                         <div className="flex items-center justify-between border-b border-white/10 bg-primary/5 p-3 sm:p-4">
@@ -102,11 +101,8 @@ const ChatWidget = () => {
                                     <Bot size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white">Asystent terrarystyki</h3>
-                                    <p className="text-xs text-primary/80 flex items-center gap-1">
-                                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                        Dostępny
-                                    </p>
+                                    <h3 id="chat-title" className="font-bold text-white">Asystent terrarystyki</h3>
+                                    <p className="text-xs text-neutral-300">Informacje o ofercie sklepu</p>
                                 </div>
                             </div>
                             <button
@@ -119,12 +115,12 @@ const ChatWidget = () => {
                             </button>
                         </div>
 
-                        <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
+                        <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-4" aria-live="polite" aria-relevant="additions text">
                             {messages.length === 0 && (
                                 <div className="mt-6 p-4 text-center text-gray-400 sm:mt-10">
                                     <Bot size={48} className="mx-auto mb-4 opacity-50" />
-                                    <p className="text-sm">Zapytaj o dobór gatunku, terrarium lub wyposażenia.</p>
-                                    <p className="text-xs mt-2">Pomogę zawęzić wybór i wskażę produkty pasujące do Twoich planów.</p>
+                                    <p className="text-sm">Zapytaj o informacje podane w opisach produktów i wyposażenia.</p>
+                                    <p className="mt-2 text-xs">Odpowiedzi opierają się na katalogu sklepu. Asystent nie zastępuje lekarza weterynarii ani nie potwierdza wymagań konkretnego zwierzęcia.</p>
                                 </div>
                             )}
 
@@ -172,11 +168,12 @@ const ChatWidget = () => {
                         <form onSubmit={handleSubmit} className="border-t border-white/10 bg-black/20 p-3 backdrop-blur-md sm:p-4">
                             <div className="relative flex items-center">
                                 <input
+                                    aria-label="Wiadomość do asystenta"
                                     value={input}
                                     onChange={handleInputChange}
                                     placeholder="Napisz wiadomość..."
                                     disabled={isLoading}
-                                    className="w-full bg-black/50 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-500 disabled:opacity-60"
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-400 disabled:opacity-60"
                                 />
                                 <button
                                     type="submit"
@@ -193,8 +190,8 @@ const ChatWidget = () => {
             </AnimatePresence>
 
             <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={isOpen ? 'Zamknij czat' : 'Otwórz czat'}
                 type="button"

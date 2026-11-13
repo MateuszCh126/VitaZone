@@ -17,8 +17,9 @@ Pomóc dwóm grupom znaleźć produkt zgodny z potrzebą: osobom kompletującym 
 | Popularność | sekcja „Najczęściej wybierane produkty” miała ręcznie wskazaną listę; nie znaleziono dowodu sortowania po sprzedaży | `src/pages/Home.jsx`; tekst zmieniono na neutralny |
 | Kontakt | w kodzie były przykładowe dane telefonu `+48 123 456 789` i adresu „Terrarystyczna 10” | `src/pages/Contact.jsx`, `src/components/Footer.jsx`, regulamin; usunięto z widoku. Faktyczne dane firmy nadal wymagają potwierdzenia przez właściciela |
 | Adres e-mail | kod używa `kontakt@animalsshop.pl`, ale domena/adres nie zostały niezależnie zweryfikowane | stan nierozstrzygnięty; potwierdzić przed publikacją lub zmianą |
-| Dane produktów | skrypt katalogu zawiera opisy zwierząt i akcesoriów; źródła zdjęć, prawdziwe specyfikacje, dostępność i pochodzenie każdego zdjęcia nie zostały zweryfikowane z właścicielem | `server/scripts/catalogData.js` oraz zasilony katalog; traktować jako do potwierdzenia |
-| Wdrożenie | Vercel CLI wskazał produkcyjne aliasy `vitazone.vercel.app` i `animalsshop.vercel.app`, deployment Ready z maja 2026 | tylko obserwacja CLI. Nie wdrożono zmian. Nie potwierdzono świeżości aplikacji w przeglądarce |
+| Dane produktów | skrypt katalogu zawiera syntetyczne ceny, stany, obrazy i opisy; źródła zdjęć, prawdziwe specyfikacje, dostępność i pochodzenie każdego zdjęcia nie zostały zweryfikowane z właścicielem | `server/scripts/catalogData.js` jest oznaczony jako fixture demo; seed i sync katalogu wymagają jawnej zgody i odmawiają działania w produkcji. Nie traktować wartości fixture jako oferty |
+| Produkcja — przegląd w przeglądarce | 13.11.2026 publiczny alias [vitazone.vercel.app](https://vitazone.vercel.app/) nadal wyświetla przykładowy adres `ul. Terrarystyczna 10, 00-001 Warszawa`, telefon `+48 123 456 789`, „Polecane na start”, „Najczęściej wybierane” i deklarację wysyłki 24–48 h | obserwacja publicznie renderowanej strony; dane i obietnice nie zostały potwierdzone. Nie zmieniono produkcji |
+| Deployment Vercel | `vercel inspect https://vitazone.vercel.app` 13.11.2026 wskazał aliasy `vitazone.vercel.app` i `animalsshop.vercel.app`; deployment Ready z 29.05.2026 (168 dni wcześniej według CLI) | obserwacja CLI potwierdza metadane deploymentu, nie przyczyny ani stan kodu. Jest zgodna z obserwacją starej treści live; zmiany z tej gałęzi pozostają lokalne |
 | Ruch i zachowania | brak dostarczonego dostępu do analityki, pytań, anulowań i zwrotów | brak danych; nie tworzyć person ani wyników konwersji |
 
 ## Hipotezy do walidacji
@@ -64,12 +65,12 @@ W obu grupach obserwować: pierwszy wybór, błędne interpretacje, użycie wysz
 
 | Sklep / publiczna strona | Obserwacja w dniu przeglądu | Możliwy kierunek dla VitaZone |
 |---|---|---|
-| [Gekonowa Pasja — zestawy](https://www.gekonowapasja.pl/sklep/zestawy) | prezentuje kompletne zestawy, ich elementy i ceny | jawnie opisać zawartość i wyłączenia, jeśli dane VitaZone są potwierdzone |
-| [Terran Polska](https://terranpolska.pl/) | listing eksponuje produkty, ceny, dostępność i etykiety popularności | dostępność i sortowanie popularnością wdrażać tylko przy rzeczywistym, świeżym źródle danych |
-| [Zmiennocieplne — kontakt](https://zmiennocieplne.pl/kontakt/) | FAQ i kontakt wyjaśniają ograniczenia logistyki zwierząt | przed zakupem pokazać faktyczne zasady dostawy zatwierdzone dla VitaZone |
-| [TerraRex — zestaw tropikalny](https://www.terrarex.pl/terrarium-tropikalne-gotowe-do-zamieszkania-bogaty-zestaw-kartapdf-422.html) | karta opisuje skład zestawu | dokładna lista zawartości pomaga ocenić kompletność |
+| [Gekonowa Pasja — zestawy](https://www.gekonowapasja.pl/sklep/zestawy) | strona ma 9 zestawów w poddziałach, ceny i sygnał dostępności; prowadzi też do kreatora krok po kroku i pokazuje jawne progi rabatowe | hipoteza do testu: kreator lub lista zawartości może ułatwić kompletowanie; rabat stosować wyłącznie przy zatwierdzonej ekonomii i prawdziwym koszyku |
+| [Terran Polska](https://terranpolska.pl/) | bardzo rozbudowana taksonomia kategorii (m.in. typy terrariów, ogrzewanie, filtracja, pomiary, pokarmy) oraz widoczny kanał telefonu i e-maila | sprawdzić w badaniu, czy węższe, zadaniowe wejścia VitaZone pomagają nowym klientom; nie kopiować szerokości katalogu bez danych |
+| [Zmiennocieplne — strona kontaktu](https://zmiennocieplne.pl/kontakt/) | komunikaty o progu darmowej dostawy i godzinie granicznej nadania są widoczne już w górnej warstwie sklepu; strona zawiera też osobne wejścia do zestawów, gatunków i poradników | warunki i godziny VitaZone wymagają niezależnego potwierdzenia; nie publikować analogicznych obietnic bez operacyjnych danych |
+| [TerraRex — zestaw tropikalny](https://www.terrarex.pl/terrarium-tropikalne-gotowe-do-zamieszkania-bogaty-zestaw-kartapdf-422.html) | karta podaje wymiar i listę elementów, ale dokument wskazuje „Niedostępny”; jednocześnie obiecuje szeroką przydatność dla wielu gatunków i bezpieczeństwo zestawu | pokazywać skład i dostępność jako osobne, konkretne pola; ostrożnie traktować uniwersalne deklaracje kompatybilności, które wymagają dowodu |
 
-To migawka publicznych stron, nie pełny audyt konkurencji. Deklaracje konkurentów nie są dowodem jakości ani podstawą do przejęcia ich obietnic.
+Migawka publicznych stron odczytana 13.11.2026; to nie pełny audyt konkurencji ani dowód, że dane mechanizmy zwiększają sprzedaż. Deklaracje konkurentów nie potwierdzają ich jakości ani nie stanowią podstawy do przejęcia obietnic w VitaZone.
 
 ## Rejestr twierdzeń wymagających dowodu / decyzji właściciela
 
@@ -101,4 +102,4 @@ To migawka publicznych stron, nie pełny audyt konkurencji. Deklaracje konkurent
 3. Kodować zanonimizowane powody anulowania, zwrotu, kontaktu i niedopasowania. Uzgodnić słownik i retencję.
 4. Przeprowadzić dwie rundy badań jakościowych; udokumentować obserwacje, cytaty bez danych osobowych, przeciwprzykłady i niepewność.
 5. Priorytetyzować według wpływu na dopasowanie i ryzyko, częstości zgłaszanej w dostępnych źródłach oraz kosztu wdrożenia. Nie ważyć wniosków według liczby kliknięć.
-6. Porównać funnel przed/po dopiero, gdy analityka i zgody pozwalają na zgodny z prywatnością pomiar; łączyć go z anulowaniami, zwrotami, kontaktami i zgłoszeniami niedopasowania. Bez wystarczającego ruchu nie uruchamiać testów A/B.
+6. Porównać funnel przed/po dopiero, gdy analityka i zgody pozwalają na zgodny z prywatnością pomiar; łączyć go z anulowaniami, zwrotami, kontaktami i zgłoszeniami niedopasowania. Wartość `purchase` pochodzi z opłaconej sesji Stripe, a nie koszyka w przeglądarce. Bez wystarczającego ruchu nie uruchamiać testów A/B.

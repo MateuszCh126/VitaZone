@@ -15,26 +15,43 @@ Gałąź `codex/vitazone-visual-refresh`, bazuje na etapie `codex/vitazone-trust
 
 - Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% do 320×320 px, `primary/10`, blur 105 px i bez screen blend.
 - Usunięto stale animowaną warstwę cząsteczek z `App`; nieużywany komponent usunięto.
+- Podmieniono niedziałający adres zdjęcia okładkowego kategorii „Węże”; poprawiono też obraz i datę przykładowego produktu używanego przez testy, aby lokalny podgląd nie przedstawiał błędnego zdjęcia ani fałszywej etykiety nowości.
 - Zredukowano motion zoomu zdjęć do 1.03/220 ms.
 - Zdjęciowe karty kategorii i listingu mają wspólny promień 16 px.
 - Dodano spójne tokeny palety, czasu ruchu, powierzchni i focus ring; globalna obsługa reduced motion. Ambient effects nie ładują się przy aktywnym systemowym `prefers-reduced-motion`.
 - Na dotyku akcja dodania do koszyka jest widoczna bez hover; na klawiaturze ujawnia się przez focus-within.
 - Wyciszono powtarzalny pasek korzyści, usunięto niepotwierdzone „Polecane na start” i pokazano neutralne informacje o dziale oraz katalogu.
-- Czat w widoku sklepu nie obiecuje doboru zwierząt. Backend nie promuje arbitralnych gatunków jako „łatwych na start”; odpowiedzi mają pozostać w granicach danych katalogu i jasno wykluczać diagnozowanie/porady weterynaryjne.
+- W opisie listingu usunięto niepotwierdzone odniesienie do „gotowych setupów”; licznik odróżnia teraz katalog od filtrowanych wyników, a przy błędzie pobierania nie przedstawia zera jako rzeczywistej liczby produktów.
+- Czat informuje, że odpowiada na podstawie katalogu; usunięto stałe „Dostępny” niezależne od stanu API oraz doprecyzowano brak porad weterynaryjnych. Backend nie promuje arbitralnych gatunków jako „łatwych na start”.
+- Z karty produktu i FAQ usunięto niepotwierdzoną obietnicę wysyłki w 24–48 godzin oraz szablonowe wymagania hodowlane. Koszyk nie przedstawia już ogólnego twierdzenia prawnego dla wszystkich produktów; link do zasad odstąpienia pojawia się przy produktach z kategorii żywych zwierząt.
+- Opis strony „O sklepie”, etykiety kategorii i meta descriptions uproszczono do faktów wynikających z katalogu oraz kodu przepływu zakupowego; usunięto hasła o stabilnej opiece, suchych wybiegach, kontroli UVB i gotowym, dopasowanym zestawie bez potwierdzenia.
 - Wyszukiwane podpowiedzi na stronie głównej są prawdziwymi przyciskami obsługiwanymi klawiaturą.
 - Przyciski/CTA zachowują kontrast black-on-green, a stan fokusu jest widoczny.
+- Zwiększono cele dotykowe ikon w nawigacji i koszyku oraz poprawiono kontrast drugorzędnych etykiet tekstowych, które na czarnym tle nie spełniały progu 4,5:1.
+- Checkout pobiera kwotę dostawy z API konfiguracyjnego backendu, zamiast zakładać wyłącznie stałą frontendową; płatność jest blokowana do otrzymania poprawnej kwoty.
+- Płatności pozostają w hostowanym Stripe Checkout z dynamicznymi metodami konta (bez listy metod zakodowanej na stałe); dodano webhooki dla asynchronicznego sukcesu i niepowodzenia. Gotowość BLIK/P24 oraz przewoźników i wymagania kont opisuje [osobny przegląd integracji](../research/vitazone-payments-shipping-readiness.md).
+- Wartość zdarzenia `purchase` pochodzi teraz z `amount_total` zwróconego przez Stripe dla opłaconej sesji, a nie z sumy koszyka po stronie przeglądarki; zdarzenia rozpoczęcia checkoutu nie wysyłają szacowanej kwoty z klienta. Endpoint nadal nie zwraca gościowi identyfikatora zamówienia ani danych profilu.
+- Dodano `MotionConfig` respektujący systemowe ograniczenie ruchu dla animacji Framer Motion; dostosowano także copy prawne/FAQ, żeby nie orzekało zbiorczego wyjątku zwrotów dla żywych zwierząt.
+- Zabezpieczono demo seed i synchronizację fikcyjnego katalogu: działają wyłącznie po jawnej zgodzie w środowisku nieprodukcyjnym; baza zdalna wymaga dodatkowego opt-in. Polityki prawne wyświetlają stan roboczy do czasu uzupełnienia faktów i akceptacji.
+- Ustawienia analityki można ponownie otworzyć ze stopki; poprawiono etykietę pola czatu, zapowiedź nowych wiadomości, obsługę reduced motion w scrollowaniu oraz semantykę i fokus mobilnego menu. Koszyk otrzymał obsługę dialogu, Escape, pułapkę fokusu i przywrócenie fokusu.
+- Profil użytkownika nie jest już trwale kopiowany do `localStorage`; istniejący klucz `exotic_user` jest usuwany, a sesję przy odświeżeniu odtwarza endpoint `/api/auth/me` z cookie. Adres pozostaje dostępny w pamięci aplikacji do uzupełnienia checkoutu.
+- Zdarzenie wyszukiwania przekazuje do analityki długość frazy zamiast jej treści, aby nie wysyłać tekstu wpisanego przez klienta do zewnętrznej analityki.
+- Dodano osobny przegląd polskich obowiązków konsumenckich, prywatności oraz handlu zwierzętami i listę pytań blokujących publikację: [przegląd prawny](../research/vitazone-polish-consumer-law-review.md). To lista do weryfikacji z właścicielem i prawnikiem, nie zatwierdzenie regulaminu.
 
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — 22 testy w 6 plikach przeszły.
+- `pnpm test -- --run` — 36 testów w 9 plikach przeszło po usunięciu cache profilu, również zmienione testy kontekstu auth.
 - `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
-- `pnpm lint` — 0 błędów, 4 ostrzeżenia `no-undef process` w `playwright.config.js`.
+- `pnpm lint` — 0 błędów; poprawiono import `process` w konfiguracji Playwright, brak ostrzeżeń.
 - `pnpm check:secrets` — przeszedł.
 - Impeccable detector — zwrócił `[]` na wskazanym zestawie UI przed końcową korektą wyszukiwanych podpowiedzi i copy; odczytuję to jako brak zgłoszeń w tej przebieżce, nie jako certyfikację.
-- Otworzyłem statyczny build na `127.0.0.1:4173`; sprawdziłem dostępnościowy widok i zrzut strony głównej oraz listingu w mobilnym kadrze. CTA uruchomiło ścieżkę terrariów. Listing zwrócił 0 produktów i komunikat o błędzie pobrania, ponieważ lokalny backend/baza nie były uruchomione.
-- `pnpm test:e2e` — Playwright nie wystartował. Dev server wymaga `DATABASE_URL` oraz `JWT_SECRET`, których checkout nie ma; Vite próbował słuchać na `0.0.0.0:5173` i otrzymał `EACCES`. Po starcie statycznego preview port `127.0.0.1:4173` działał, ale ten tryb nie weryfikuje API, płatności, prawdziwych danych ani całego checkoutu.
+- W podglądzie lokalnym bez backendu listing zgłosił błąd pobrania, dlatego do dalszej oceny renderu użyłem jawnie mockowanego API i fixture demo (opis poniżej). Nie otwierałem ani nie modyfikowałem deploymentu produkcyjnego.
+- Wykonałem aktualny przegląd zrzutów na danych demo: strona główna 1440 px przy normalnym i ograniczonym ruchu, listing 390 px, karta produktu 1440/390 px oraz koszyk i checkout 390 px. Zdjęcia demo zostały zdekodowane przed przechwyceniem; ocena układu nie potwierdza prawdziwych danych ani działania backendu.
+- `PLAYWRIGHT_PORT=4174 pnpm test:e2e` (PowerShell: ustawiono `$env:PLAYWRIGHT_PORT='4174'`) — 11/11 scenariuszy Playwright na jawnych danych demo. Obejmują dwie ścieżki zakupowe, listing/koszyk, wyszukiwanie i reset pustych wyników, gościnny mock Stripe bez `userId` w payloadzie, zakres czatu, focus management zgód, walidację checkoutu z fokusem pierwszego pola i checkboxa, przejście fokusu między krokami, formatowanie 5 cyfr kodu pocztowego, etykiety i błędy formularzy, dialog koszyka, mobilne menu z pułapką fokusu/Escape oraz brak poziomego overflow przy szerokości 720 i 360 px podczas przejścia listing → produkt → koszyk → checkout. Szerokość 720 px jest przybliżeniem reflow przy powiększeniu, a nie testem powiększenia przeglądarki 200%. `playwright.config.js` domyślnie używa portu 4173 i pozwala zmienić go przez `PLAYWRIGHT_PORT`; API sklepu jest mockowane, więc testy nie dowodzą działania produkcyjnego backendu, webhooków ani prawdziwych płatności.
+- Przegląd dostaw uzupełniono o oficjalne warunki Apaczki i Furgonetki oraz zakazy przewozu żywych zwierząt w standardowych usługach InPost/DPD. Nie aktywowano usług i nie zmieniano checkoutu bez kont, wycen i potwierdzonej metody dostawy żywych zwierząt.
+- Testy Stripe są lokalnymi testami kontraktowymi; nie sprawdzają sieci, konfiguracji webhooka ani rzeczywistej transakcji Stripe.
 
 ## Ograniczenia
 
-Brak badań z klientami, danych analitycznych i potwierdzonych źródeł praw do zdjęć. Fotografia oraz produktowe fakty wymagają potwierdzenia z właścicielem. Kanał `kontakt@animalsshop.pl` pozostał w linkach z dotychczasowego kodu, bo nie otrzymałem zatwierdzonego adresu zastępczego; należy potwierdzić go przed publikacją. Legalne treści wymagają sprawdzenia przez kompetentną osobę. Zmiany są lokalne — nie są widoczne na produkcji.
+Brak badań z klientami, danych analitycznych i potwierdzonych źródeł praw do zdjęć. Fotografia, opisy/specyfikacje produktów, warunki dostaw, dane firmy i kontakt wymagają potwierdzenia z właścicielem. Kanał `kontakt@animalsshop.pl` pozostał w linkach z dotychczasowego kodu; należy go potwierdzić. Regulamin, zwroty i polityki prawne nadal wymagają sprawdzenia przez kompetentną osobę. Zmiany są lokalne — nie są widoczne na produkcji.

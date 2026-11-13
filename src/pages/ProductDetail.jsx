@@ -67,7 +67,7 @@ const ProductDetail = () => {
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center sm:px-6">
-        <div className="text-xl font-mono text-gray-500">Ładowanie produktu...</div>
+        <div className="text-xl font-mono text-gray-400">Ładowanie produktu...</div>
       </div>
     );
   }
@@ -134,14 +134,14 @@ const ProductDetail = () => {
               <>
                 <button
                   onClick={previousImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:left-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:left-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                   aria-label="Poprzednie zdjęcie"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
                   onClick={nextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:right-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:right-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
                   aria-label="Następne zdjęcie"
                 >
                   <ChevronRight size={24} />
@@ -189,15 +189,15 @@ const ProductDetail = () => {
 
           <div className="mb-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Cena</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Cena</p>
               <p className="mt-2 text-2xl font-bold text-white">{product.price} zł</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Dostępność</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Dostępność</p>
               <p className="mt-2 text-2xl font-bold text-white">{product.stock} szt.</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Status</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</p>
               <p className="mt-2 text-base font-semibold text-primary">
                 {product.stock > 0 ? 'Gotowe do zamówienia' : 'Chwilowo niedostępne'}
               </p>
@@ -217,12 +217,10 @@ const ProductDetail = () => {
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">
               <div className="mb-3 flex items-center gap-2 text-white">
                 <CheckCircle2 size={18} className="text-primary" />
-                Co warto wiedzieć
+                Przed zakupem
               </div>
               <p>
-                {isLiveAnimal
-                  ? 'To żywe zwierzę, dlatego przed zakupem upewnij się, że masz gotowe terrarium, temperaturę, UVB i plan żywienia.'
-                  : 'Ten produkt jest częścią wyposażenia i dobrze pracuje w duecie z odpowiednio dobranym terrarium oraz kontrolą temperatury.'}
+                Sprawdź opis, dostępność i informacje właściwe dla tego produktu. Ogólne treści nie potwierdzają wymagań konkretnego zwierzęcia ani kompatybilności zestawu.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">
@@ -231,17 +229,17 @@ const ProductDetail = () => {
                 Dostawa
               </div>
               <p>
-                {isLiveAnimal
-                  ? 'Żywe zwierzęta wysyłamy wyłącznie w bezpiecznych oknach logistycznych. Po zamówieniu potwierdzamy dogodny termin kontaktowo.'
-                  : 'Akcesoria, terraria i pokarm wysyłamy standardowo w 24-48 godzin, zależnie od typu produktu i dostępności.'}
+                Koszt dostawy zobaczysz w podsumowaniu przed płatnością. Termin i sposób realizacji mogą zależeć od produktu — sprawdź aktualne{' '}
+                <Link to="/faq" className="text-emerald-300 underline underline-offset-4">warunki dostawy w FAQ</Link>.
               </p>
             </div>
           </div>
 
           {isLiveAnimal && (
-            <div className="mt-6 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5 text-sm leading-relaxed text-orange-100">
-              <strong>Uwaga:</strong> dla żywych zwierząt nie stosuje się standardowego zwrotu jak dla zwykłych akcesoriów.
-              Szczegóły znajdziesz w zakładce odstąpienia od umowy i FAQ.
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm leading-relaxed text-gray-300">
+              <strong className="text-white">Przed zamówieniem:</strong> przeczytaj aktualne warunki{' '}
+              <Link to="/faq" className="text-emerald-300 underline underline-offset-4">dostawy</Link> i{' '}
+              <Link to="/withdrawal" className="text-emerald-300 underline underline-offset-4">odstąpienia od umowy</Link> dla tej kategorii. W razie wątpliwości nie opieraj decyzji na ogólnym opisie produktu.
             </div>
           )}
         </div>

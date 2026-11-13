@@ -4,29 +4,18 @@ import { API_BASE } from '../utils/config';
 
 const AuthContext = createContext();
 
-const readStoredUser = () => {
-    if (typeof window === 'undefined') return null;
-
-    try {
-        const savedUser = window.localStorage.getItem('exotic_user');
-        return savedUser ? JSON.parse(savedUser) : null;
-    } catch {
-        window.localStorage.removeItem('exotic_user');
-        window.localStorage.removeItem('exotic_last_activity');
-        return null;
-    }
-};
-
 export const useAuth = () => useContext(AuthContext);
 
 export const AuthProvider = ({ children }) => {
-    const [user, setUser] = useState(() => readStoredUser());
+    const [user, setUser] = useState(null);
     const [loading, setLoading] = useState(true);
 
     // --- Session Restoration ---
     useEffect(() => {
         const restoreSession = async () => {
             try {
+                // Remove legacy profile snapshots; profile/address data stays in memory only.
+                localStorage.removeItem('exotic_user');
                 // Verify session with API (cookies are sent automatically)
                 const apiBase = API_BASE;
                 // 'credentials: include' is CRITICAL for sending cookies
@@ -38,7 +27,6 @@ export const AuthProvider = ({ children }) => {
                 if (res.ok) {
                     const dbUser = await res.json();
                     setUser(dbUser);
-                    localStorage.setItem('exotic_user', JSON.stringify(dbUser));
                     if (!localStorage.getItem('exotic_last_activity')) {
                         localStorage.setItem('exotic_last_activity', Date.now().toString());
                     }
@@ -87,7 +75,6 @@ export const AuthProvider = ({ children }) => {
         const data = await res.json();
         setUser(data.user);
         // Token is handled via Cookie automatically
-        localStorage.setItem('exotic_user', JSON.stringify(data.user));
         localStorage.setItem('exotic_last_activity', Date.now().toString());
 
         return data.user;
@@ -119,7 +106,6 @@ export const AuthProvider = ({ children }) => {
 
         const data = await res.json();
         setUser(data.user);
-        localStorage.setItem('exotic_user', JSON.stringify(data.user));
         localStorage.setItem('exotic_last_activity', Date.now().toString());
         return data.user;
     };
@@ -214,7 +200,6 @@ export const AuthProvider = ({ children }) => {
         if (res.ok) {
             const updated = await res.json();
             setUser(updated);
-            localStorage.setItem('exotic_user', JSON.stringify(updated));
             return updated;
         }
 

@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -114,6 +115,7 @@ function App() {
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <HelmetProvider>
       <Router>
         <AuthProvider>
@@ -121,9 +123,9 @@ function App() {
             <div className="min-h-screen overflow-x-hidden bg-bg text-text selection:bg-primary selection:text-black">
               <Helmet>
                 <title>VitaZone | Zwierzęta egzotyczne, terraria i akcesoria terrarystyczne</title>
-                <meta
+                  <meta
                   name="description"
-                  content="VitaZone to sklep terrarystyczny ze zwierzętami egzotycznymi, terrariami i akcesoriami do kompletnej aranżacji terrarium."
+                  content="Katalog VitaZone obejmuje zwierzęta egzotyczne, terraria i wyposażenie terrarystyczne."
                 />
               </Helmet>
               <ScrollToTop />
@@ -182,6 +184,7 @@ function App() {
         </AuthProvider>
       </Router>
     </HelmetProvider>
+    </MotionConfig>
   );
 }
 

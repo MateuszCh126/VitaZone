@@ -69,10 +69,10 @@ describe('AuthContext Integration', () => {
             expect.stringContaining('/api/auth/me'),
             expect.objectContaining({ credentials: 'include' })
         );
-        expect(localStorage.getItem('exotic_user')).toContain('restored@example.com');
+        expect(localStorage.getItem('exotic_user')).toBeNull();
     });
 
-    it('registers user and persists session details', async () => {
+    it('registers user in memory without persisting profile details', async () => {
         globalThis.fetch
             .mockResolvedValueOnce({
                 ok: false,
@@ -107,7 +107,7 @@ describe('AuthContext Integration', () => {
                 credentials: 'include'
             })
         );
-        expect(localStorage.getItem('exotic_user')).toContain('jan@example.com');
+        expect(localStorage.getItem('exotic_user')).toBeNull();
         expect(localStorage.getItem('exotic_last_activity')).toBeTruthy();
     });
 
@@ -198,7 +198,7 @@ describe('AuthContext Integration', () => {
         });
     });
 
-    it('updates profile and stores updated user when authenticated', async () => {
+    it('updates profile in memory without persisting profile details', async () => {
         globalThis.fetch
             .mockResolvedValueOnce({
                 ok: true,
@@ -224,7 +224,7 @@ describe('AuthContext Integration', () => {
         await waitFor(() => {
             expect(screen.getByTestId('result-display').textContent).toContain('"city":"Warszawa"');
         });
-        expect(localStorage.getItem('exotic_user')).toContain('"city":"Warszawa"');
+        expect(localStorage.getItem('exotic_user')).toBeNull();
     });
 
     it('logs out automatically when inactivity timeout is exceeded', async () => {
@@ -285,7 +285,7 @@ describe('AuthContext Integration', () => {
         });
     });
 
-    it('handles restoreSession fetch failure by clearing persisted session cache', async () => {
+    it('removes legacy profile snapshots and does not restore cached users when session lookup fails', async () => {
         localStorage.setItem('exotic_user', JSON.stringify({ id: 'cached', email: 'cached@example.com' }));
         globalThis.fetch.mockRejectedValueOnce(new Error('network down'));
 
@@ -295,9 +295,7 @@ describe('AuthContext Integration', () => {
             </AuthProvider>
         );
 
-        await waitFor(() => {
-            expect(screen.getByTestId('user-display').textContent).toBe('cached@example.com');
-        });
+        await waitFor(() => expect(screen.getByTestId('user-display').textContent).toBe('No User'));
         expect(localStorage.getItem('exotic_user')).toBeNull();
     });
 

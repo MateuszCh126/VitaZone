@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { Lock, Shield } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import LegalDraftNotice from '../../components/LegalDraftNotice';
 
 const PrivacyPolicy = () => {
   return (
@@ -25,8 +26,10 @@ const PrivacyPolicy = () => {
             <h1 className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent">
               Polityka prywatności
             </h1>
-            <p className="text-neutral-400">Ostatnia aktualizacja: {new Date().toLocaleDateString('pl-PL')}</p>
+            <p className="text-neutral-400">Projekt — data aktualizacji do uzupełnienia po zatwierdzeniu.</p>
           </div>
+
+          <LegalDraftNotice />
 
           <div className="space-y-8 rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-8 shadow-xl backdrop-blur-sm">
             <section className="space-y-3">

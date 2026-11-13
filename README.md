@@ -21,9 +21,14 @@ Production-hardened storefront for exotic animals and terrarium accessories.
 - Build production bundle: `npm run build`
 
 ## Deployment
-
 - Production deploys are triggered from `origin/main` through Vercel Git Integration.
 - Vercel uses `pnpm` deterministically via `packageManager` in `package.json` and `pnpm-lock.yaml`.
+
+## Demo Data Safety
+
+- `server/scripts/catalogData.js` contains synthetic development data, not a verified product catalog.
+- `pnpm seed` deletes existing users, addresses, categories, products, orders, and order items before inserting demo records. `pnpm sync:catalog` can overwrite prices/stock and archive products. Both scripts are blocked by default and refuse Vercel/production environments.
+- Use only a disposable local database. Explicitly set `ALLOW_DEMO_SEED=true` or `ALLOW_DEMO_CATALOG_SYNC=true` for the matching local operation. Remote database targets additionally require `ALLOW_REMOTE_DEMO_DATABASE=true`; never use demo data against the production database.
 
 ## Security: Secrets Policy
 

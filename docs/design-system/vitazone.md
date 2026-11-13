@@ -18,6 +18,8 @@
 | `duration-quick` | 140 ms | hover/focus |
 | `duration-standard` | 220 ms | spokojne przejście obrazu/układu |
 
+Tekst pomocniczy używa co najmniej `gray-400` na czarnych powierzchniach. `gray-500` (#6b7280) na tle `#050505` ma kontrast około 4,22:1 i nie spełnia 4,5:1 dla zwykłego tekstu; `gray-400` (#9ca3af) ma około 8,03:1.
+
 Używaj nazw Tailwind z `tailwind.config.js`; wartości kolorów są zakodowane jako RGB, by klasy z opacity (`text-primary/80`) działały spójnie. Nie dodawaj nowych odcieni zieleni do komponentu ad hoc.
 
 ## Układ i responsywność
@@ -59,10 +61,12 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 - Ciągłe cząsteczki zostały usunięte z powierzchni sklepu. Ograniczone ruchy systemowe dostają globalny override animacji i transitionów; ambient effects nie są ładowane, gdy `prefers-reduced-motion: reduce` jest aktywne.
 - Żadna dekoracyjna animacja nie ma opóźniać widoczności produktu ani bloku decyzji.
 
-## Dostępność i testy ręczne do odbioru
+## Dostępność i przegląd ręczny
 
-Build/testy kodu nie zastępują sprawdzenia wyrenderowanego widoku. Przed zatwierdzeniem na urządzeniu sprawdzić homepage, listing, produkt, koszyk i checkout przy 360, 768 i 1440 px; powiększenie 200%; tab/shift-tab/enter/space; widoczność fokusu; screen reader; kontrast; reduced motion; brak hover na dotyku; długie polskie nazwy i stany pustego listingu.
+Build/testy kodu nie zastępują sprawdzenia wyrenderowanego widoku. Na lokalnym Vite z mockowanym API demo obejrzano zrzuty strony głównej (1440 px, normalny i ograniczony ruch), listingu (390 px), karty produktu (1440 i 390 px), koszyka oraz checkoutu (390 px). Playwright przeszedł 11 scenariuszy, w tym zakup gościa, walidację checkoutu i przekazanie fokusu między krokami, focus management ustawień cookies, menu mobilne, etykiety i błędy formularzy oraz koszyk. Nowy scenariusz sprawdza reflow ścieżki zakupowej przy 720 i 360 px bez poziomego przewijania; nie zastępuje on rzeczywistego powiększenia 200%. Nie sprawdzono fizycznych urządzeń, czytnika ekranu ani pełnej ręcznej nawigacji klawiaturą.
+
+Przed końcowym odbiorem sprawdzić homepage, listing, produkt, koszyk i checkout przy 360, 768 i 1440 px; powiększenie 200%; tab/shift-tab/enter/space; widoczność fokusu; screen reader; kontrast; reduced motion; brak hover na dotyku; długie polskie nazwy i stany pustego listingu. Zrzuty robione na mockach potwierdzają lokalne renderowanie, nie rzeczywiste dane produktu ani backend.
 
 ## Otwarte ograniczenia
 
-W tym środowisku dev server nie uruchamia się z powodu braku `DATABASE_URL`/`JWT_SECRET` i `EACCES` dla `0.0.0.0:5173`. Nie wykonano wizualnego Playwright screenshot review ani pomiaru computed style w przeglądarce. Zrzut użytkownika pokazuje stan sprzed zmian, nie dowodzi jakości po zmianach. Zdjęcia zewnętrzne i przypisanie obrazu do konkretnego wariantu nadal trzeba potwierdzić z właścicielem.
+Sklep nie został zweryfikowany z prawdziwym backendem ani bazą danych; Playwright używa jawnych danych demonstracyjnych. Zrzut użytkownika pokazuje stan sprzed zmian, nie dowodzi jakości po zmianach. Zdjęcia zewnętrzne i przypisanie obrazu do konkretnego wariantu nadal trzeba potwierdzić z właścicielem.

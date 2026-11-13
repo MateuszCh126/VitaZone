@@ -52,6 +52,7 @@ const Footer = () => {
               <li><Link to="/privacy" className="transition-colors hover:text-primary">Polityka prywatności</Link></li>
               <li><Link to="/terms" className="transition-colors hover:text-primary">Regulamin</Link></li>
               <li><Link to="/cookies" className="transition-colors hover:text-primary">Cookies</Link></li>
+              <li><button type="button" onClick={() => window.dispatchEvent(new Event('open_cookie_settings'))} className="text-left transition-colors hover:text-primary">Ustawienia prywatności</button></li>
               <li><Link to="/withdrawal" className="transition-colors hover:text-primary">Odstąpienie od umowy</Link></li>
             </ul>
           </div>
@@ -69,7 +70,7 @@ const Footer = () => {
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-500">
+        <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
           <p>&copy; {new Date().getFullYear()} VitaZone. Sklep terrarystyczny online.</p>
         </div>
       </div>

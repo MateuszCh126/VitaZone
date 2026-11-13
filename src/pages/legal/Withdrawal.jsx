@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { AlertTriangle, Download } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import LegalDraftNotice from '../../components/LegalDraftNotice';
 
 const Withdrawal = () => {
   return (
@@ -25,8 +26,10 @@ const Withdrawal = () => {
             <h1 className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent">
               Odstąpienie od umowy
             </h1>
-            <p className="text-neutral-400">Zasady zwrotu dla zwykłych produktów oraz wyjątki dotyczące żywych zwierząt.</p>
+            <p className="text-neutral-400">Informacje o odstąpieniu od umowy zawartej na odległość.</p>
           </div>
+
+          <LegalDraftNotice />
 
           <div className="space-y-8 rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-8 shadow-xl backdrop-blur-sm">
             <section className="space-y-4">
@@ -38,12 +41,11 @@ const Withdrawal = () => {
             </section>
 
             <section className="space-y-3 rounded-2xl border border-red-500/20 bg-red-500/10 p-6">
-              <h3 className="flex items-center gap-2 text-xl font-semibold text-red-400">
-                <AlertTriangle className="h-6 w-6" /> Wyjątek: żywe zwierzęta
+              <h3 className="flex items-center gap-2 text-xl font-semibold text-amber-300">
+                <AlertTriangle className="h-6 w-6" /> Ustawowe wyjątki
               </h3>
-              <p className="leading-relaxed text-red-100/85">
-                Dla żywych zwierząt nie stosuje się standardowego zwrotu jak dla zwykłych akcesoriów. Wynika to z charakteru świadczenia,
-                logistyki transportu oraz dobrostanu zwierzęcia. Przed zakupem warto zapoznać się z FAQ i warunkami dostawy.
+              <p className="leading-relaxed text-amber-100/90">
+                Ustawa przewiduje wyjątki od prawa odstąpienia w określonych sytuacjach. Nie potwierdzono jeszcze ich zastosowania dla konkretnych produktów VitaZone. Sprzedawca powinien zweryfikować każdą kategorię i jasno wskazać właściwe warunki przed zakupem. Nie zakładaj automatycznego wyłączenia dla wszystkich żywych zwierząt.
               </p>
             </section>
 

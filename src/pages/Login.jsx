@@ -61,6 +61,7 @@ const Login = () => {
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
+                        role="alert"
                         className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg flex items-center gap-2 mb-6 text-sm"
                     >
                         <AlertCircle size={16} /> {serverError}
@@ -69,31 +70,39 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Adres Email</label>
+                        <label htmlFor="login-email" className="text-sm font-medium text-gray-300 ml-1">Adres email</label>
                         <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 {...register('email')}
+                                id="login-email"
                                 type="email"
+                                autoComplete="username"
+                                aria-invalid={Boolean(errors.email)}
+                                aria-describedby={errors.email ? 'login-email-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.email ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all`}
                                 placeholder="you@example.com"
                             />
                         </div>
-                        {errors.email && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.email.message}</p>}
+                        {errors.email && <p id="login-email-error" role="alert" className="text-red-400 text-xs mt-1 ml-1">{errors.email.message}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Hasło</label>
+                        <label htmlFor="login-password" className="text-sm font-medium text-gray-300 ml-1">Hasło</label>
                         <div className="relative">
-                            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 {...register('password')}
+                                id="login-password"
                                 type="password"
+                                autoComplete="current-password"
+                                aria-invalid={Boolean(errors.password)}
+                                aria-describedby={errors.password ? 'login-password-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.password ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all`}
                                 placeholder="••••••••"
                             />
                         </div>
-                        {errors.password && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.password.message}</p>}
+                        {errors.password && <p id="login-password-error" role="alert" className="text-red-400 text-xs mt-1 ml-1">{errors.password.message}</p>}
                     </div>
 
                     <button
@@ -107,7 +116,7 @@ const Login = () => {
                     </button>
                 </form>
 
-                <p className="text-center text-sm text-gray-500 mt-8">
+                <p className="text-center text-sm text-gray-400 mt-8">
                     Nie masz konta? <Link to="/register" className="text-primary cursor-pointer hover:underline">Zarejestruj się</Link>
                 </p>
             </motion.div>

@@ -118,7 +118,7 @@ const Home = () => {
   const handleSearch = (event) => {
     event.preventDefault();
     if (searchQuery.trim()) {
-      trackEvent('search_catalog', { query: searchQuery.trim() });
+      trackEvent('search_catalog', { queryLength: Array.from(searchQuery.trim()).length });
       navigate(`/shop?search=${encodeURIComponent(searchQuery.trim())}`);
     }
   };
@@ -129,7 +129,7 @@ const Home = () => {
         <title>VitaZone | Zwierzęta egzotyczne, terraria i akcesoria</title>
         <meta
           name="description"
-          content="VitaZone to sklep terrarystyczny online ze zwierzętami egzotycznymi, terrariami i akcesoriami do kompletnej aranżacji terrarium."
+          content="Katalog VitaZone: zwierzęta egzotyczne, terraria, ogrzewanie, oświetlenie, podłoża, dekoracje, pokarm i suplementy."
         />
       </Helmet>
 
@@ -325,7 +325,7 @@ const Home = () => {
                         </span>
                       ))}
                     </div>
-                    <p className="text-xs uppercase tracking-[0.3em] text-gray-500">{product.category_name}</p>
+                    <p className="text-xs uppercase tracking-[0.3em] text-gray-400">{product.category_name}</p>
                     <Link to={`/product/${product.id}`}>
                       <h3 className="mt-2 text-xl font-bold text-white transition-colors hover:text-primary">{product.name}</h3>
                     </Link>

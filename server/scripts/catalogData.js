@@ -1,4 +1,5 @@
-﻿const imageBank = {
+// Synthetic development/demo fixtures; verify prices, stock, specifications, image rights, and care claims with the owner before use.
+const imageBank = {
   leopardGecko: 'https://images.pexels.com/photos/12514418/pexels-photo-12514418.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200',
   beardedDragon: 'https://images.pexels.com/photos/2109796/pexels-photo-2109796.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200',
   cornSnake: 'https://images.pexels.com/photos/80474/snake-corn-snake-reptile-scale-80474.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200',

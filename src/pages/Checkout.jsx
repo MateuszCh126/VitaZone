@@ -1,5 +1,5 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
-import { motion } from 'framer-motion';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useNavigate, useSearchParams } from 'react-router-dom';
 import {
     AlertCircle,
@@ -15,8 +15,6 @@ import { API_BASE } from '../utils/config';
 import { DEFAULT_SHIPPING_AMOUNT_CENTS } from '../../shared/commerce.js';
 import { trackEvent } from '../utils/analytics';
 
-const SHIPPING_AMOUNT = DEFAULT_SHIPPING_AMOUNT_CENTS / 100;
-
 const Checkout = () => {
     const {
         cart,
@@ -29,8 +27,10 @@ const Checkout = () => {
     const { user, loading } = useAuth();
     const navigate = useNavigate();
     const [searchParams] = useSearchParams();
+    const prefersReducedMotion = useReducedMotion();
 
     const [promoCode, setPromoCode] = useState('');
+    const [shippingAmountCents, setShippingAmountCents] = useState(null);
     const [promoLoading, setPromoLoading] = useState(false);
     const [promoError, setPromoError] = useState(null);
     const [step, setStep] = useState(1);
@@ -42,6 +42,27 @@ const Checkout = () => {
         message: ''
     });
     const didClearCartRef = useRef(false);
+    const deliveryHeadingRef = useRef(null);
+    const paymentHeadingRef = useRef(null);
+    const previousStepRef = useRef(step);
+    const firstShippingErrorRef = useRef(null);
+
+    useEffect(() => {
+        let isActive = true;
+        fetch(`${API_BASE}/api/stripe/config`, { credentials: 'include' })
+            .then(async (response) => {
+                if (!response.ok) throw new Error('Nie udało się pobrać kosztu dostawy.');
+                const data = await response.json();
+                if (!Number.isInteger(data.shippingAmountCents) || data.shippingAmountCents < 0) {
+                    throw new Error('Serwer zwrócił nieprawidłowy koszt dostawy.');
+                }
+                if (isActive) setShippingAmountCents(data.shippingAmountCents);
+            })
+            .catch((error) => {
+                if (isActive) setCheckoutState({ type: 'error', message: error.message });
+            });
+        return () => { isActive = false; };
+    }, []);
 
     const [formData, setFormData] = useState({
         fullName: user?.full_name || user?.name || '',
@@ -68,11 +89,19 @@ const Checkout = () => {
         }));
     }, [user]);
 
+    useEffect(() => {
+        if (previousStepRef.current === step) return;
+        previousStepRef.current = step;
+        window.requestAnimationFrame(() => {
+            (step === 1 ? deliveryHeadingRef.current : paymentHeadingRef.current)?.focus();
+        });
+    }, [step]);
+
     const subtotal = useMemo(() => cartTotal, [cartTotal]);
     const discountValue = useMemo(() => (appliedDiscount ? appliedDiscount.amount / 100 : 0), [appliedDiscount]);
     const total = useMemo(
-        () => Math.max(subtotal + SHIPPING_AMOUNT - discountValue, 0),
-        [subtotal, discountValue]
+        () => Math.max(subtotal + (shippingAmountCents ?? DEFAULT_SHIPPING_AMOUNT_CENTS) / 100 - discountValue, 0),
+        [subtotal, discountValue, shippingAmountCents]
     );
 
     useEffect(() => {
@@ -123,11 +152,14 @@ const Checkout = () => {
                         didClearCartRef.current = true;
                         const trackedPurchaseKey = `purchase:${sessionId}`;
                         if (!window.sessionStorage.getItem(trackedPurchaseKey)) {
-                            trackEvent('purchase', {
-                                value: total,
-                                currency: 'PLN',
-                                itemCount: cart.length
-                            });
+                            const purchaseEvent = {
+                                currency: typeof data.currency === 'string' ? data.currency : 'PLN',
+                                itemCount: cart.reduce((count, item) => count + item.quantity, 0)
+                            };
+                            if (Number.isInteger(data.amountTotalCents)) {
+                                purchaseEvent.value = data.amountTotalCents / 100;
+                            }
+                            trackEvent('purchase', purchaseEvent);
                             window.sessionStorage.setItem(trackedPurchaseKey, '1');
                         }
                         await clearCart();
@@ -179,7 +211,7 @@ const Checkout = () => {
             isActive = false;
             if (pollTimer) window.clearTimeout(pollTimer);
         };
-    }, [searchParams, user, loading, clearCart, navigate, total, cart.length]);
+    }, [searchParams, user, loading, clearCart, navigate, cart]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
@@ -202,20 +234,31 @@ const Checkout = () => {
         if (!formData.city.trim()) nextErrors.city = 'Miasto jest wymagane';
         if (!formData.postal_code.trim()) {
             nextErrors.postal_code = 'Kod pocztowy jest wymagany';
-        } else if (!/^\d{2}-\d{3}$/.test(formData.postal_code)) {
+        } else if (!/^(?:\d{2}-\d{3}|\d{5})$/.test(formData.postal_code)) {
             nextErrors.postal_code = 'Użyj formatu 00-000';
         }
         if (!formData.street.trim()) nextErrors.street = 'Ulica jest wymagana';
         if (!formData.house_number.trim()) nextErrors.house_number = 'Numer domu jest wymagany';
 
         setErrors(nextErrors);
+        firstShippingErrorRef.current = Object.keys(nextErrors)[0] || null;
         return Object.keys(nextErrors).length === 0;
     };
 
+    const focusFirstShippingError = () => {
+        const firstError = firstShippingErrorRef.current;
+        if (firstError) {
+            window.requestAnimationFrame(() => document.getElementById(`checkout-${firstError}`)?.focus());
+        }
+    };
+
     const handleNextStep = () => {
-        if (!validateShipping()) return;
+        if (!validateShipping()) {
+            focusFirstShippingError();
+            return;
+        }
         setStep(2);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
+        window.scrollTo({ top: 0, behavior: prefersReducedMotion ? 'auto' : 'smooth' });
     };
 
     const handleStartCheckout = async () => {
@@ -227,25 +270,31 @@ const Checkout = () => {
             return;
         }
 
+        if (shippingAmountCents === null) {
+            setCheckoutState({ type: 'error', message: 'Pobieramy koszt dostawy. Spróbuj ponownie za chwilę.' });
+            return;
+        }
+
         if (!validateShipping()) {
             setStep(1);
+            focusFirstShippingError();
             return;
         }
 
         if (!isAgreed) {
+            setErrors((current) => ({ ...current, checkoutAge: 'Potwierdź wymagane oświadczenie, aby przejść do płatności.' }));
             setCheckoutState({
                 type: 'error',
                 message: 'Musisz potwierdzić pełnoletność oraz akceptację zasad wydania żywych zwierząt opisanych w regulaminie.'
             });
+            document.getElementById('checkoutAge')?.focus();
             return;
         }
 
         setCheckoutState({ type: 'idle', message: '' });
         setIsSubmitting(true);
         trackEvent('begin_checkout', {
-            value: total,
-            currency: 'PLN',
-            itemCount: cart.length,
+            itemCount: cart.reduce((count, item) => count + item.quantity, 0),
             discountApplied: Boolean(appliedDiscount)
         });
 
@@ -261,7 +310,10 @@ const Checkout = () => {
                         productId: item.id || item.productId,
                         quantity: item.quantity
                     })),
-                    shipping: formData,
+                    shipping: {
+                        ...formData,
+                        postal_code: formData.postal_code.replace(/^(\d{2})(\d{3})$/, '$1-$2')
+                    },
                     discountCode: appliedDiscount?.code || null
                 })
             });
@@ -298,7 +350,7 @@ const Checkout = () => {
                 : <AlertCircle className={isWarning ? 'text-yellow-400' : 'text-red-400'} size={28} />;
 
         return (
-            <div className={`mb-8 rounded-2xl border p-5 ${isSuccess
+            <div role={isSuccess || isWarning ? 'status' : 'alert'} aria-live={isSuccess || isWarning ? 'polite' : 'assertive'} className={`mb-8 rounded-2xl border p-5 ${isSuccess
                 ? 'border-green-500/30 bg-green-500/10'
                 : isWarning
                     ? 'border-yellow-500/20 bg-yellow-500/10'
@@ -355,8 +407,8 @@ const Checkout = () => {
                 <div className="flex flex-col gap-12 lg:flex-row">
                     <div className="flex-1">
                         <div className="mb-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>1</div>
-                            <h2 className={`text-xl font-bold ${step === 1 ? 'text-white' : 'text-gray-500'}`}>Dane dostawy</h2>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>1</div>
+                            <h2 ref={deliveryHeadingRef} tabIndex={-1} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 1 ? 'text-white' : 'text-gray-400'}`}>Dane dostawy</h2>
                         </div>
 
                         {step === 1 && (
@@ -388,8 +440,8 @@ const Checkout = () => {
                         )}
 
                         <div className="mb-8 mt-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>2</div>
-                            <h2 className={`text-xl font-bold ${step === 2 ? 'text-white' : 'text-gray-500'}`}>Płatność</h2>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>2</div>
+                            <h2 ref={paymentHeadingRef} tabIndex={-1} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 2 ? 'text-white' : 'text-gray-400'}`}>Płatność</h2>
                         </div>
 
                         {step === 2 && (
@@ -405,14 +457,19 @@ const Checkout = () => {
                                 </div>
 
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod rabatowy</label>
+                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-400">Kod rabatowy</label>
                                     <div className="flex gap-2">
                                         <input
                                             id="checkout-promo-code"
                                             value={promoCode}
-                                            onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
+                                            onChange={(event) => {
+                                                setPromoCode(event.target.value.toUpperCase());
+                                                setPromoError(null);
+                                            }}
                                             disabled={Boolean(appliedDiscount)}
                                             placeholder="Wpisz kod"
+                                            aria-invalid={Boolean(promoError)}
+                                            aria-describedby={promoError ? 'checkout-promo-error' : undefined}
                                             className="flex-1 rounded-lg border border-white/10 bg-black/30 px-4 py-3 outline-none transition-colors focus:border-primary disabled:opacity-50"
                                         />
                                         {appliedDiscount ? (
@@ -448,7 +505,7 @@ const Checkout = () => {
                                             </button>
                                         )}
                                     </div>
-                                    {promoError && <div className="mt-2 text-xs font-bold text-red-500">{promoError}</div>}
+                                    {promoError && <div id="checkout-promo-error" role="alert" className="mt-2 text-sm font-semibold text-red-400">{promoError}</div>}
                                     {appliedDiscount && (
                                         <div className="mt-2 flex items-center gap-2 text-xs font-bold text-green-500">
                                             <Check size={12} />
@@ -458,18 +515,24 @@ const Checkout = () => {
                                 </div>
 
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                    <div className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${!isAgreed && isSubmitting ? 'border-red-500 bg-red-500/10' : 'border-white/10 bg-black/20'}`}>
+                                    <div className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${errors.checkoutAge ? 'border-red-500 bg-red-500/10' : 'border-white/10 bg-black/20'}`}>
                                         <input
                                             type="checkbox"
                                             id="checkoutAge"
                                             checked={isAgreed}
-                                            onChange={(event) => setIsAgreed(event.target.checked)}
+                                            aria-invalid={Boolean(errors.checkoutAge)}
+                                            aria-describedby={errors.checkoutAge ? 'checkout-age-error' : undefined}
+                                            onChange={(event) => {
+                                                setIsAgreed(event.target.checked);
+                                                setErrors((current) => ({ ...current, checkoutAge: null }));
+                                            }}
                                             className="mt-1 h-4 w-4 rounded border-white/20 bg-black/50 text-primary focus:ring-primary"
                                         />
                                         <label htmlFor="checkoutAge" className="cursor-pointer text-sm leading-relaxed text-gray-300">
                                             <span className="font-bold text-red-400">[Wymagane]</span> Oświadczam, że mam ukończone 18 lat oraz że (jeśli zamówienie obejmuje żywe zwierzęta) akceptuję zasady ich wydania i transportu opisane w Regulaminie.
                                         </label>
                                     </div>
+                                    {errors.checkoutAge && <p id="checkout-age-error" role="alert" className="mt-2 text-sm font-semibold text-red-400">{errors.checkoutAge}</p>}
                                 </div>
 
                                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -481,7 +544,7 @@ const Checkout = () => {
                                     </button>
                                     <button
                                         onClick={handleStartCheckout}
-                                        disabled={!isAgreed || isSubmitting}
+                                        disabled={isSubmitting}
                                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 font-bold text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {isSubmitting ? (
@@ -498,7 +561,7 @@ const Checkout = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                                     <ShieldCheck size={14} />
                                     Bezpieczne szyfrowane polaczenie
                                 </div>
@@ -544,7 +607,7 @@ const Checkout = () => {
                                             Dostawa kurierska
                                         </span>
                                     }
-                                    value={`${SHIPPING_AMOUNT.toFixed(2)} zł`}
+                                    value={shippingAmountCents === null ? '—' : `${(shippingAmountCents / 100).toFixed(2)} zł`}
                                 />
                                 {appliedDiscount && (
                                     <SummaryRow
@@ -555,7 +618,7 @@ const Checkout = () => {
                                 )}
                                 <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xl font-bold text-primary">
                                     <span>Razem</span>
-                                    <span>{total.toFixed(2)} zł</span>
+                                    <span>{shippingAmountCents === null ? '—' : `${total.toFixed(2)} zł`}</span>
                                 </div>
                             </div>
                         </div>
@@ -600,7 +663,7 @@ const InputField = ({
                 }`}
         />
         {errors[name] && (
-            <p id={`checkout-${name}-error`} role="alert" className="mt-1 ml-1 text-xs font-semibold text-red-400">{errors[name]}</p>
+            <p id={`checkout-${name}-error`} className="mt-1 ml-1 text-xs font-semibold text-red-400">{errors[name]}</p>
         )}
     </div>
 );

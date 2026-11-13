@@ -21,7 +21,7 @@ const Contact = () => {
         <title>Kontakt | VitaZone</title>
         <meta
           name="description"
-          content="Skontaktuj się z VitaZone. Znajdziesz tu dane kontaktowe, godziny obsługi oraz wskazówki, jak najszybciej uzyskać odpowiedź."
+          content="Skontaktuj się z VitaZone w sprawie asortymentu, dostępności produktów i zamówień."
         />
       </Helmet>
 
@@ -52,7 +52,7 @@ const Contact = () => {
                         <Icon className="h-6 w-6" />
                       </div>
                       <div>
-                        <p className="text-sm uppercase tracking-[0.3em] text-neutral-500">{card.title}</p>
+                        <p className="text-sm uppercase tracking-[0.3em] text-neutral-400">{card.title}</p>
                         <p className="mt-2 text-xl font-semibold text-emerald-200">{card.value}</p>
                         <p className="mt-3 text-sm leading-relaxed text-neutral-400">{card.description}</p>
                       </div>
