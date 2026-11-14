@@ -1,8 +1,8 @@
 # VitaZone engineering audit and implementation plan
 
-**Status:** In progress — documentation and read-only audit additions are local to `codex/vitazone-visual-refresh`; not merged, not deployed.  
-**Date:** 2026-11-14  
-**Branch / MR:** PR #2, draft; base `codex/vitazone-trust-checkout`.  
+**Status:** In progress — documentation and read-only audit additions are local to `codex/vitazone-visual-refresh`; not merged, not deployed.
+**Date:** 2026-11-14
+**Branch / MR:** PR #2, draft; base `codex/vitazone-trust-checkout`.
 **Task:** project owner requested a fact-based technical description and detailed implementation roadmap, including modules/files, data architecture, every route and user-facing copy, visual quality, workflows/tools and research.
 
 ## Scope completed in this iteration

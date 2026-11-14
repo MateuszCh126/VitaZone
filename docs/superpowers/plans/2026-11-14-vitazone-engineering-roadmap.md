@@ -33,8 +33,8 @@
 
 ## Cel, metryki i dowód
 
-**Status:** plan roboczy do realizacji w kolejnych zmianach PR #2; punkty zależne od firmy, klientów lub prawnika są oznaczone i nie powinny być zastępowane fikcyjnymi danymi.  
-**Stan bazowy:** branch `codex/vitazone-visual-refresh`, SPA React 19/Vite, Express 5, PostgreSQL przez `pg`, Stripe Checkout, Vercel Functions.  
+**Status:** plan roboczy do realizacji w kolejnych zmianach PR #2; punkty zależne od firmy, klientów lub prawnika są oznaczone i nie powinny być zastępowane fikcyjnymi danymi.
+**Stan bazowy:** branch `codex/vitazone-visual-refresh`, SPA React 19/Vite, Express 5, PostgreSQL przez `pg`, Stripe Checkout, Vercel Functions.
 **Zasady:** zachować markę black/green i spokojny charakter; nie wprowadzać manipulacyjnej presji; ceny, stan, reputacja i treści prawne muszą mieć dowód; prace i testy lokalne używają syntetycznych danych; bez migracji produkcyjnej, merge do `main` i deployu.
 
 ## 1. Cel, metryki i dowód
