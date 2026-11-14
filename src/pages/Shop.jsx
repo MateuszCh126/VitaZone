@@ -154,7 +154,7 @@ const Shop = () => {
               onClick={() => handleCategoryChange(category)}
               className={`rounded-2xl px-4 py-3 text-left text-sm transition-all ${
                 selectedCategory === category
-                  ? 'bg-primary font-semibold text-black shadow-glow'
+                  ? 'border border-primary/70 bg-primary/[0.08] font-semibold text-primary'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -285,7 +285,7 @@ const Shop = () => {
                 aria-pressed={selectedCategory === category}
                 className={`rounded-full px-4 py-2 text-sm transition-all ${
                   selectedCategory === category
-                    ? 'bg-primary text-black'
+                    ? 'border border-primary/70 bg-primary/[0.08] font-semibold text-primary'
                     : 'border border-white/10 bg-white/[0.03] text-gray-300 hover:border-primary/40 hover:text-white'
                 }`}
               >

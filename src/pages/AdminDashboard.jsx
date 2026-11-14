@@ -13,8 +13,6 @@ import {
     CheckCircle,
     XCircle,
     ChevronRight,
-    Search,
-    Filter,
     Eye,
     EyeOff
 } from 'lucide-react';
@@ -295,12 +293,6 @@ const AdminDashboard = () => {
                             >
                                 <div className="flex items-center justify-between mb-2">
                                     <h2 className="text-2xl font-bold">Kolejka zamówień</h2>
-                                    <div className="flex gap-2">
-                                        <div className="glass px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                                            <Search size={14} className="text-gray-400" />
-                                            <input className="bg-transparent border-none outline-none text-xs" placeholder="Szukaj zamówień..." />
-                                        </div>
-                                    </div>
                                 </div>
 
                                 <div className="space-y-4">
@@ -487,7 +479,7 @@ const AdminDashboard = () => {
                                         onClick={() => { setEditingProduct(null); setIsProductModalOpen(true); }}
                                         className="bg-primary text-black px-4 py-2 rounded-lg font-bold text-sm hover:bg-white transition-colors"
                                     >
-                                        + Dodaj nowy gatunek
+                                        + Dodaj produkt
                                     </button>
                                 </div>
 
@@ -562,22 +554,22 @@ const AdminDashboard = () => {
                                 <h2 className="text-2xl font-bold">Analityka użytkowników</h2>
                                 <div className="glass rounded-2xl border border-white/5 overflow-hidden">
                                     <table className="w-full text-left">
-                                        <thead className="bg-white/5 text-gray-400 text-xs uppercase tracking-wider cursor-pointer">
+                                        <thead className="bg-white/5 text-gray-400 text-xs uppercase tracking-wider">
                                             <tr>
-                                                <th className="p-4 hover:text-white transition-colors" onClick={() => handleSort('name')}>
-                                                    <div className="flex items-center gap-1">Użytkownik <SortIcon column="name" /></div>
+                                                <th className="p-4 hover:text-white transition-colors" aria-sort={sortConfig.key === 'name' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}>
+                                                    <button type="button" onClick={() => handleSort('name')} className="flex items-center gap-1 text-left">Użytkownik <SortIcon column="name" /></button>
                                                 </th>
-                                                <th className="p-4 hover:text-white transition-colors" onClick={() => handleSort('role')}>
-                                                    <div className="flex items-center gap-1">Rola <SortIcon column="role" /></div>
+                                                <th className="p-4 hover:text-white transition-colors" aria-sort={sortConfig.key === 'role' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}>
+                                                    <button type="button" onClick={() => handleSort('role')} className="flex items-center gap-1 text-left">Rola <SortIcon column="role" /></button>
                                                 </th>
-                                                <th className="p-4 hover:text-white transition-colors" onClick={() => handleSort('joined')}>
-                                                    <div className="flex items-center gap-1">Dołączył <SortIcon column="joined" /></div>
+                                                <th className="p-4 hover:text-white transition-colors" aria-sort={sortConfig.key === 'joined' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}>
+                                                    <button type="button" onClick={() => handleSort('joined')} className="flex items-center gap-1 text-left">Dołączył <SortIcon column="joined" /></button>
                                                 </th>
-                                                <th className="p-4 hover:text-white transition-colors" onClick={() => handleSort('orderCount')}>
-                                                    <div className="flex items-center gap-1">Zamówienia <SortIcon column="orderCount" /></div>
+                                                <th className="p-4 hover:text-white transition-colors" aria-sort={sortConfig.key === 'orderCount' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}>
+                                                    <button type="button" onClick={() => handleSort('orderCount')} className="flex items-center gap-1 text-left">Zamówienia <SortIcon column="orderCount" /></button>
                                                 </th>
-                                                <th className="p-4 hover:text-white transition-colors" onClick={() => handleSort('totalSpent')}>
-                                                    <div className="flex items-center gap-1">Wydatki <SortIcon column="totalSpent" /></div>
+                                                <th className="p-4 hover:text-white transition-colors" aria-sort={sortConfig.key === 'totalSpent' ? (sortConfig.direction === 'asc' ? 'ascending' : 'descending') : undefined}>
+                                                    <button type="button" onClick={() => handleSort('totalSpent')} className="flex items-center gap-1 text-left">Wydatki <SortIcon column="totalSpent" /></button>
                                                 </th>
                                             </tr>
                                         </thead>

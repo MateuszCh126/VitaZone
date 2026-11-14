@@ -2,7 +2,7 @@
 title: "VitaZone: calmer visual layer"
 status: draft-pr-open-awaiting-owner-facts-and-review
 owner: Codex
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # VitaZone — warstwa wizualna
@@ -48,15 +48,21 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 - Profil użytkownika nie jest już trwale kopiowany do `localStorage`; istniejący klucz `exotic_user` jest usuwany, a sesję przy odświeżeniu odtwarza endpoint `/api/auth/me` z cookie. Adres pozostaje dostępny w pamięci aplikacji do uzupełnienia checkoutu.
 - Zdarzenie wyszukiwania przekazuje do analityki długość frazy zamiast jej treści, aby nie wysyłać tekstu wpisanego przez klienta do zewnętrznej analityki.
 - Dodano osobny przegląd polskich obowiązków konsumenckich, prywatności oraz handlu zwierzętami i listę pytań blokujących publikację: [przegląd prawny](../research/vitazone-polish-consumer-law-review.md). To lista do weryfikacji z właścicielem i prawnikiem, nie zatwierdzenie regulaminu.
+- Złagodzono wspólny zielony token do `#58C983`; zaznaczony filtr ma przyciemnioną powierzchnię, obrys i fokus bez glow. Kolor tekstu nagłówków FAQ/legal i banera cookies korzysta z tokenu; z legal pages usunięto gradient nagłówków.
+- FAQ uproszczono do nawigacji sekcji i natywnych rozwijanych odpowiedzi. Tekst koszyka rozróżnia jedno zamówienie od jednej przesyłki i podaje warunek zatrzymania finalizacji, gdy koszt/sposób dostawy są niejasne.
+- Zielone cząsteczki są z powrotem wyłącznie nad fotografią hero, mają `aria-hidden`, nie przechwytują interakcji i są statyczne przy `prefers-reduced-motion`. Kropka czatu sygnalizuje tylko nową udaną odpowiedź, znika po otwarciu i nie pulsuje.
+- Usunięto niepotwierdzony adres `kontakt@animalsshop.pl` z linków strony i konta. Kontakt pokazuje jawnie brak potwierdzonych danych zamiast tworzyć fałszywy kanał. FAQ, checkout, produkt, cookies i login mają precyzyjniejsze copy bez obietnic poza dowodami.
+- Admin nie pokazuje niedziałającego pola wyszukiwania; sortowanie ma klawiaturowe przyciski i `aria-sort`. Panel klienta powiązał etykiety z polami, nie wymyśla daty konta i nie tworzy maila do niepotwierdzonego odbiorcy.
 
 ## Weryfikacja
 
 - `git diff --check` — przeszedł po normalizacji zakończeń wierszy.
-- `pnpm test -- --run` — po synchronizacji 72 testy w 15 plikach przeszły, w tym walidacja Product JSON-LD z błędnymi polami, serializacja bezpieczna dla HTML, galeria, gościnny checkout, wyceny dostawy i webhooki. Usunięto testy starego adaptera, który tworzył paczki; zastępuje je zakres wycen sandboxowych PR #1.
-- `pnpm build` — przeszedł; Vite zgłosił tylko przestarzałą bazę Browserslist (11 miesięcy).
-- `pnpm lint` — przeszedł bez błędów; poprawiono import `process` w konfiguracji Playwright. Pierwsza równoległa próba uruchomiona podczas E2E zakończyła się błędem odczytu tworzonego katalogu `test-results`; ponowne uruchomienie po zakończeniu E2E przeszło.
+- `pnpm exec vitest run` — bieżący wynik 26 plików / 112 testów PASS; dołożono regresje FAQ, unread state, particles, palety, etykiet admina/dashboardu i copy.
+- `pnpm build` — przeszedł; Vite zgłasza tylko przestarzałą bazę Browserslist (11 miesięcy).
+- `pnpm lint` — przeszedł bez warningów po poprawkach testów.
 - `pnpm check:secrets` — przeszedł.
-- Impeccable detector — zwrócił `[]` na wskazanym zestawie UI przed końcową korektą wyszukiwanych podpowiedzi i copy; odczytuję to jako brak zgłoszeń w tej przebieżce, nie jako certyfikację.
+- `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 na demo/mockach. E2E zapisuje `test-results/.last-run.json`; plik artefaktu znormalizowano po sprawdzeniu.
+- Impeccable — wcześniejszy agentowy detektor sprawdził CSS/listing i nie zgłosił problemów. W tej powłoce komenda `pnpm exec impeccable detect --json` nie jest zainstalowana i zwróciła „Command not found”; końcowa ręczna kontrola przeglądarki oraz testy są wykonane, ale nie deklarujemy końcowego przebiegu detektora Impeccable.
 - W podglądzie lokalnym bez backendu listing zgłosił błąd pobrania, dlatego do dalszej oceny renderu użyłem jawnie mockowanego API i fixture demo (opis poniżej). Nie otwierałem ani nie modyfikowałem deploymentu produkcyjnego.
 - Wykonałem aktualny przegląd zrzutów na danych demo: strona główna 1440 px przy normalnym i ograniczonym ruchu, listing 390 px, karta produktu 1440/390 px oraz koszyk i checkout 390 px. Zdjęcia demo zostały zdekodowane przed przechwyceniem; ocena układu nie potwierdza prawdziwych danych ani działania backendu.
 - `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 12/12 scenariuszy Playwright na jawnych danych demo. Obejmują dwie ścieżki zakupowe, listing/koszyk, wyszukiwanie i reset pustych wyników, widoczną informację o przekazaniu danych Furgonetce, gościnny checkout z mockowaną wyceną InPost i Stripe bez `userId` w payloadzie, zakres czatu, focus management zgód, walidację checkoutu z fokusem pierwszego pola i checkboxa, przejście fokusu między krokami, etykiety i błędy formularzy, dialog koszyka, mobilne menu z pułapką fokusu/Escape, brak poziomego overflow przy szerokości 720 i 360 px podczas przejścia listing → produkt → koszyk → checkout oraz brak komunikatu o odstąpieniu dla żywych zwierząt przy koszyku zawierającym samo akcesorium. Szerokość 720 px jest przybliżeniem reflow przy powiększeniu, a nie testem powiększenia przeglądarki 200%. `playwright.config.js` domyślnie używa portu 4173 i pozwala zmienić go przez `PLAYWRIGHT_PORT`; API sklepu jest mockowane, więc testy nie dowodzą działania produkcyjnego backendu, webhooków ani prawdziwych płatności.
@@ -65,4 +71,4 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 
 ## Ograniczenia
 
-Brak badań z klientami, danych analitycznych i potwierdzonych źródeł praw do zdjęć. Fotografia, opisy/specyfikacje produktów, warunki dostaw, dane firmy i kontakt wymagają potwierdzenia z właścicielem. Kanał `kontakt@animalsshop.pl` pozostał w linkach z dotychczasowego kodu; należy go potwierdzić. Regulamin, zwroty i polityki prawne nadal wymagają sprawdzenia przez kompetentną osobę. Zmiany są w otwartych draft PR-ach w GitHubie i nie są widoczne na produkcji. Vercel wskazuje źródłowe repozytorium `MateuszCh126/animalsshop`, nie `MateuszCh126/VitaZone`; dla bieżących PR-ów nie ma podglądów Vercel. Przed przygotowaniem preview trzeba ustalić źródło wdrożenia.
+Brak badań z klientami, danych analitycznych i potwierdzonych źródeł praw do zdjęć. Fotografia, opisy/specyfikacje produktów, warunki dostaw, dane firmy i kontakt wymagają potwierdzenia z właścicielem. Usunięto historyczny kanał `kontakt@animalsshop.pl`; prawdziwy adres nie został jeszcze przekazany. Regulamin, zwroty i polityki prawne nadal wymagają sprawdzenia przez kompetentną osobę. PR #2 jest draftem i nie jest widoczny na produkcji. Historyczny projekt Vercel wskazywał źródłowe repozytorium `MateuszCh126/animalsshop`, nie `MateuszCh126/VitaZone`; dla bieżącego PR nie potwierdzono podglądu. Przed przygotowaniem preview trzeba ustalić źródło wdrożenia.

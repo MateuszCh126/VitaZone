@@ -13,11 +13,19 @@ const createMessage = (role, content) => ({
 const ChatWidget = () => {
     const { pathname } = useLocation();
     const [isOpen, setIsOpen] = useState(false);
+    const [hasUnreadResponse, setHasUnreadResponse] = useState(false);
+    const isOpenRef = useRef(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
     const prefersReducedMotion = useReducedMotion();
+
+    const setPanelOpen = (open) => {
+        isOpenRef.current = open;
+        setIsOpen(open);
+        if (open) setHasUnreadResponse(false);
+    };
 
     useEffect(() => {
         messagesEndRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
@@ -70,6 +78,7 @@ const ChatWidget = () => {
             }
 
             setMessages((current) => [...current, createMessage('assistant', data.message.trim())]);
+            if (!isOpenRef.current) setHasUnreadResponse(true);
         } catch (error) {
             console.error('Chat error:', error);
             setMessages((current) => [
@@ -108,7 +117,7 @@ const ChatWidget = () => {
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => setPanelOpen(false)}
                                 className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
                                 aria-label="Zamknij okno czatu"
                                 type="button"
@@ -194,17 +203,16 @@ const ChatWidget = () => {
             <motion.button
                 whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
                 whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
-                onClick={() => setIsOpen(!isOpen)}
+                onClick={() => setPanelOpen(!isOpenRef.current)}
                 aria-label={isOpen ? 'Zamknij czat' : 'Otwórz czat'}
                 type="button"
                 className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-surface transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:h-14 sm:w-14"
             >
                 {isOpen ? <X size={24} strokeWidth={2.5} /> : <MessageCircle size={24} strokeWidth={2.5} />}
 
-                {!isOpen && messages.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+                {!isOpen && hasUnreadResponse && (
+                    <span role="status" aria-label="Nowa odpowiedź" className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="inline-flex h-3.5 w-3.5 rounded-full border-2 border-black bg-red-500"></span>
                     </span>
                 )}
             </motion.button>

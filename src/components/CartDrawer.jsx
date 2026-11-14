@@ -177,7 +177,7 @@ const CartDrawer = () => {
                   Przejdź do płatności
                 </button>
                 <p className="mt-4 flex items-center justify-center gap-2 text-center text-xs text-gray-400">
-                  <span className="h-2 w-2 rounded-full bg-green-500"></span> Bezpieczna szyfrowana płatność
+                  <span className="h-2 w-2 rounded-full bg-green-500"></span> Płatność przez Stripe Checkout
                 </p>
               </div>
             )}

@@ -9,12 +9,11 @@
 | `bg` | RGB 5 5 5 (`#050505`) | główne tło |
 | `bg-secondary` | RGB 15 15 15 (`#0f0f0f`) | odseparowane sekcje |
 | `surface-raised` | RGB 22 26 23 | podniesione tło komponentu |
-| `primary` | RGB 0 255 136 (`#00ff88`) | CTA, fokus, akcent marki |
+| `primary` | RGB 88 201 131 (`#58c983`) | CTA, fokus, akcent marki |
 | `text` | RGB 255 255 255 | tekst główny |
 | `muted` | RGB 156 163 175 | tekst pomocniczy |
 | `rounded-card` | 16 px | listing/kategorie |
 | `shadow-surface` | 0 12px 30px, czarny 24% | warstwa powierzchni; używać oszczędnie |
-| `shadow-glow` | wycofany | nie używać jako stałego cienia, dekoracji ani bloom pod kursorem |
 | `duration-quick` | 140 ms | hover/focus |
 | `duration-standard` | 220 ms | spokojne przejście obrazu/układu |
 
@@ -46,7 +45,7 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 ### Inputy i filtry
 
 - Widoczna etykieta poprzedza input/select. Błąd jest tekstem przy polu, `aria-invalid=true`, `aria-describedby` łączy pole z błędem.
-- Focus: 2 px w kolorze primary z 3 px offsetem, bez znikania na tle obrazu.
+- Focus klawiatury: 2 px w kolorze primary z 3 px offsetem, bez znikania na tle obrazu. Primary jest jednym tokenem dla akcentu i fokusu. Aktywne filtry używają `bg-primary/[0.08]`, obrysu `border-primary/70` i tekstu `text-primary`; nie dodają stałej poświaty.
 - Równorzędne ścieżki zakupowe dostają równorzędną wagę wizualną. Na homepage oba linki używają obrysu i dyskretnej powierzchni; nie wyróżniać „pierwszego terrarium” jako sugerowanej decyzji bez danych.
 - Aktywne filtry można zdejmować pojedynczo. Sortowanie katalogowe i cena mogą opierać się o obecny katalog; nowość wynika z `created_at`, nie z ręcznej popularności.
 - Cel interaktywny: co najmniej 44×44 CSS px w ważnych elementach mobilnych; nie schodzić poniżej wymogu WCAG 2.2 24×24 px z wyjątkami.
@@ -61,12 +60,14 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 
 - Nie renderować poświaty pod kursorem. Nawet ograniczony wariant był widoczny na dużych czarnych powierzchniach i odciągał uwagę od treści.
 - Pływający launcher czatu nie ma stałego zielonego halo. Na `/register` ukrywa się poniżej breakpointu `sm` (640 px), by nie zasłaniać zgód i wysłania formularza. Zachować widoczny fokus klawiatury.
-- Ciągłe cząsteczki zostały usunięte z powierzchni sklepu. Ograniczone ruchy systemowe dostają globalny override animacji i transitionów; ambient effects nie są ładowane, gdy `prefers-reduced-motion: reduce` jest aktywne.
+- Zielone cząsteczki występują wyłącznie w hero homepage, są `aria-hidden` i nie przechwytują pointera. Przy `prefers-reduced-motion: reduce` animacja jest wyłączona, a punkty pozostają statyczne.
+- Czerwona kropka czatu oznacza tylko nieprzeczytaną, udaną odpowiedź. Otwarcie panelu czyści stan; kropka nie pulsuje.
+- Nagłówki FAQ i dokumentów prawnych są jednolite, bez gradientowego wypełnienia tekstu. Akcenty publicznej warstwy korzystają z jednego tokenu `primary`.
 - Żadna dekoracyjna animacja nie ma opóźniać widoczności produktu ani bloku decyzji.
 
 ## Dostępność i przegląd ręczny
 
-Build/testy kodu nie zastępują sprawdzenia wyrenderowanego widoku. Na lokalnym Vite z mockowanym API demo obejrzano zrzuty strony głównej (1440 px, normalny i ograniczony ruch), listingu (390 px), karty produktu (1440 i 390 px), koszyka oraz checkoutu (390 px). Playwright przeszedł 12 scenariuszy, w tym zakup gościa, walidację checkoutu i przekazanie fokusu między krokami, focus management ustawień cookies, menu mobilne, etykiety i błędy formularzy oraz koszyk. Scenariusz reflow sprawdza ścieżkę zakupową przy 720 i 360 px bez poziomego przewijania; nie zastępuje on rzeczywistego powiększenia 200%. Nie sprawdzono fizycznych urządzeń, czytnika ekranu ani pełnej ręcznej nawigacji klawiaturą.
+Build/testy kodu nie zastępują sprawdzenia wyrenderowanego widoku. W tej iteracji na lokalnym Vite obejrzano homepage, FAQ i Kontakt; Playwright renderuje wszystkie trasy na mockach. `pnpm test:e2e` przeszedł 21 scenariuszy, w tym testy tras na wąskim viewport i reflow przy 200-procentowym ekwiwalencie. Nie sprawdzono fizycznych urządzeń, czytnika ekranu ani rzeczywistego zoomu 200%.
 
 Przed końcowym odbiorem sprawdzić homepage, listing, produkt, koszyk i checkout przy 360, 768 i 1440 px; powiększenie 200%; tab/shift-tab/enter/space; widoczność fokusu; screen reader; kontrast; reduced motion; brak hover na dotyku; długie polskie nazwy i stany pustego listingu. Zrzuty robione na mockach potwierdzają lokalne renderowanie, nie rzeczywiste dane produktu ani backend.
 

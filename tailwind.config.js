@@ -13,7 +13,6 @@ export default {
       },
       borderRadius: { card: 'var(--surface-radius)' },
       boxShadow: {
-        glow: '0 0 22px rgb(var(--color-primary) / 0.10)',
         surface: '0 12px 30px rgb(0 0 0 / 0.24)'
       },
       transitionDuration: { quick: 'var(--motion-fast)', standard: 'var(--motion-standard)' },

@@ -220,7 +220,7 @@ const ProductDetail = () => {
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
               <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</p>
               <p className="mt-2 text-base font-semibold text-primary">
-                {product.stock > 0 ? 'Gotowe do zamówienia' : 'Chwilowo niedostępne'}
+                {product.stock > 0 ? 'Dostępny' : 'Chwilowo niedostępny'}
               </p>
             </div>
           </div>

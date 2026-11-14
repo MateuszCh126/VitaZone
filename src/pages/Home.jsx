@@ -14,6 +14,7 @@ import { getOptimizedImageUrl, getSrcSet } from '../utils/imageUtils';
 import { getProductBadges } from '../utils/productBadges';
 import { trackEvent } from '../utils/analytics';
 import { fetchJsonWithRetry } from '../utils/fetchJson';
+import './Home.css';
 
 const featuredCategories = STOREFRONT_CATEGORIES.filter((category) => FEATURED_CATEGORY_NAMES.includes(category.name));
 const shoppingJourneyLinkClass = 'group inline-flex w-full items-center justify-center gap-3 rounded-full border border-primary/35 bg-white/[0.03] px-6 py-3.5 font-bold text-white transition-colors duration-300 hover:border-primary/70 hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto sm:px-8 sm:py-4';
@@ -158,6 +159,12 @@ const Home = () => {
             />
           </picture>
           <div className="absolute inset-0 bg-gradient-to-t from-bg via-bg/55 to-transparent"></div>
+        </div>
+
+        <div className="hero-particles" data-testid="hero-particles" aria-hidden="true">
+          {Array.from({ length: 8 }, (_, index) => (
+            <span className="hero-particle" key={index} />
+          ))}
         </div>
 
         <div className="container relative z-10 mx-auto px-4 py-16 sm:px-6 sm:py-20">

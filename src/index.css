@@ -7,10 +7,9 @@
   --color-bg: 5 5 5;
   --color-surface: 15 15 15;
   --color-surface-raised: 22 26 23;
-  --color-primary: 0 255 136;
+  --color-primary: 88 201 131;
   --color-text: 255 255 255;
   --color-muted: 156 163 175;
-  --color-focus: 0 255 136;
   --motion-fast: 140ms;
   --motion-standard: 220ms;
   --surface-radius: 16px;
@@ -22,7 +21,7 @@
   }
 
   :focus-visible {
-    outline: 2px solid rgb(var(--color-focus));
+    outline: 2px solid rgb(var(--color-primary));
     outline-offset: 3px;
   }
 

@@ -81,7 +81,7 @@ const Login = () => {
                                 aria-invalid={Boolean(errors.email)}
                                 aria-describedby={errors.email ? 'login-email-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.email ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all`}
-                                placeholder="you@example.com"
+                                placeholder="adres@przyklad.pl"
                             />
                         </div>
                         {errors.email && <p id="login-email-error" role="alert" className="text-red-400 text-xs mt-1 ml-1">{errors.email.message}</p>}

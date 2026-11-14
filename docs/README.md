@@ -11,6 +11,7 @@ Dokumentacja odróżnia stan widoczny w bieżącym kodzie od planu, hipotez bada
 - [Szczegółowy plan techniczny](superpowers/plans/2026-11-14-vitazone-engineering-roadmap.md) — zależności, taski, pliki, testy i release gates.
 - [Notatki robocze audytu](technical/working-notes.md) — dziennik tej iteracji, wyniki kontroli i otwarte zadania.
 - [Audyt tras, treści i widoków](technical/route-audit.md) — przegląd wszystkich tras na lokalnych renderach desktop/mobile, twierdzeń w copy i stanów interfejsu.
+- [Pogłębiony audyt sklepu i plan napraw](technical/storefront-deep-audit-and-plan.md) — route-by-route copy, wizualia, dostępność, zaufanie, owner/legal gates i priorytety wdrożenia.
 - [Design system i handoff](design-system/vitazone.md) — tokeny, responsywność, interakcje i checklisty dostępności.
 - [Zmiany zaufania i checkoutu](changes/vitazone-trust-checkout.md) — status i weryfikacja pierwszego etapu.
 - [Zmiany warstwy wizualnej](changes/vitazone-visual-refresh.md) — status PR #2 oraz ograniczenia renderu i danych.

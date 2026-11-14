@@ -6,8 +6,8 @@
 
 | Element | Stan potwierdzony | Granica dowodu |
 |---|---|---|
-| Repozytorium | `MateuszCh126/VitaZone`; aktywny branch `codex/vitazone-visual-refresh`; HEAD `92b8ad4`; PR #2 jest draftem | Brak merge do `main`; ten audyt nie wdraża. |
-| Lokalny Git | checkout w `C:\Users\gamin\.codex\worktrees\vitazone-visual-refresh\vitazone-audit-2026-11-13` | Na wznowienie były dwie lokalne edycje dokumentacji; zachowujemy je. |
+| Repozytorium | `MateuszCh126/VitaZone`; aktywny branch `codex/vitazone-visual-refresh`; HEAD bazowy `1157d38`; PR #2 jest otwarty jako draft z `CLEAN` względem `codex/vitazone-trust-checkout` (2026-11-14) | Zmiany tej iteracji są lokalne, niecommitowane; brak merge do `main` i wdrożenia. |
+| Lokalny Git | checkout w `C:\Users\gamin\.codex\worktrees\vitazone-visual-refresh\vitazone-audit-2026-11-13` | Gałąź ma lokalne zmiany frontendowe, testy i dokumentację; odróżniać je od HEAD PR. |
 | GitHub CLI | `gh` dostępne; PR/status/workflow można odczytać | PR #2 nie miał zgłoszonych checków; Actions API zwróciło zero workflow. Nie jest to dowód, że build poza GitHubem nie istnieje. |
 | Vercel CLI | dostępne, wersja 65.5.0, konto CLI uwierzytelnione | Projekt `vitazone` i historyczny deployment READY z 2026-05-29; alias `animalsshop.vercel.app`. `project inspect` nie ujawnił wiarygodnego mapowania repo/commitu; UI zatrzymał Security Checkpoint. Nie przypisujemy tego deploymentu aktualnemu PR. |
 | Package manager | `packageManager: pnpm@10.33.0`; `pnpm-lock.yaml` i `package-lock.json` są śledzone | README kieruje na pnpm; przed CI utrwalić jeden lockfile i sprawdzić instalację hosta. |
@@ -30,8 +30,8 @@ Aktualny spis narzędzi sesji wyliczył **498 narzędzi** (migawka 2026-11-14; p
 | MCP Codex app | Worktrees, status zadań/PR checks, pliki | Dostępne; kod repo edytowany lokalnie. |
 | MCP Sites | Tworzenie/zmiana/hosting artefaktów Sites | Nieadekwatny do repozytorium React i nieużywany. |
 | MCP node_repl | Izolowane wykonanie JavaScript | Dostępny, niepotrzebny wobec lokalnego Node/pnpm. |
-| Browser/Playwright z repo | Test widoków lokalnych i flow | `@playwright/test` jest w projekcie; poprzedni smoke używał mocków. Brak narzędzia browser MCP gwarantującego dostęp do produkcji. |
-| Computer-use/CUA | Automatyzacja UI lokalnego Windows/browsera | Dostępne w bieżącej sesji, nieużyte w tej iteracji: uruchomiony lokalny Playwright pozwolił powtarzalnie sprawdzić DOM, błędy i screeny bez sterowania pulpitowym browserem. |
+| Browser/Playwright z repo | Test widoków lokalnych i flow | W tej iteracji `pnpm test:e2e` zakończył się wynikiem 21/21 na fixture/mockach. Brak dowodu działania produkcyjnych providerów. |
+| Computer-use/CUA | Automatyzacja UI lokalnego Windows/browsera | Użyto do ręcznej kontroli homepage, FAQ i Kontakt na lokalnym renderze; nie zastępuje urządzenia fizycznego, czytnika ekranu ani pełnego audytu breakpointów. |
 | Artifact Session | Edycja dokumentów arkuszy/prezentacji w kanwie | Narzędzie dostępne, lecz nie jest przeznaczone do wersjonowanych Markdown/źródeł repo; nieużyte. |
 | MCP Figma | Projektowanie/inspekcja Figma | Connector nie był potwierdzony jako aktywny; Figma pojawiła się w katalogu zalecanych, nieinstalowanych pluginów. |
 | MCP Stripe / przewoźnicy | Operacje kont/providerów | Brak potwierdzonego connectora; konta i umowy nie są skonfigurowane według odpowiedzi właściciela. Testy wyłącznie sandbox/mocks po uzyskaniu właściwego środowiska. |

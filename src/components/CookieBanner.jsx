@@ -81,12 +81,12 @@ const CookieBanner = () => {
             {!showDetails ? (
               <div className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
                 <div className="flex items-start gap-4">
-                  <Cookie aria-hidden="true" className="mt-1 hidden h-7 w-7 text-emerald-400 sm:block" />
+                  <Cookie aria-hidden="true" className="mt-1 hidden h-7 w-7 text-primary sm:block" />
                   <div>
                     <h2 id="cookie-title" className="text-xl font-bold text-white">Ustawienia prywatności</h2>
                     <p id="cookie-description" className="mt-2 max-w-2xl text-sm text-neutral-300">
                       Niezbędne elementy działają zawsze. Narzędzia analityczne Vercel uruchamiają się tylko po zgodzie. Możesz ją zaakceptować lub odrzucić.{' '}
-                      <Link to="/cookies" className="text-emerald-300 underline underline-offset-4">Szczegóły w polityce cookies</Link>.
+                      <Link to="/cookies" className="text-primary underline underline-offset-4">Szczegóły w polityce cookies</Link>.
                     </p>
                   </div>
                 </div>
@@ -100,15 +100,15 @@ const CookieBanner = () => {
               <div>
                 <div className="flex items-start justify-between gap-4">
                   <div>
-                    <h2 ref={detailsHeadingRef} id="cookie-title" tabIndex={-1} className="flex items-center gap-2 text-xl font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-emerald-400"><Settings aria-hidden="true" className="h-5 w-5 text-emerald-400" /> Ustawienia prywatności</h2>
+                    <h2 ref={detailsHeadingRef} id="cookie-title" tabIndex={-1} className="flex items-center gap-2 text-xl font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Settings aria-hidden="true" className="h-5 w-5 text-primary" /> Ustawienia prywatności</h2>
                     <p className="mt-2 text-sm text-neutral-300">Wybierz, czy zezwalasz na analitykę. Niezbędne elementy są zawsze aktywne.</p>
                   </div>
                   <button type="button" onClick={() => { focusViewRef.current = true; setShowDetails(false); }} aria-label="Wróć do wyboru zgody" className="rounded p-2 text-neutral-300 hover:text-white"><X aria-hidden="true" /></button>
                 </div>
                 <div className="mt-5 grid gap-4 sm:grid-cols-2">
-                  <div className="rounded-xl border border-neutral-700 p-4"><h3 className="font-semibold text-white">Niezbędne</h3><p className="mt-1 text-sm text-neutral-300">Wymagane do działania strony, koszyka i sesji.</p><p className="mt-3 text-sm text-emerald-300">Zawsze aktywne</p></div>
+                  <div className="rounded-xl border border-neutral-700 p-4"><h3 className="font-semibold text-white">Niezbędne</h3><p className="mt-1 text-sm text-neutral-300">Wymagane do działania strony, koszyka i sesji.</p><p className="mt-3 text-sm text-primary">Zawsze aktywne</p></div>
                   <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-700 p-4 text-white">
-                    <input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="mt-1 h-5 w-5 accent-emerald-500" />
+                    <input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="mt-1 h-5 w-5 accent-primary" />
                     <span><span className="font-semibold">Analityka Vercel</span><span className="mt-1 block text-sm text-neutral-300">Pomiar wydajności i sposobu korzystania ze sklepu.</span></span>
                   </label>
                 </div>
