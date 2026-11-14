@@ -306,6 +306,8 @@ export const getCheckoutSessionStatus = async (req, res) => {
         const orderId = session.metadata?.orderId || session.client_reference_id;
         const sessionUserId = session.metadata?.userId;
 
+        // The checkout-session ID is the bearer proof for guest polling. Keep
+        // signed-out sessions usable, but reject an authenticated different owner.
         if (sessionUserId && req.user?.id && sessionUserId !== req.user.id) {
             return res.status(403).json({ error: 'Brak dostępu' });
         }
