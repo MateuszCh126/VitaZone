@@ -1,4 +1,5 @@
 import express from 'express';
+import { optionalAuth } from '../server/middleware/authMiddleware.js';
 import {
     createCheckoutSession,
     getCheckoutSessionStatus
@@ -7,8 +8,8 @@ import {
 const createStripeRoutes = ({ orderLimiter }) => {
     const router = express.Router();
 
-    router.post('/create-checkout-session', orderLimiter, createCheckoutSession);
-    router.get('/checkout-session/:sessionId/status', getCheckoutSessionStatus);
+    router.post('/create-checkout-session', orderLimiter, optionalAuth, createCheckoutSession);
+    router.post('/checkout-session/status', optionalAuth, getCheckoutSessionStatus);
 
     return router;
 };

@@ -10,6 +10,7 @@ import { getOptimizedImageUrl, getSrcSet } from '../utils/imageUtils';
 import { CATEGORY_ORDER } from '../data/storefrontData';
 import { getProductBadges } from '../utils/productBadges';
 import { fetchJsonWithRetry } from '../utils/fetchJson';
+import { sortProducts } from '../utils/productSorting';
 
 const categoryRank = new Map(CATEGORY_ORDER.map((name, index) => [name, index]));
 
@@ -29,6 +30,8 @@ const Shop = () => {
   const [searchParams] = useSearchParams();
   const queryCategory = searchParams.get('category');
   const querySearch = searchParams.get('search');
+  const journey = searchParams.get('journey');
+  const [sortBy, setSortBy] = useState('catalog');
   const paramToken = `${queryCategory || ''}|${querySearch || ''}`;
 
   const [products, setProducts] = useState([]);
@@ -115,6 +118,13 @@ const Shop = () => {
     });
   }, [priceRange, products, searchQuery, selectedCategory]);
 
+  const sortedProducts = useMemo(() => sortProducts(filteredProducts, sortBy), [filteredProducts, sortBy]);
+
+  const clearFilters = () => {
+    setLocalFilters({ token: paramToken, selectedCategory: 'Wszystkie', searchQuery: '' });
+    setPriceRange(maxPrice);
+  };
+
   const renderFilters = () => (
     <div className="glass sticky top-24 rounded-3xl p-6">
       <div className="mb-8">
@@ -185,6 +195,19 @@ const Shop = () => {
           content="Przeglądaj ofertę VitaZone: zwierzęta egzotyczne, terraria oraz akcesoria do kompletnego i bezpiecznego setupu."
         />
       </Helmet>
+
+      {journey === 'existing' && (
+        <section className="mb-8 rounded-3xl border border-primary/20 bg-primary/[0.04] p-6" aria-labelledby="existing-journey-title">
+          <h2 id="existing-journey-title" className="text-xl font-bold text-white">Czego szukasz do swojego terrarium?</h2>
+          <p className="mt-2 text-sm text-gray-400">Wybierz dział albo przejdź do pełnej oferty.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {['Ogrzewanie i oświetlenie', 'Podłoża i dekoracje', 'Pokarm i suplementy'].map((category) => (
+              <button key={category} type="button" onClick={() => handleCategoryChange(category)} className="min-h-11 rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:border-primary">{category}</button>
+            ))}
+            <button type="button" onClick={() => handleCategoryChange('Wszystkie')} className="min-h-11 px-4 py-2 text-sm text-primary underline underline-offset-4">Cały katalog</button>
+          </div>
+        </section>
+      )}
 
       <section className="mb-10 rounded-[2rem] border border-white/10 bg-white/[0.03] px-8 py-10 md:px-10">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Asortyment</p>
@@ -261,9 +284,26 @@ const Shop = () => {
             ))}
           </div>
 
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-400" role="status" aria-live="polite">Znaleziono {filteredProducts.length} {getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])}</p>
+            <label className="flex items-center gap-3 text-sm text-gray-300">Sortuj
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="min-h-11 rounded-xl border border-white/15 bg-bg-secondary px-3 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <option value="catalog">Kolejność katalogu</option><option value="price-asc">Cena: od najniższej</option><option value="price-desc">Cena: od najwyższej</option><option value="newest">Najnowsze</option>
+              </select>
+            </label>
+          </div>
+          {(selectedCategory !== 'Wszystkie' || searchQuery || priceRange < maxPrice) && (
+            <div className="mb-5 flex flex-wrap items-center gap-2" aria-label="Aktywne filtry">
+              {selectedCategory !== 'Wszystkie' && <button type="button" onClick={() => handleCategoryChange('Wszystkie')} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">{selectedCategory} ×</button>}
+              {searchQuery && <button type="button" onClick={() => handleSearchChange('')} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Szukaj: {searchQuery} ×</button>}
+              {priceRange < maxPrice && <button type="button" onClick={() => setPriceRange(maxPrice)} className="rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Do {priceRange} zł ×</button>}
+              <button type="button" onClick={clearFilters} className="min-h-10 px-2 text-sm text-primary underline underline-offset-4">Wyczyść filtry</button>
+            </div>
+          )}
+
           <motion.div layout className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence>
-              {filteredProducts.map((product, index) => (
+              {sortedProducts.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}

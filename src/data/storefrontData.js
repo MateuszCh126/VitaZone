@@ -15,63 +15,63 @@ export const STOREFRONT_CATEGORIES = [
     name: 'Jaszczurki i gekony',
     slug: 'gady',
     shortLabel: 'Gekony, agamy i skynki',
-    description: 'Sprawdzone gatunki dzienne i nocne dla osób zaczynających oraz rozwijających własną hodowlę.',
+    description: 'Przeglądaj dostępne jaszczurki i gekony oraz informacje na kartach produktów.',
     image: 'https://images.pexels.com/photos/12514418/pexels-photo-12514418.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Węże',
     slug: 'weze',
-    shortLabel: 'Spokojne gatunki startowe',
-    description: 'Węże o stabilnym temperamencie, dobrane pod bezpieczny start i odpowiedzialne prowadzenie terrarium.',
+    shortLabel: 'Węże w ofercie',
+    description: 'Zobacz dostępne węże i sprawdź szczegóły na kartach produktów.',
     image: 'https://images.pexels.com/photos/80474/snake-corn-snake-reptile-scale-80474.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Żółwie',
     slug: 'zolwie',
     shortLabel: 'Gatunki lądowe do suchych wybiegów',
-    description: 'Młode żółwie dla opiekunów gotowych zapewnić mocne UVB, przestrzeń i dobrze rozpisaną dietę roślinną.',
+    description: 'Zobacz dostępne żółwie oraz informacje podane przy konkretnym produkcie.',
     image: 'https://images.pexels.com/photos/15798777/pexels-photo-15798777.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Płazy',
     slug: 'plazy',
     shortLabel: 'Zbiorniki wilgotne i półwodne',
-    description: 'Aksolotle, rzekotki i inne płazy do akwaterrariów oraz spokojnych, dobrze ustabilizowanych setupów.',
+    description: 'Przeglądaj dostępne płazy i informacje na kartach produktów.',
     image: 'https://images.pexels.com/photos/18061314/pexels-photo-18061314.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Ptaszniki i skorpiony',
     slug: 'pajaki',
     shortLabel: 'Bezkręgowce ekspozycyjne',
-    description: 'Ptaszniki, skakuny i skorpiony do prostych, dobrze zabezpieczonych terrariów ekspozycyjnych.',
+    description: 'Ptaszniki, skakuny i skorpiony dostępne w tej kategorii.',
     image: 'https://images.pexels.com/photos/4056759/pexels-photo-4056759.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Terraria i zestawy',
     slug: 'akcesoria',
     shortLabel: 'Gotowe bazy pod aranżację',
-    description: 'Terraria otwierane od frontu, pionowe setupy i zestawy startowe gotowe do uzupełnienia o wyposażenie.',
+    description: 'Przeglądaj terraria i zestawy. Zawartość sprawdzisz w opisie każdego produktu.',
     image: 'https://images.pexels.com/photos/7516897/pexels-photo-7516897.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Ogrzewanie i oświetlenie',
     slug: 'ogrzewanie-i-oswietlenie',
     shortLabel: 'Temperatura i UVB pod kontrolą',
-    description: 'Lampy, maty i termostaty do budowania stabilnych stref grzewczych oraz bezpiecznego fotoperiodu.',
+    description: 'Przeglądaj dostępne lampy, maty i termostaty.',
     image: 'https://images.pexels.com/photos/28750132/pexels-photo-28750132.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Podłoża i dekoracje',
     slug: 'podloza-i-dekoracje',
     shortLabel: 'Funkcjonalny wystrój terrarium',
-    description: 'Podłoża, kryjówki, tła i konary dobrane tak, by terrarium wyglądało dobrze i pracowało na dobrostan zwierzęcia.',
+    description: 'Podłoża, kryjówki, tła i konary z aktualnej oferty.',
     image: 'https://images.pexels.com/photos/7516897/pexels-photo-7516897.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   },
   {
     name: 'Pokarm i suplementy',
     slug: 'pokarm-i-suplementy',
     shortLabel: 'Owady feeder i diety kompletne',
-    description: 'Pokarm żywy, gotowe diety i suplementy wapniowe do codziennego, stabilnego żywienia.',
+    description: 'Przeglądaj dostępny pokarm i suplementy; szczegóły składu zawiera karta produktu.',
     image: 'https://images.pexels.com/photos/8250731/pexels-photo-8250731.jpeg?auto=compress&cs=tinysrgb&dpr=1&w=1200'
   }
 ];

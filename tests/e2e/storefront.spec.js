@@ -1,22 +1,51 @@
 import { test, expect } from '@playwright/test';
 
+const demoProduct = {
+  id: '00000000-0000-4000-8000-000000000001',
+  name: 'Terrarium demonstracyjne dla gekona',
+  price: 249,
+  stock: 3,
+  category_name: 'Terraria i zestawy',
+  species: '',
+  description: 'Dane demonstracyjne używane wyłącznie w lokalnych testach interfejsu.',
+  image_urls: ['/hero-bg-1280.avif'],
+  is_active: true,
+  created_at: '2020-01-01T00:00:00.000Z'
+};
+
 test.describe('VitaZone D2C Storefront E2E Tests', () => {
 
   test.beforeEach(async ({ page }) => {
-    // Navigate to homepage first
-    await page.goto('/');
-    
-    // Inject cookie consent directly into localStorage to bypass the cookie banner
-    await page.evaluate(() => {
-      localStorage.setItem('cookie_consent', JSON.stringify({
+    await page.addInitScript(() => {
+      localStorage.setItem('cookie_consent_v1', JSON.stringify({
         necessary: true,
         analytics: true,
-        marketing: true,
         timestamp: new Date().toISOString()
       }));
     });
-    
-    // Reload or visit the page again to apply consent state
+
+    await page.route('**/api/auth/me', (route) => route.fulfill({ status: 401, json: { error: 'Unauthorized' } }));
+    await page.route('**/api/consent', (route) => route.fulfill({ status: 204, body: '' }));
+    await page.route('**/api/stripe/config', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ shippingAmountCents: 1500 })
+    }));
+    await page.route('**/api/products**', async (route) => {
+      const url = new URL(route.request().url());
+      const isProductDetail = url.pathname.endsWith(`/api/products/${demoProduct.id}`);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(isProductDetail ? demoProduct : [demoProduct])
+      });
+    });
+    await page.route('**/api/chat', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ message: 'To odpowiedź demonstracyjna oparta na informacjach z testowego katalogu.' })
+    }));
+
     await page.goto('/');
   });
   
@@ -33,48 +62,38 @@ test.describe('VitaZone D2C Storefront E2E Tests', () => {
   test('should navigate to shop and add a product to the cart', async ({ page }) => {
     await page.goto('/shop');
     
-    // Search for an in-stock product (like "Gekon")
     const searchInput = page.locator('input[placeholder*="Szukaj"]').first();
     await expect(searchInput).toBeVisible();
     await searchInput.fill('Gekon');
     
-    // Click the details link of the filtered in-stock product card
     const detailsLink = page.locator('text=Szczegóły →').first();
     await expect(detailsLink).toBeVisible();
     await detailsLink.click();
     
-    // Wait for the product details page
     await page.waitForURL(/\/product\/.+/);
     
-    // Click the add to cart button (should be enabled for in-stock gecko)
     const addToCartBtn = page.locator('button:has-text("Dodaj do koszyka")').first();
     await expect(addToCartBtn).toBeVisible();
     await expect(addToCartBtn).toBeEnabled();
     await addToCartBtn.click();
     
-    // Open the cart drawer manually by clicking the navbar shopping bag button
     const cartNavBtn = page.locator('button[aria-label^="Otwórz koszyk"]').first();
     await expect(cartNavBtn).toBeVisible();
     await cartNavBtn.click();
     
-    // Verify the cart drawer opens
     const cartDrawerHeader = page.locator('h2:has-text("Koszyk"), h3:has-text("Koszyk"), :has-text("Twój koszyk")').first();
     await expect(cartDrawerHeader).toBeVisible();
   });
 
   test('should interact with the AI terrarium assistant', async ({ page }) => {
-    // Check if the chat widget trigger button is present
     const chatTrigger = page.locator('button[aria-label*="czat"], button[aria-label*="Czat"]').first();
     await expect(chatTrigger).toBeVisible();
     
-    // Open the chat widget (Cookie banner is dismissed, so it should not block)
     await chatTrigger.click();
     
-    // Verify the assistant window is open
     const chatTitle = page.locator('h3:has-text("Asystent terrarystyki")');
     await expect(chatTitle).toBeVisible();
     
-    // Send a message
     const chatInput = page.locator('input[placeholder*="Napisz"], input[placeholder*="wiadomość"]').first();
     const chatSubmitBtn = page.locator('button[aria-label="Wyślij wiadomość"]').first();
     await expect(chatInput).toBeVisible();
@@ -83,11 +102,9 @@ test.describe('VitaZone D2C Storefront E2E Tests', () => {
     await chatInput.fill('Hi, recommend a reptile for a beginner');
     await chatSubmitBtn.click();
     
-    // Check that our message appears in the conversation list
     const userMsg = page.locator('div:has-text("Hi, recommend a reptile for a beginner")').last();
     await expect(userMsg).toBeVisible();
     
-    // Wait for the assistant reply bubble (which has the .justify-start layout class) to appear
     const assistantBubble = page.locator('.custom-scrollbar .justify-start').first();
     await expect(assistantBubble).toBeVisible({ timeout: 15000 });
   });

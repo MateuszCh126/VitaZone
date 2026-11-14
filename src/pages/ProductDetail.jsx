@@ -107,6 +107,7 @@ const ProductDetail = () => {
       <Helmet>
         <title>{`${product.name} | ${product.category_name} | VitaZone`}</title>
         <meta name="description" content={product.description?.substring(0, 160)} />
+        <link rel="canonical" href={`https://vitazone.vercel.app/product/${product.id}`} />
         <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
       </Helmet>
 

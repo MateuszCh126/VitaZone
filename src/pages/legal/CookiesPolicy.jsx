@@ -75,7 +75,7 @@ const CookiesPolicy = () => {
               <h2 className="text-2xl font-semibold text-emerald-400">Zarządzanie zgodą</h2>
               <p className="leading-relaxed text-neutral-300">
                 Ustawienia cookies można zmieniać z poziomu przeglądarki oraz banera zgód dostępnego na stronie.
-                Wyłączenie części plików może wpłynąć na wygodę korzystania z wybranych funkcji sklepu.
+                Zgodę na analitykę można odrzucić lub zmienić w banerze. Niezbędne elementy pozostają aktywne, aby sklep i koszyk działały.
               </p>
             </section>
           </div>

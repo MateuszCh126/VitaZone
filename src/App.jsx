@@ -31,6 +31,7 @@ const PrivacyPolicy = lazyWithRetry(() => import('./pages/legal/PrivacyPolicy'))
 const CookiesPolicy = lazyWithRetry(() => import('./pages/legal/CookiesPolicy'));
 const Withdrawal = lazyWithRetry(() => import('./pages/legal/Withdrawal'));
 const FAQ = lazyWithRetry(() => import('./pages/FAQ'));
+const NotFound = lazyWithRetry(() => import('./pages/NotFound'));
 
 const scheduleIdleTask = (callback, timeout = 1200) => {
   if (typeof window === 'undefined') {
@@ -173,7 +174,7 @@ function App() {
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
-                    <Route path="*" element={<Home />} />
+                    <Route path="*" element={<NotFound />} />
                   </Routes>
                 </React.Suspense>
               </main>
