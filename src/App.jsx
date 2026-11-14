@@ -118,6 +118,12 @@ function App() {
                   content="Katalog VitaZone obejmuje zwierzęta egzotyczne, terraria i wyposażenie terrarystyczne."
                 />
               </Helmet>
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-black"
+              >
+                Przejdź do treści
+              </a>
               <ScrollToTop />
               {analyticsEnabled && (
                 <React.Suspense fallback={null}>
@@ -135,7 +141,7 @@ function App() {
                   <ChatWidget />
                 </React.Suspense>
               )}
-              <main className="relative z-10 min-h-screen pt-16 sm:pt-20">
+              <main id="main-content" tabIndex={-1} className="relative z-10 min-h-screen pt-16 sm:pt-20">
                 <React.Suspense
                   fallback={
                     <div className="flex min-h-screen items-center justify-center">

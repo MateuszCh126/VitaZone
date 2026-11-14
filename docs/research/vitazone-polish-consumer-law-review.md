@@ -2,7 +2,7 @@
 title: "VitaZone — przegląd prawny ścieżki sprzedaży (Polska)"
 status: owner-and-legal-review-required
 owner: Codex
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # Przegląd prawny sklepu VitaZone — Polska
@@ -30,4 +30,4 @@ To jest przegląd ryzyk interfejsu i listy kontrolnej na podstawie publicznych a
 
 ## Granice przeglądu
 
-Stan prawny sprawdzono 2026-11-13 w wymienionych źródłach. Nie oceniano konkretnego gatunku, dokumentu importowego, podatków, obowiązków transportera ani kompletności obecnego regulaminu. Wnioski prawne pozostają do zatwierdzenia przez właściwą osobę.
+Stan prawny sprawdzono ponownie 2026-11-14 w [ELI: tekście jednolitym ustawy o prawach konsumenta](https://eli.gov.pl/eli/DU/2026/1244/ogl) — status obowiązujący, Dz.U. 2026 poz. 1244, stan prawny na 2026-09-02 — oraz w wytycznych [UOKiK o sprzedaży na odległość](https://prawakonsumenta.uokik.gov.pl/prawo-do-informacji/sprzedaz-poza-lokalem-i-na-odleglosc/). Nie oceniano konkretnego gatunku, dokumentu importowego, podatków, obowiązków transportera ani kompletności obecnego regulaminu. Wnioski prawne pozostają do zatwierdzenia przez właściwą osobę.

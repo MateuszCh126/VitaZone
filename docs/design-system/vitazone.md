@@ -14,7 +14,7 @@
 | `muted` | RGB 156 163 175 | tekst pomocniczy |
 | `rounded-card` | 16 px | listing/kategorie |
 | `shadow-surface` | 0 12px 30px, czarny 24% | warstwa powierzchni; używać oszczędnie |
-| `shadow-glow` | 0 0 22px, primary 10% | tylko skupiony stan marki, nie podświetlenie całego ekranu |
+| `shadow-glow` | wycofany | nie używać jako stałego cienia, dekoracji ani bloom pod kursorem |
 | `duration-quick` | 140 ms | hover/focus |
 | `duration-standard` | 220 ms | spokojne przejście obrazu/układu |
 
@@ -47,6 +47,7 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 
 - Widoczna etykieta poprzedza input/select. Błąd jest tekstem przy polu, `aria-invalid=true`, `aria-describedby` łączy pole z błędem.
 - Focus: 2 px w kolorze primary z 3 px offsetem, bez znikania na tle obrazu.
+- Równorzędne ścieżki zakupowe dostają równorzędną wagę wizualną. Na homepage oba linki używają obrysu i dyskretnej powierzchni; nie wyróżniać „pierwszego terrarium” jako sugerowanej decyzji bez danych.
 - Aktywne filtry można zdejmować pojedynczo. Sortowanie katalogowe i cena mogą opierać się o obecny katalog; nowość wynika z `created_at`, nie z ręcznej popularności.
 - Cel interaktywny: co najmniej 44×44 CSS px w ważnych elementach mobilnych; nie schodzić poniżej wymogu WCAG 2.2 24×24 px z wyjątkami.
 
@@ -59,6 +60,7 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 ### Tło i ruch
 
 - Nie renderować poświaty pod kursorem. Nawet ograniczony wariant był widoczny na dużych czarnych powierzchniach i odciągał uwagę od treści.
+- Pływający launcher czatu nie ma stałego zielonego halo. Na `/register` ukrywa się poniżej breakpointu `sm` (640 px), by nie zasłaniać zgód i wysłania formularza. Zachować widoczny fokus klawiatury.
 - Ciągłe cząsteczki zostały usunięte z powierzchni sklepu. Ograniczone ruchy systemowe dostają globalny override animacji i transitionów; ambient effects nie są ładowane, gdy `prefers-reduced-motion: reduce` jest aktywne.
 - Żadna dekoracyjna animacja nie ma opóźniać widoczności produktu ani bloku decyzji.
 

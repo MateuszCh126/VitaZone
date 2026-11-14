@@ -133,3 +133,58 @@ Do dokumentacji zastosować podział Diátaxis (wyjaśnienie stanu, referencja m
 - `pnpm check:secrets` — przeszło. `git diff --check` — przeszło, z ostrzeżeniami Git o przyszłej konwersji LF→CRLF.
 - Wykonano punktowy screenshot strony głównej 1440×900 po usunięciu `MouseGlow`; na tym renderze poświata kursora nie występuje. Nie jest to pełny test interakcji ani dowód produkcyjnego zachowania.
 - E2E zgłosiło `ECONNREFUSED` w proxy Vite dla `/api/cart` i `/api/categories` przed mockami, ale 17/17 asercji zakończyło się powodzeniem. Żaden test nie zależy od prawdziwego API.
+
+## Wznowienie dokumentacji — 2026-11-14
+
+- Stan Git potwierdzony na branchu `codex/vitazone-visual-refresh`, HEAD `92b8ad4`; dwie wcześniejsze edycje `current-state-and-roadmap.md` i `route-audit.md` zachowano.
+- Ścieżka `docs/README.md` istnieje w aktualnym checkoutcie. Starsze zdanie wyżej, że indeksu nie znaleziono, opisuje wcześniejszy checkout i nie jest aktualnym stanem.
+- Dodano [referencję kodu](codebase-reference.md), [inwentarz skilli i narzędzi](engineering-tooling-inventory.md) oraz [plan techniczny](../superpowers/plans/2026-11-14-vitazone-engineering-roadmap.md). Są to dokumenty lokalne, jeszcze nie commitowane/pushowane.
+- Potwierdzono 149 katalogów skilli w `C:\Users\gamin\.agents\skills` i 494 narzędzia w sesji. Liczba narzędzi jest migawką; opis inwentarza odróżnia użyte, tylko dostępne i nieadekwatne. Nie wczytywano instrukcji wszystkich 149 niezwiązanych domen.
+- Odświeżono legal source date do 2026-11-14; ELI wskazuje Dz.U. 2026 poz. 1244 jako tekst jednolity ustawy o prawach konsumenta, obowiązujący w stanie na 2026-09-02. To nie jest opinia prawna.
+- Nie uruchomiono nowego test suite dla zmian dokumentacyjnych. `git diff --check` wykonano i nie zgłosił błędów whitespace; pozostały jedynie ostrzeżenia Git LF→CRLF na dwóch wcześniejszych plikach.
+- Następny krok: sprawdzić pokrycie rejestru plików i tras względem repo/routera, naprawić nieaktualne/niedokładne wpisy, następnie wykonać review dokumentacji i lokalnych zmian. Nic nie scalać do `main` ani nie wdrażać.
+
+## Kontrola PR #3 na prośbę właściciela — 2026-11-14
+
+- PR #3 `Draft: Add 3D terrarium configurator` (`codex/terrarium-configurator-3d` → `main`) pozostaje `OPEN` i draftem; head `35172bd2e9737c3223e66a6575c2560c83328498`, base `43d5487ffa9e9242d5b990918aafee0074fdb5fb`.
+- `gh pr view 3` zwracał `mergeable: CONFLICTING`; API `mergeable_state: dirty`; `gh pr checks 3` raportował brak checków. Zmiana obejmuje 47 plików (+4,242/-28), więc nie była bezpieczna do automatycznego squash merge.
+- Read-only `git merge-tree --write-tree origin/main refs/remotes/origin/pr-3` względem aktualnego `origin/main` wykazał konflikty treści w `repositories/orderRepository.js`, `routes/stripeRoutes.js`, `server/controllers/stripeController.js`, `src/App.jsx`, `src/components/ProductModal.jsx`. Niczego nie łączono ani nie rozwiązywano.
+- Wniosek: warunek właściciela „jeśli bez konfliktu” nie zachodzi; PR #3 nie został scalony. Branch PR #2 pozostaje bieżącym worktree.
+
+## Poprawki backendu po audycie — 2026-11-14
+
+- Test-first dla helpera HTML, schematu czatu i timeoutu Furgonetki: pierwsze uruchomienie celowo nie przechodziło, bo nie było escapera, schema przyjmowała `system`, a client nie przekazywał sygnału ani deadline.
+- Zmiany na branchu: `server/services/emailHtml.js` escapuje tekst; `emailService.js` używa go dla dynamicznego HTML, normalizuje ilość i nie loguje e-maila odbiorcy przy wyłączonym Resend. `schemas/chatSchema.js` odrzuca rolę `system`. Klient Furgonetki przekazuje `AbortSignal` i ma twardy deadline; timeout można ustawić przez `FURGONETKA_TIMEOUT_MS` (default 10 s).
+- Skorygowano `server/services/shipping/README.md`: stary opis przypisywał kodowi package/label creation i zmienny host API, których bieżący adapter nie implementuje.
+- Weryfikacja: `pnpm exec vitest run tests/unit/emailHtml.test.js tests/unit/emailService.test.js tests/unit/chatSchema.test.js tests/unit/furgonetkaClient.test.js` — 4 pliki, 10 testów passed. `pnpm lint` — exit 0, bez warningów.
+- Pełny test suite/build/E2E/secrets scan po tej poprawce jest nadal do wykonania. Brak wywołań prawdziwych providerów, bazy i deploymentu.
+
+## Krytyka wizualna „O sklepie” i nawigacja klawiaturą — 2026-11-14
+
+- Zrzuty lokalne 1440×900 oraz 390×844 potwierdziły, że `/about` składał się z kilku powtarzanych kart i powtórzonego opisu zakupu. Zastąpiono je redakcyjnym H1, rzeczową listą działów, jedną krótką ścieżką 3 kroków i działającym linkiem do katalogu. Nie użyto niezatwierdzonych zdjęć/historii firmy ani animacji/poświaty.
+- Po oględzinach struktury wykryto zagnieżdżony `<main>` na `/about` oraz brak skip linku. Page używa teraz jednego wspólnego landmarku, a app shell ma widoczny po fokusie link „Przejdź do treści”.
+- Test red/green: przed dodaniem linku `pnpm exec playwright test -g "keeps one main landmark"` zakończył się błędem braku skip linku; po zmianie przeszedł 1/1. Test weryfikuje Tab → link → Enter → fokus `#main-content`.
+- Ręczny render/screenshot na lokalnym Vite sprawdzono przy 1440×900 i 390×844 z zapisaną decyzją odmowy analityki w przeglądarce testowej. Brak `pageerror`, `scrollWidth` równe viewportowi. Zrzuty pozostały w systemowym Temp, poza repo.
+- Pełny Vitest/build/lint/secret scan/E2E należy uruchomić ponownie po tej zmianie UI; ostatni pełny run poprzedzał dodanie skip linku i nowego About layout.
+
+## Punkt wznowienia przed pauzą — 2026-11-14
+
+- Użytkownik poprosił o pauzę. Kontynuować na worktree `C:\Users\gamin\.codex\worktrees\vitazone-visual-refresh\vitazone-audit-2026-11-13`, branch `codex/vitazone-visual-refresh` (PR #2). Nie scalać do `main` ani nie wdrażać. PR #2 był ostatnio otwarty jako draft i `MERGEABLE`; stan sprawdzić ponownie przed jakąkolwiek publikacją.
+- Przed tą pauzą wykonano trzy read-only audyty subagentami `gpt-6-luna`: architektura/DB, 16 tras/treści/widoki, checkout/płatności/dostawa. Raporty są w kontekście rozmowy. Ważne dopiski: runner odkrywa każdy `migrate_*.js`/`run_migration_*.js` (w tym historyczne `migrate_v2`–`v4` i `migrate_names`); ścieżka Stripe nie przekazuje obsługiwanego przez repo klucza idempotencji; niejednoznaczny wynik Stripe może kolidować ze zwolnieniem rezerwacji stocku; obraz „Węże” jest botaniczny; launcher czatu nachodzi na zgodę/newsletter przy rejestracji.
+- Wdrożono lokalnie dwie poprawki wyglądu/interakcji na PR #2: oba CTA ścieżek zakupowych mają równą wagę; launcher czatu jest ukryty na telefonie na `/register`, a stały zielony `shadow-glow` zastąpiono neutralnym cieniem i widocznym fokusowaniem. Zmieniono też `tests/e2e/storefront.spec.js` o testy tych założeń i niezasłaniania akcji checkoutu na 360 px.
+- TDD: test równych CTA najpierw wykazał różnicę między pełnym zielonym wypełnieniem a obrysem, potem przeszedł. Test zasłaniania newslettera najpierw wykrył kolizję po załadowaniu odroczonego widgetu, potem przeszedł po ukryciu launchera na małych ekranach `/register`. Test stałej zielonej poświaty najpierw wykrył `rgba(0, 255, 136, 0.1)`, potem przeszedł po zmianie cienia.
+- Ostatni wąski run Playwright: `$env:PLAYWRIGHT_PORT='4182'; pnpm exec playwright test -g 'equal visual weight|mobile chat launcher clear|permanent green halo|reflows shopping and checkout'` — 4/4 passed. Pojawiały się tylko ostrzeżenia `NO_COLOR`/`FORCE_COLOR` i przestarzała baza Browserslist (`caniuse-lite` 11 miesięcy). Pełny zestaw po tych zmianach nie został jeszcze odpalony.
+- Lokalny, fikcyjny smoke render objął 16 tras × desktop 1440×1000 i telefon 390×844 (32 zrzuty w `C:\Users\gamin\AppData\Local\Temp\vitazone-route-audit`). Każdy widok miał jeden `h1` i jeden `main`, brak `pageerror` i poziomego overflow. Oczekiwane 401 dla wylogowanej sesji pochodziły z mocka. Jedno `currentSrc` było puste dla obrazu lazy-load na mobilnej stronie głównej, ponieważ skrypt nie przewinął strony przed pełnostronicowym screenshotem; nie uznawać tego za potwierdzony brak assetu. Screenshoty mają tylko fixture/demo i nie potwierdzają produkcyjnej oferty.
+- Powyższa lista opisywała stan w chwili pauzy. Po wznowieniu część dokumentów/planów została zaktualizowana, a testy pełne wykonano; pozostają końcowy przegląd diffu i dokumentów.
+- Bieżący stan zmienionych plików źródłowych obejmuje wcześniejsze niecommitowane poprawki z tej sesji oraz `src/pages/Home.jsx`, `src/components/ChatWidget.jsx`, `tests/e2e/storefront.spec.js`; nie wykonano commit/push/merge/deploy.
+
+## Wznowienie i pełna weryfikacja — 2026-11-14
+
+- PR #2 sprawdzono przez `gh pr view 2`: `OPEN`, draft, `MERGEABLE`, head `codex/vitazone-visual-refresh`, base `codex/vitazone-trust-checkout`. Bez merge i deploymentu.
+- Aktualizacja dokumentacji: dopisano testową obserwację równych CTA, brak stałego halo, launcher rejestracji ukryty poniżej 640 px, niejednoznaczny lazy-load screenshot, oraz braki źródeł fotografii; rozbudowano ryzyko Stripe (rezerwacja stock przed Checkout Session i brak idempotency handoff); skorygowano GitHub connector z 15 na 89 narzędzi; dodano ADR migracji PostgreSQL ze statusem `Proposed`.
+- Pierwszy pełny Vitest po zmianie `ChatWidget` wykrył, że komponent używa `useLocation`, a test jednostkowy nie montował go pod routerem. Zmieniono test, aby używał `MemoryRouter`; ponowny `pnpm exec vitest run` przeszedł: 20 plików, 89 testów.
+- `pnpm lint` — pierwsza równoległa próba dostała `ENOENT` dla katalogu Playwright `test-results`, który runner równolegle sprzątał. Powtórzony samodzielnie po zakończeniu E2E: exit 0, bez błędów i warningów.
+- `pnpm build` — exit 0; pozostał warning o `caniuse-lite` w wieku 11 miesięcy.
+- `pnpm check:secrets` — exit 0, `Secret check passed`.
+- `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 testów przeszło w Chromium na mock API/demo. W logu pojawiły się oczekiwane proxy `ECONNREFUSED` dla `/api/cart` i `/api/categories` przed stubami; testy nie weryfikują live backendu ani dostawców.
+- Nie przeprowadzono testu czytnikiem ekranu, zoomu 200% przeglądarki, fizycznego telefonu, prawdziwej transakcji ani migracji. ELI/UOKiK review jest checklistą źródeł, nie opinią prawną.

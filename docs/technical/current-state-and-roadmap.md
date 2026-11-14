@@ -165,6 +165,8 @@ Diagram pokazuje integracje odnalezione w kodzie i dokumentacji PR. Nie potwierd
 5. Stripe wywołuje podpisany webhook; ten jest źródłem potwierdzenia statusu asynchronicznego i idempotentnie aktualizuje zamówienie.
 6. Klient dostaje potwierdzenie i późniejsze informacje e-mailem; gość nie uzyskuje historii po samym numerze zamówienia.
 
+**Istotny szczegół implementacji:** stock jest blokowany/dekrementowany podczas utworzenia zamówienia, przed odpowiedzią Stripe o utworzeniu Checkout Session. Ścieżka tworzenia sesji nie przekazuje obecnie do repozytorium zamówień obsługiwanego klucza idempotency. Jeśli Stripe utworzy sesję, ale odpowiedź zaginie, kompensacja lokalna może zwolnić rezerwację, mimo że sesja płatnicza istnieje. To ryzyko spójności, nie potwierdzony incydent. Wymaga jawnego modelu idempotencji, reconciliation i testu timeoutu/niejednoznacznej odpowiedzi przed rolloutem.
+
 Przed uznaniem tego za produkcyjnie gotowe trzeba sprawdzić kod wszystkich branchy płatności i awarii (wygaśnięcie, cancel, niepowodzenie, retry webhooka, brak towaru/wyceny i timeout e-maila) z testami kontraktowymi i Stripe CLI na osobnym testowym koncie. Dokumentacja PR nie jest dowodem transakcji live.
 
 ### Granice odpowiedzialności — obecna i docelowa
@@ -192,18 +194,24 @@ Główny plik `schema.sql` deklaruje `users`, `addresses`, `categories`, `produc
 - Indeksy `idx_carts_user`, `idx_consents_user`, `idx_consents_ip` występują przed `CREATE TABLE carts` i `legal_consents`; czysta baza może przerwać skrypt.
 - Reset pomija `cart_items` i `legal_consents` przy usuwaniu. Pozostałe klucze obce mogą uniemożliwić ponowne stworzenie tabel lub pozostawić tabelę w nieznanym stanie.
 - `VitaZonedb.sql` jest odrębnym, starszym schematem, więc nie może być równorzędnym źródłem prawdy.
-- `server/scripts/run-migrations.js` szuka `migrate_*.js`/`run_migration_*.js` w katalogu skryptów, uruchamia child process i dopisuje ledger po fakcie. Nie aplikuje `.sql` z katalogu `migrations/` i nie obejmuje skryptu transakcją; katalogowa konwencja nie pasuje do realnych migracji.
+- `server/scripts/run-migrations.js` szuka `migrate_*.js`/`run_migration_*.js`, uruchamia wrappery JS jako child process i dopisuje ledger po kodzie wyjścia. Nie ładuje SQL bezpośrednio; wrappery 003–005 uruchamiają część SQL pośrednio, natomiast 001–002 nie mają zgodnego wrappera. Nie obejmuje wykonania i ledgera transakcją.
+- Błędy mogą zostać oznaczone jako sukces: wrappery 003/004 łapią błąd bez gwarancji niezerowego exit, `run_migration_005.js` kończy `process.exit(0)` także po błędzie, a `migrate_names.js` ustawia kod błędu, po czym `finally` może zakończyć proces z kodem 0. Każdy skrypt wymaga osobnej weryfikacji.
 - `pnpm migrate` wywołuje reset przez `schema.sql`; dodana w tej gałęzi bramka wymaga `ALLOW_DESTRUCTIVE_SCHEMA_RESET=true`, drugi opt-in dla zdalnej bazy i odmawia środowiska production/Vercel. To awaryjna osłona legacy, **nie naprawa systemu migracji**.
+
+Proponowany kierunek dla migracji jest opisany w [ADR 0001](../adr/0001-postgresql-migration-governance.md). Dokument jest statusem **Proposed**: nie ustalono wdrożonego schematu/hosta i nie wybrano biblioteki.
 
 Przegląd źródeł domenowych wykazał ponadto, że deklarowany `schema.sql` nie jest kontraktem bieżącego runtime: repozytorium użytkowników odczytuje/zapisuje m.in. `first_name`, `last_name`, `deleted_at`, `last_active_at`, adres oczekuje `house_number`/`apartment_number`, produkt używa `tax_rate`, a zamówienie i pozycje używają idempotency/discount oraz snapshotów, których bazowy plik nie deklaruje. Dokładny diff kolumn trzeba zautomatyzować względem repozytoriów, migracji i wariantów schematu, zanim powstanie migrator.
 
-Pozostałe ryzyka potwierdzone statycznie w bieżących ścieżkach:
+Pozostałe ryzyka potwierdzone statycznie w bieżących ścieżkach (z wyjątkiem poprawek wykonanych niżej w tym branchu):
 
-- Runner `server/scripts/run-migrations.js` skanuje wybrane wzorce JavaScript i nie aplikuje `server/scripts/migrations/*.sql`. Część skryptów jednorazowych ma niespójny kod wyjścia/obsługę błędu; wejścia migracyjne wymagają inwentaryzacji.
+- Runner `server/scripts/run-migrations.js` skanuje wybrane wzorce JavaScript i uruchamia część SQL tylko za pośrednictwem wrapperów; migracje 001–002 nie są wpięte. Część wrapperów może raportować sukces po błędzie.
 - Niektóre listy katalogu/admina/historii nie mają paginacji z maksymalnym limitem. Odpowiedź statystyk admina pobiera rekordy `orders` szerokim `SELECT`, co może przenosić snapshoty adresowe/PII mimo że ekran ich nie potrzebuje.
 - Koszyk używa odczytu i zapisu bez unikalnego ograniczenia koszyka użytkownika, a kontrola ilości przed upsertem może ścigać się przy równoległych żądaniach. Zamówienie blokuje stan produktu transakcyjnie, ale ścieżka idempotency SELECT-then-INSERT musi obsłużyć konflikt unique (`23505`).
 - `productSchema` dopuszcza szeroki kształt `specs`, a URL zdjęć wymaga polityki dozwolonych schematów/hostów. Utworzenie użytkownika wraz z opcjonalnym adresem wymaga transakcji, jeśli adres jest atomową częścią rejestracji.
 - Limiter jest lokalny dla procesu, a pula `pg` nie deklaruje jawnie limitu i timeoutów dopasowanych do serverless. To wnioski statyczne; nie połączono się z bazą.
+- **Naprawione na bieżącym branchu, testowane lokalnie:** `emailService` escapuje dynamiczne treści HTML i nie loguje adresu odbiorcy przy pominiętej wysyłce; `schemas/chatSchema.js` odrzuca rolę `system` i nadal ogranicza historię do 30 wiadomości; klient Furgonetki przekazuje `AbortSignal` i ma deadline `FURGONETKA_TIMEOUT_MS` (domyślnie 10 s). Testy: `tests/unit/emailHtml.test.js`, `emailService.test.js`, `chatSchema.test.js`, `furgonetkaClient.test.js`.
+- Repo nie ma `.github/workflows`, GitHub Actions API zwraca `total_count: 0`, a PR #2 nie raportuje checków. Skrypty `package.json` są lokalne; brakuje automatycznej bramki lint/unit/build.
+- Śledzone są oba lockfile (`pnpm-lock.yaml` i `package-lock.json`), choć `packageManager` wskazuje pnpm. Ustalić jedno źródło prawdy po sprawdzeniu README, hosta i lokalnego CI.
 
 Żaden skrypt migracji/resetu nie został uruchomiony w audycie. Nie łączyć się do realnej bazy.
 

@@ -1,4 +1,14 @@
 const SANDBOX_URL = 'https://api.sandbox.furgonetka.pl';
+const DEFAULT_TIMEOUT_MS = 10000;
+
+export class FurgonetkaTimeoutError extends Error {
+    constructor() {
+        super('Furgonetka sandbox request timed out.');
+        this.name = 'FurgonetkaTimeoutError';
+        this.code = 'SHIPPING_PROVIDER_TIMEOUT';
+        this.statusCode = 504;
+    }
+}
 
 export class FurgonetkaRequestError extends Error {
     constructor(status) {
@@ -20,7 +30,7 @@ const assertBrokerService = (services, carrier, serviceId) => {
     if (!matches) throw new TypeError('Service is not configured for the requested carrier through Furgonetka.');
 };
 
-export const createFurgonetkaClient = ({ accessToken, fetchImpl = globalThis.fetch } = {}) => {
+export const createFurgonetkaClient = ({ accessToken, fetchImpl = globalThis.fetch, timeoutMs = DEFAULT_TIMEOUT_MS } = {}) => {
     if (!accessToken || typeof fetchImpl !== 'function') {
         const error = new Error('Furgonetka sandbox is not configured.');
         error.code = 'SHIPPING_NOT_CONFIGURED';
@@ -29,18 +39,41 @@ export const createFurgonetkaClient = ({ accessToken, fetchImpl = globalThis.fet
     }
 
     const request = async (path, { method = 'GET', body, version = 'v1' } = {}) => {
-        const response = await fetchImpl(`${SANDBOX_URL}${path}`, {
-            method,
-            headers: {
-                Authorization: `Bearer ${accessToken}`,
-                Accept: `application/vnd.furgonetka.${version}+json`,
-                ...(body ? { 'Content-Type': `application/vnd.furgonetka.${version}+json` } : {})
-            },
-            ...(body ? { body: JSON.stringify(body) } : {})
+        const controller = new AbortController();
+        const deadlineMs = Number.isFinite(timeoutMs) && timeoutMs > 0 ? timeoutMs : DEFAULT_TIMEOUT_MS;
+        let timeoutId;
+        const deadline = new Promise((_, reject) => {
+            timeoutId = setTimeout(() => {
+                controller.abort();
+                reject(new FurgonetkaTimeoutError());
+            }, deadlineMs);
         });
-        if (!response.ok) throw new FurgonetkaRequestError(response.status);
-        if (response.status === 204) return null;
-        return response.json();
+        const operation = (async () => {
+            const response = await fetchImpl(`${SANDBOX_URL}${path}`, {
+                method,
+                headers: {
+                    Authorization: `Bearer ${accessToken}`,
+                    Accept: `application/vnd.furgonetka.${version}+json`,
+                    ...(body ? { 'Content-Type': `application/vnd.furgonetka.${version}+json` } : {})
+                },
+                ...(body ? { body: JSON.stringify(body) } : {}),
+                signal: controller.signal
+            });
+            if (!response.ok) throw new FurgonetkaRequestError(response.status);
+            if (response.status === 204) return null;
+            return response.json();
+        })();
+
+        try {
+            return await Promise.race([operation, deadline]);
+        } catch (error) {
+            if (controller.signal.aborted && error?.name === 'AbortError') {
+                throw new FurgonetkaTimeoutError();
+            }
+            throw error;
+        } finally {
+            clearTimeout(timeoutId);
+        }
     };
 
     return Object.freeze({

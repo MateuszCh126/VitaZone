@@ -16,6 +16,7 @@ import { trackEvent } from '../utils/analytics';
 import { fetchJsonWithRetry } from '../utils/fetchJson';
 
 const featuredCategories = STOREFRONT_CATEGORIES.filter((category) => FEATURED_CATEGORY_NAMES.includes(category.name));
+const shoppingJourneyLinkClass = 'group inline-flex w-full items-center justify-center gap-3 rounded-full border border-primary/35 bg-white/[0.03] px-6 py-3.5 font-bold text-white transition-colors duration-300 hover:border-primary/70 hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:w-auto sm:px-8 sm:py-4';
 
 const valueCards = [
   {
@@ -205,16 +206,17 @@ const Home = () => {
             <div className="flex flex-col gap-4 sm:flex-row">
               <Link
                 to="/shop?category=Terraria%20i%20zestawy"
-                className="group inline-flex w-full items-center justify-center gap-3 rounded-full bg-primary px-6 py-3.5 font-bold text-black transition-all duration-300 hover:bg-white sm:w-auto sm:px-8 sm:py-4"
+                className={shoppingJourneyLinkClass}
               >
                 Urządzam pierwsze terrarium
-                <ArrowRight size={20} className="transition-transform group-hover:translate-x-1" />
+                <ArrowRight size={20} aria-hidden="true" className="transition-transform group-hover:translate-x-1" />
               </Link>
               <Link
                 to="/shop?journey=existing"
-                className="inline-flex w-full items-center justify-center gap-3 rounded-full border border-white/20 px-6 py-3.5 font-bold text-white transition-all duration-300 hover:bg-white/5 sm:w-auto sm:px-8 sm:py-4"
+                className={shoppingJourneyLinkClass}
               >
                 Mam już zwierzę
+                <ArrowRight size={20} aria-hidden="true" className="transition-transform group-hover:translate-x-1" />
               </Link>
             </div>
           </div>

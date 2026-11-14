@@ -1,4 +1,5 @@
 import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
 import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { API_BASE } from '../utils/config';
@@ -10,6 +11,7 @@ const createMessage = (role, content) => ({
 });
 
 const ChatWidget = () => {
+    const { pathname } = useLocation();
     const [isOpen, setIsOpen] = useState(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
@@ -83,7 +85,7 @@ const ChatWidget = () => {
     };
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-40 flex flex-col items-stretch gap-3 sm:bottom-6 sm:left-auto sm:right-6 sm:items-end sm:gap-4">
+        <div className={`fixed bottom-4 left-4 right-4 z-40 flex flex-col items-stretch gap-3 sm:bottom-6 sm:left-auto sm:right-6 sm:items-end sm:gap-4 ${pathname === '/register' ? 'max-sm:hidden' : ''}`}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
@@ -195,7 +197,7 @@ const ChatWidget = () => {
                 onClick={() => setIsOpen(!isOpen)}
                 aria-label={isOpen ? 'Zamknij czat' : 'Otwórz czat'}
                 type="button"
-                className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-glow transition-colors hover:bg-white sm:h-14 sm:w-14"
+                className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-surface transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:h-14 sm:w-14"
             >
                 {isOpen ? <X size={24} strokeWidth={2.5} /> : <MessageCircle size={24} strokeWidth={2.5} />}
 

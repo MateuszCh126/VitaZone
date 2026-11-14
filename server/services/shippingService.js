@@ -113,7 +113,11 @@ export const createFurgonetkaGateway = ({ env, fetchImpl = globalThis.fetch }) =
             if (!accessToken) {
             throw shippingError('SHIPPING_NOT_CONFIGURED', 'Wysyłka InPost/DPD nie jest jeszcze skonfigurowana.');
             }
-            const client = createFurgonetkaClient({ accessToken, fetchImpl });
+            const client = createFurgonetkaClient({
+                accessToken,
+                fetchImpl,
+                timeoutMs: env.FURGONETKA_TIMEOUT_MS
+            });
             const services = (await client.listServices())?.services || [];
             const quotes = [];
 

@@ -5,11 +5,16 @@ Dokumentacja odróżnia stan widoczny w bieżącym kodzie od planu, hipotez bada
 ## Utrzymanie i rozwój
 
 - [Stan techniczny i plan rozwoju](technical/current-state-and-roadmap.md) — architektura, przepływy, mapa modułów, baza danych, ryzyka, kolejność prac i kryteria odbioru.
+- [Referencja kodu i architektury](technical/codebase-reference.md) — kontenery, przepływy, odpowiedzialności i katalog plików źródłowych.
+- [Inwentarz skilli i narzędzi](technical/engineering-tooling-inventory.md) — możliwości sesji, wykorzystane workflowy oraz integracje nieadekwatne/niepotwierdzone.
+- [ADR 0001 — workflow migracji PostgreSQL](adr/0001-postgresql-migration-governance.md) — propozycja jawnych, wersjonowanych migracji; decyzja pozostaje otwarta do sprawdzenia środowiska.
+- [Szczegółowy plan techniczny](superpowers/plans/2026-11-14-vitazone-engineering-roadmap.md) — zależności, taski, pliki, testy i release gates.
 - [Notatki robocze audytu](technical/working-notes.md) — dziennik tej iteracji, wyniki kontroli i otwarte zadania.
 - [Audyt tras, treści i widoków](technical/route-audit.md) — przegląd wszystkich tras na lokalnych renderach desktop/mobile, twierdzeń w copy i stanów interfejsu.
 - [Design system i handoff](design-system/vitazone.md) — tokeny, responsywność, interakcje i checklisty dostępności.
 - [Zmiany zaufania i checkoutu](changes/vitazone-trust-checkout.md) — status i weryfikacja pierwszego etapu.
 - [Zmiany warstwy wizualnej](changes/vitazone-visual-refresh.md) — status PR #2 oraz ograniczenia renderu i danych.
+- [Audyt inżynierski i status](changes/vitazone-engineering-audit.md) — zakres, dowody weryfikacji i nadal niepotwierdzone obszary.
 
 ## Badania i warunki uruchomienia
 

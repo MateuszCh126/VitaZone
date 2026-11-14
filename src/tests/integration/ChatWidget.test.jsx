@@ -1,6 +1,7 @@
 import React from 'react';
 import { describe, expect, it, vi } from 'vitest';
 import { fireEvent, render, screen } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import ChatWidget from '../../components/ChatWidget.jsx';
 
 describe('ChatWidget scope and availability copy', () => {
@@ -9,7 +10,11 @@ describe('ChatWidget scope and availability copy', () => {
             configurable: true,
             value: vi.fn()
         });
-        render(<ChatWidget />);
+        render(
+            <MemoryRouter initialEntries={['/']}>
+                <ChatWidget />
+            </MemoryRouter>
+        );
         fireEvent.click(screen.getByRole('button', { name: 'Otwórz czat' }));
 
         expect(screen.getByText('Informacje o ofercie sklepu')).toBeInTheDocument();

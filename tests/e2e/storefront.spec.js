@@ -93,6 +93,41 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(page.getByRole('link', { name: /Mam już zwierzę/ })).toBeVisible();
   });
 
+  test('gives both homepage shopping journeys equal visual weight', async ({ page }) => {
+    await page.goto('/');
+
+    const firstJourney = page.getByRole('link', { name: /Urządzam pierwsze terrarium/ });
+    const existingOwnerJourney = page.getByRole('link', { name: /Mam już zwierzę/ });
+    const visualTreatment = (element) => element.evaluate((node) => {
+      const style = window.getComputedStyle(node);
+      return {
+        backgroundColor: style.backgroundColor,
+        borderColor: style.borderColor,
+        borderStyle: style.borderStyle,
+        borderWidth: style.borderWidth,
+        borderRadius: style.borderRadius,
+        fontWeight: style.fontWeight,
+        padding: style.padding
+      };
+    });
+
+    await expect(firstJourney).toBeVisible();
+    await expect(existingOwnerJourney).toBeVisible();
+    expect(await visualTreatment(firstJourney)).toEqual(await visualTreatment(existingOwnerJourney));
+  });
+
+  test('keeps one main landmark and provides a keyboard skip link on the about page', async ({ page }) => {
+    await page.goto('/about');
+
+    await expect(page.getByRole('main')).toHaveCount(1);
+    const skipLink = page.getByRole('link', { name: 'Przejdź do treści' });
+    await expect(skipLink).toBeAttached();
+    await page.keyboard.press('Tab');
+    await expect(skipLink).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#main-content')).toBeFocused();
+  });
+
   test('labels account fields and connects validation errors to their inputs', async ({ page }) => {
     await page.goto('/login');
     await expect(page.getByRole('heading', { level: 1, name: 'Witaj ponownie' })).toBeVisible();
@@ -111,6 +146,30 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(page.locator('#register-last-name-error')).toHaveAttribute('role', 'alert');
     await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toHaveAttribute('aria-invalid', 'true');
     await expect(page.locator('#register-age-error')).toHaveAttribute('role', 'alert');
+  });
+
+  test('keeps the mobile chat launcher clear of registration choices and submit action', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/register');
+    const chatLauncher = page.locator('button[aria-label="Otwórz czat"]');
+    await expect(chatLauncher).toBeAttached({ timeout: 5000 });
+
+    const hasChatOverlap = await page.evaluate(() => {
+      const chat = document.querySelector('button[aria-label="Otwórz czat"]');
+      const consent = document.querySelector('#newsletter')?.closest('div');
+      const submit = document.querySelector('button[type="submit"]');
+      if (!chat || !consent || !submit || getComputedStyle(chat).display === 'none') return false;
+
+      const intersects = (left, right) => {
+        const a = left.getBoundingClientRect();
+        const b = right.getBoundingClientRect();
+        return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      };
+
+      return intersects(chat, consent) || intersects(chat, submit);
+    });
+
+    expect(hasChatOverlap).toBe(false);
   });
 
   test('finds a demo product, opens its details, and adds it to the cart', async ({ page }) => {
@@ -287,6 +346,16 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(page.getByText(/To odpowiedź demonstracyjna/)).toBeVisible();
   });
 
+  test('keeps a permanent green halo off the floating chat launcher', async ({ page }) => {
+    await page.goto('/');
+
+    const launcher = page.getByRole('button', { name: 'Otwórz czat' });
+    await expect(launcher).toBeVisible({ timeout: 5000 });
+    const boxShadow = await launcher.evaluate((element) => getComputedStyle(element).boxShadow);
+
+    expect(boxShadow).not.toMatch(/0,\s*255,\s*136/);
+  });
+
   test('stores a refusal of optional analytics', async ({ page }) => {
     const optionalScriptRequests = [];
     page.on('request', (request) => {
@@ -396,6 +465,19 @@ test.describe('VitaZone storefront (demo data)', () => {
       await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
       await expect(page.getByRole('heading', { name: 'Podsumowanie zamówienia' })).toBeVisible();
       await expect.poll(hasNoHorizontalOverflow).toBe(true);
+
+      if (width === 360) {
+        const chatCoversCheckoutAction = await page.evaluate(() => {
+          const chat = document.querySelector('button[aria-label="Otwórz czat"]');
+          const action = [...document.querySelectorAll('button')].find((button) => button.textContent.includes('Sprawdź metody i koszt dostawy'));
+          if (!chat || !action || getComputedStyle(chat).display === 'none') return false;
+          const launcher = chat.getBoundingClientRect();
+          const target = action.getBoundingClientRect();
+          return launcher.left < target.right && launcher.right > target.left && launcher.top < target.bottom && launcher.bottom > target.top;
+        });
+
+        expect(chatCoversCheckoutAction).toBe(false);
+      }
     }
   });
 });
