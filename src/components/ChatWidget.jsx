@@ -1,6 +1,7 @@
-﻿import React, { useState, useRef, useEffect } from 'react';
+import React, { useState, useRef, useEffect } from 'react';
+import { useLocation } from 'react-router-dom';
 import { MessageCircle, X, Send, Bot, User } from 'lucide-react';
-import { motion, AnimatePresence } from 'framer-motion';
+import { motion, AnimatePresence, useReducedMotion } from 'framer-motion';
 import { API_BASE } from '../utils/config';
 
 const createMessage = (role, content) => ({
@@ -10,19 +11,25 @@ const createMessage = (role, content) => ({
 });
 
 const ChatWidget = () => {
+    const { pathname } = useLocation();
     const [isOpen, setIsOpen] = useState(false);
+    const [hasUnreadResponse, setHasUnreadResponse] = useState(false);
+    const isOpenRef = useRef(false);
     const [messages, setMessages] = useState([]);
     const [input, setInput] = useState('');
     const [isLoading, setIsLoading] = useState(false);
     const messagesEndRef = useRef(null);
+    const prefersReducedMotion = useReducedMotion();
 
-    const scrollToBottom = () => {
-        messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
+    const setPanelOpen = (open) => {
+        isOpenRef.current = open;
+        setIsOpen(open);
+        if (open) setHasUnreadResponse(false);
     };
 
     useEffect(() => {
-        scrollToBottom();
-    }, [messages, isOpen]);
+        messagesEndRef.current?.scrollIntoView({ behavior: prefersReducedMotion ? 'auto' : 'smooth' });
+    }, [messages, isOpen, prefersReducedMotion]);
 
     const handleInputChange = (event) => {
         setInput(event.target.value);
@@ -71,6 +78,7 @@ const ChatWidget = () => {
             }
 
             setMessages((current) => [...current, createMessage('assistant', data.message.trim())]);
+            if (!isOpenRef.current) setHasUnreadResponse(true);
         } catch (error) {
             console.error('Chat error:', error);
             setMessages((current) => [
@@ -86,14 +94,16 @@ const ChatWidget = () => {
     };
 
     return (
-        <div className="fixed bottom-4 left-4 right-4 z-40 flex flex-col items-stretch gap-3 sm:bottom-6 sm:left-auto sm:right-6 sm:items-end sm:gap-4">
+        <div className={`fixed bottom-4 left-4 right-4 z-40 flex flex-col items-stretch gap-3 sm:bottom-6 sm:left-auto sm:right-6 sm:items-end sm:gap-4 ${pathname === '/register' ? 'max-sm:hidden' : ''}`}>
             <AnimatePresence>
                 {isOpen && (
                     <motion.div
-                        initial={{ opacity: 0, y: 20, scale: 0.95 }}
+                        initial={prefersReducedMotion ? false : { opacity: 0, y: 20, scale: 0.95 }}
                         animate={{ opacity: 1, y: 0, scale: 1 }}
-                        exit={{ opacity: 0, y: 20, scale: 0.95 }}
-                        transition={{ duration: 0.2 }}
+                        exit={prefersReducedMotion ? undefined : { opacity: 0, y: 20, scale: 0.95 }}
+                        transition={prefersReducedMotion ? { duration: 0 } : { duration: 0.2 }}
+                        role="region"
+                        aria-labelledby="chat-title"
                         className="glass flex h-[min(70vh,32rem)] max-h-[calc(100svh-5.5rem)] w-full flex-col overflow-hidden rounded-2xl border border-white/10 shadow-2xl sm:h-[500px] sm:w-[400px]"
                     >
                         <div className="flex items-center justify-between border-b border-white/10 bg-primary/5 p-3 sm:p-4">
@@ -102,15 +112,12 @@ const ChatWidget = () => {
                                     <Bot size={20} />
                                 </div>
                                 <div>
-                                    <h3 className="font-bold text-white">Asystent terrarystyki</h3>
-                                    <p className="text-xs text-primary/80 flex items-center gap-1">
-                                        <span className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></span>
-                                        Dostępny
-                                    </p>
+                                    <h3 id="chat-title" className="font-bold text-white">Asystent terrarystyki</h3>
+                                    <p className="text-xs text-neutral-300">Informacje o ofercie sklepu</p>
                                 </div>
                             </div>
                             <button
-                                onClick={() => setIsOpen(false)}
+                                onClick={() => setPanelOpen(false)}
                                 className="p-2 hover:bg-white/10 rounded-lg transition-colors text-gray-400 hover:text-white"
                                 aria-label="Zamknij okno czatu"
                                 type="button"
@@ -119,12 +126,12 @@ const ChatWidget = () => {
                             </button>
                         </div>
 
-                        <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-4">
+                        <div className="custom-scrollbar min-h-0 flex-1 space-y-4 overflow-y-auto p-3 sm:p-4" aria-live="polite" aria-relevant="additions text">
                             {messages.length === 0 && (
                                 <div className="mt-6 p-4 text-center text-gray-400 sm:mt-10">
                                     <Bot size={48} className="mx-auto mb-4 opacity-50" />
-                                    <p className="text-sm">Zapytaj o dobór gatunku, terrarium lub wyposażenia.</p>
-                                    <p className="text-xs mt-2">Pomogę zawęzić wybór i wskażę produkty pasujące do Twoich planów.</p>
+                                    <p className="text-sm">Zapytaj o informacje podane w opisach produktów i wyposażenia.</p>
+                                    <p className="mt-2 text-xs">Odpowiedzi opierają się na katalogu sklepu. Asystent nie zastępuje lekarza weterynarii ani nie potwierdza wymagań konkretnego zwierzęcia.</p>
                                 </div>
                             )}
 
@@ -172,11 +179,12 @@ const ChatWidget = () => {
                         <form onSubmit={handleSubmit} className="border-t border-white/10 bg-black/20 p-3 backdrop-blur-md sm:p-4">
                             <div className="relative flex items-center">
                                 <input
+                                    aria-label="Wiadomość do asystenta"
                                     value={input}
                                     onChange={handleInputChange}
                                     placeholder="Napisz wiadomość..."
                                     disabled={isLoading}
-                                    className="w-full bg-black/50 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-500 disabled:opacity-60"
+                                    className="w-full bg-black/50 border border-white/10 rounded-xl pl-4 pr-12 py-3 text-sm text-white focus:outline-none focus:border-primary/50 transition-all placeholder:text-gray-400 disabled:opacity-60"
                                 />
                                 <button
                                     type="submit"
@@ -193,19 +201,18 @@ const ChatWidget = () => {
             </AnimatePresence>
 
             <motion.button
-                whileHover={{ scale: 1.05 }}
-                whileTap={{ scale: 0.95 }}
-                onClick={() => setIsOpen(!isOpen)}
+                whileHover={prefersReducedMotion ? undefined : { scale: 1.05 }}
+                whileTap={prefersReducedMotion ? undefined : { scale: 0.95 }}
+                onClick={() => setPanelOpen(!isOpenRef.current)}
                 aria-label={isOpen ? 'Zamknij czat' : 'Otwórz czat'}
                 type="button"
-                className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-[0_0_20px_rgba(250,204,21,0.3)] transition-colors hover:bg-white sm:h-14 sm:w-14"
+                className="relative z-50 flex h-12 w-12 self-end items-center justify-center rounded-full bg-primary text-black shadow-surface transition-colors hover:bg-white focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary sm:h-14 sm:w-14"
             >
                 {isOpen ? <X size={24} strokeWidth={2.5} /> : <MessageCircle size={24} strokeWidth={2.5} />}
 
-                {!isOpen && messages.length > 0 && (
-                    <span className="absolute -top-1 -right-1 flex h-4 w-4">
-                        <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-red-400 opacity-75"></span>
-                        <span className="relative inline-flex rounded-full h-4 w-4 bg-red-500"></span>
+                {!isOpen && hasUnreadResponse && (
+                    <span role="status" aria-label="Nowa odpowiedź" className="absolute -top-1 -right-1 flex h-4 w-4">
+                        <span className="inline-flex h-3.5 w-3.5 rounded-full border-2 border-black bg-red-500"></span>
                     </span>
                 )}
             </motion.button>

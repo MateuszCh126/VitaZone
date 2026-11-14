@@ -4,6 +4,7 @@ import { useNavigate, useLocation, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
 import { KeyRound, Mail, AlertCircle, ArrowRight } from 'lucide-react';
 
@@ -43,26 +44,26 @@ const Login = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center relative overflow-hidden">
-            {/* Background Effect */}
-            <div className="absolute inset-0 z-0">
-                <div className="absolute top-1/4 left-1/4 w-96 h-96 bg-primary/10 rounded-full blur-[100px]"></div>
-                <div className="absolute bottom-1/4 right-1/4 w-96 h-96 bg-purple-500/10 rounded-full blur-[100px]"></div>
-            </div>
+            <Helmet>
+                <title>Logowanie | VitaZone</title>
+                <meta name="robots" content="noindex,follow" />
+            </Helmet>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass p-8 md:p-12 rounded-2xl w-full max-w-md relative z-10 border border-white/10"
+                className="rounded-2xl border border-white/10 bg-bg-secondary p-8 md:p-12 w-full max-w-md relative z-10"
             >
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Witaj ponownie</h2>
-                    <p className="text-gray-400">Uzyskaj dostęp do swojej kolekcji.</p>
+                    <h1 className="text-3xl font-bold mb-2">Witaj ponownie</h1>
+                    <p className="text-gray-400">Sprawdzaj zamówienia i zarządzaj danymi konta.</p>
                 </div>
 
                 {serverError && (
                     <motion.div
                         initial={{ opacity: 0, height: 0 }}
                         animate={{ opacity: 1, height: 'auto' }}
+                        role="alert"
                         className="bg-red-500/10 border border-red-500/20 text-red-500 p-3 rounded-lg flex items-center gap-2 mb-6 text-sm"
                     >
                         <AlertCircle size={16} /> {serverError}
@@ -71,31 +72,39 @@ const Login = () => {
 
                 <form onSubmit={handleSubmit(onSubmit)} className="space-y-6">
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Adres Email</label>
+                        <label htmlFor="login-email" className="text-sm font-medium text-gray-300 ml-1">Adres email</label>
                         <div className="relative">
-                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                            <Mail className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 {...register('email')}
+                                id="login-email"
                                 type="email"
+                                autoComplete="username"
+                                aria-invalid={Boolean(errors.email)}
+                                aria-describedby={errors.email ? 'login-email-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.email ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all`}
-                                placeholder="you@example.com"
+                                placeholder="adres@przyklad.pl"
                             />
                         </div>
-                        {errors.email && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.email.message}</p>}
+                        {errors.email && <p id="login-email-error" role="alert" className="text-red-400 text-xs mt-1 ml-1">{errors.email.message}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm font-medium text-gray-300 ml-1">Hasło</label>
+                        <label htmlFor="login-password" className="text-sm font-medium text-gray-300 ml-1">Hasło</label>
                         <div className="relative">
-                            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-500" size={20} />
+                            <KeyRound className="absolute left-4 top-1/2 -translate-y-1/2 text-gray-400" size={20} />
                             <input
                                 {...register('password')}
+                                id="login-password"
                                 type="password"
+                                autoComplete="current-password"
+                                aria-invalid={Boolean(errors.password)}
+                                aria-describedby={errors.password ? 'login-password-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.password ? 'border-red-500' : 'border-white/10'} rounded-xl py-3 pl-12 pr-4 text-white focus:border-primary focus:ring-1 focus:ring-primary focus:outline-none transition-all`}
                                 placeholder="••••••••"
                             />
                         </div>
-                        {errors.password && <p className="text-red-500 text-[10px] mt-1 ml-1">{errors.password.message}</p>}
+                        {errors.password && <p id="login-password-error" role="alert" className="text-red-400 text-xs mt-1 ml-1">{errors.password.message}</p>}
                     </div>
 
                     <button

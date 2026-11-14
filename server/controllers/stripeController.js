@@ -1,10 +1,12 @@
 import Stripe from 'stripe';
 import env from '../config/env.js';
 import logger from '../config/logger.js';
-import { CreateCheckoutSessionSchema } from '../../schemas/stripeSchema.js';
+import { CheckoutSessionStatusSchema, CreateCheckoutSessionSchema } from '../../schemas/stripeSchema.js';
 import * as orderRepo from '../../repositories/orderRepository.js';
 import { ORDER_STATUS } from '../../shared/orderStatus.js';
 import { sendOrderPaidEmail } from '../services/emailService.js';
+import * as productRepo from '../../repositories/productRepository.js';
+import { createFurgonetkaGateway, getShippingQuotes, resolveReviewedShippingQuote } from '../services/shippingService.js';
 import * as terrariumRepo from '../../repositories/terrariumRepository.js';
 import { TerrariumCheckoutSchema } from '../../schemas/terrariumSchema.js';
 import { z } from 'zod';
@@ -57,7 +59,6 @@ const buildAllowedCheckoutOrigins = () => {
 };
 
 const allowedCheckoutOrigins = buildAllowedCheckoutOrigins();
-const STRIPE_CHECKOUT_SESSION_ID_PATTERN = /^cs(?:_test|_live)?_[A-Za-z0-9]+$/;
 
 const buildAppUrl = (req) => {
     const requestOrigin = normalizeOrigin(req.headers.origin);
@@ -105,14 +106,15 @@ const buildLineItems = (order) => {
         });
     }
 
-    if (env.ORDER_SHIPPING_CENTS > 0) {
+    const shippingAmountCents = order.shipping_address_json?.delivery?.amount_cents;
+    if (Number.isSafeInteger(shippingAmountCents) && shippingAmountCents > 0) {
         lineItems.push({
             price_data: {
                 currency: env.STRIPE_CURRENCY,
                 product_data: {
-                    name: 'Dostawa kurierska'
+                    name: order.shipping_address_json.delivery.method === 'inpost' ? 'Dostawa InPost' : 'Dostawa DPD'
                 },
-                unit_amount: env.ORDER_SHIPPING_CENTS
+                unit_amount: shippingAmountCents
             },
             quantity: 1
         });
@@ -345,26 +347,50 @@ export const createCheckoutSession = async (req, res) => {
         ensureStripeClientConfigured();
 
         const validatedData = CreateCheckoutSessionSchema.parse(req.body);
-        if (req.user.id !== validatedData.userId) {
-            return res.status(403).json({ error: 'Brak dostępu: nie możesz utworzyć checkoutu dla innego użytkownika' });
+        const userId = req.user?.id || null;
+        const productIds = [...new Set(validatedData.items.map((item) => item.productId))];
+        const shippingProducts = await productRepo.getShippingProductsByIds(productIds);
+        const deliveryQuotes = await getShippingQuotes({
+            items: validatedData.items,
+            shipping: validatedData.shipping,
+            products: shippingProducts,
+            gateway: createFurgonetkaGateway({ env })
+        });
+        const deliveryReview = resolveReviewedShippingQuote({
+            quotes: deliveryQuotes,
+            method: validatedData.deliveryMethod,
+            expectedAmountCents: validatedData.expectedShippingAmountCents
+        });
+        if (deliveryReview.changed) {
+            res.set('Cache-Control', 'no-store');
+            return res.status(409).json({
+                error: 'Koszt dostawy się zmienił. Sprawdź aktualną cenę i ponownie ją zatwierdź.',
+                code: 'SHIPPING_QUOTE_CHANGED',
+                quotes: deliveryQuotes.map(({ method, label, amountCents, currency }) => ({ method, label, amountCents, currency }))
+            });
         }
+        const selectedDelivery = deliveryReview.quote;
 
         const createdOrder = await orderRepo.createOrder({
-            userId: validatedData.userId,
+            userId,
             paymentMethod: 'stripe_checkout',
             paymentId: null,
             items: validatedData.items,
             fullName: validatedData.shipping.fullName,
             email: validatedData.shipping.email,
+            phone: validatedData.shipping.phone,
             country: validatedData.shipping.country,
             city: validatedData.shipping.city,
             postalCode: validatedData.shipping.postal_code,
             street: validatedData.shipping.street,
             houseNumber: validatedData.shipping.house_number,
             apartmentNumber: validatedData.shipping.apartment_number || null,
+            deliveryMethod: selectedDelivery.method,
+            deliveryProvider: selectedDelivery.provider,
+            deliveryServiceId: selectedDelivery.providerServiceId,
             discountCode: validatedData.discountCode,
             initialStatus: ORDER_STATUS.PAYMENT_PENDING,
-            shippingAmountCents: env.ORDER_SHIPPING_CENTS
+            shippingAmountCents: selectedDelivery.amountCents
         });
 
         orderId = createdOrder.id;
@@ -387,12 +413,12 @@ export const createCheckoutSession = async (req, res) => {
             line_items: buildLineItems(hydratedOrder),
             metadata: {
                 orderId,
-                userId: req.user.id
+                ...(userId ? { userId } : {})
             },
             payment_intent_data: {
                 metadata: {
                     orderId,
-                    userId: req.user.id
+                    ...(userId ? { userId } : {})
                 }
             }
         });
@@ -419,6 +445,9 @@ export const createCheckoutSession = async (req, res) => {
         if (error.code === 'STRIPE_NOT_CONFIGURED') {
             return res.status(503).json({ error: 'Płatności Stripe Checkout nie są skonfigurowane' });
         }
+        if (error.statusCode && String(error.code || '').startsWith('SHIPPING_')) {
+            return res.status(error.statusCode).json({ error: error.message, code: error.code });
+        }
 
         const badRequestPatterns = [
             'Nie znaleziono',
@@ -428,6 +457,8 @@ export const createCheckoutSession = async (req, res) => {
             'Discount code not yet active',
             'Discount code expired',
             'Discount usage limit reached',
+            'Żywe zwierzęta nie są obsługiwane',
+            'Ta kategoria nie jest obsługiwana przez standardową wysyłkę InPost/DPD.',
             'Kwota zamówienia musi być większa niż zero',
             'Zamówienie zostało utworzone, ale nie udało się go odczytać'
         ];
@@ -449,21 +480,19 @@ export const createCheckoutSession = async (req, res) => {
 export const getCheckoutSessionStatus = async (req, res) => {
     try {
         ensureStripeClientConfigured();
-        const sessionId = req.params.sessionId;
-
-        if (!sessionId || typeof sessionId !== 'string') {
-            return res.status(400).json({ error: 'Brak identyfikatora sesji checkout' });
-        }
-
-        if (!STRIPE_CHECKOUT_SESSION_ID_PATTERN.test(sessionId)) {
+        const parsed = CheckoutSessionStatusSchema.safeParse(req.body || {});
+        if (!parsed.success) {
             return res.status(400).json({ error: 'Nieprawidłowy identyfikator sesji checkout' });
         }
 
+        const { sessionId } = parsed.data;
         const session = await stripe.checkout.sessions.retrieve(sessionId);
         const orderId = session.metadata?.orderId || session.client_reference_id;
         const sessionUserId = session.metadata?.userId;
 
-        if (sessionUserId && sessionUserId !== req.user.id) {
+        // The checkout-session ID is the bearer proof for guest polling. Keep
+        // signed-out sessions usable, but reject an authenticated different owner.
+        if (sessionUserId && req.user?.id && sessionUserId !== req.user.id) {
             return res.status(403).json({ error: 'Brak dostępu' });
         }
 
@@ -476,21 +505,29 @@ export const getCheckoutSessionStatus = async (req, res) => {
         }
 
         const order = orderId ? await orderRepo.findById(orderId) : null;
-
-        res.json({
-            sessionId: session.id,
+        const response = {
             checkoutStatus: session.status,
-            paymentStatus: session.payment_status,
-            orderId,
-            orderStatus: order?.status || null
-        });
+            paymentStatus: session.payment_status
+        };
+
+        if (Number.isInteger(session.amount_total) && typeof session.currency === 'string') {
+            response.amountTotalCents = session.amount_total;
+            response.currency = session.currency.toUpperCase();
+        }
+
+        if (sessionUserId && req.user?.id === sessionUserId) {
+            response.orderId = orderId || null;
+            response.orderStatus = order?.status || null;
+        }
+
+        res.set('Cache-Control', 'no-store');
+        res.json(response);
     } catch (error) {
         if (error.code === 'STRIPE_NOT_CONFIGURED') {
-            return res.status(503).json({ error: 'Płatności Stripe Checkout nie są skonfigurowane' });
+            return res.status(503).json({ error: 'Płatności Stripe nie są skonfigurowane' });
         }
 
         logger.error('Stripe checkout status error', {
-            sessionId: req.params.sessionId,
             errorMessage: error?.message || 'Unknown Stripe status error',
             errorName: error?.name || 'Error',
             errorCode: error?.code || null
@@ -549,6 +586,10 @@ export const handleStripeWebhook = async (req, res) => {
             }
 
             case 'payment_intent.payment_failed':
+                // Checkout can keep the session open for another payment attempt.
+                // Keep the reservation; release it on terminal cancellation or expiry.
+                break;
+
             case 'payment_intent.canceled': {
                 const paymentIntent = event.data.object;
                 const orderId = paymentIntent.metadata?.orderId;

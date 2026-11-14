@@ -15,6 +15,7 @@ import createOrderRoutes from './routes/orderRoutes.js';
 import createStripeRoutes from './routes/stripeRoutes.js';
 import uploadRoutes from './routes/uploadRoutes.js';
 import userRoutes from './routes/userRoutes.js';
+import shippingRoutes from './routes/shippingRoutes.js';
 import adminRoutes from './routes/adminRoutes.js';
 import terrariumRoutes from './routes/terrariumRoutes.js';
 
@@ -80,7 +81,8 @@ app.use('/api', globalLimiter);
 app.use('/api/auth', authLimiter, authRoutes);
 app.use('/api/cart', cartRoutes);
 app.use('/api/users', verifyToken, userRoutes);
-app.use('/api/stripe', verifyToken, createStripeRoutes({ orderLimiter }));
+app.use('/api/stripe', createStripeRoutes({ orderLimiter }));
+app.use('/api/shipping', orderLimiter, shippingRoutes);
 app.use('/api/orders', verifyToken, createOrderRoutes({ orderLimiter }));
 app.use('/api/admin', adminLimiter, verifyAdmin, adminRoutes);
 app.use('/api/terrarium', terrariumRoutes);

@@ -22,6 +22,8 @@ const navLinkClassName = ({ isActive }) =>
 const Navbar = () => {
   const [isOpen, setIsOpen] = React.useState(false);
   const [shouldLoadCartDrawer, setShouldLoadCartDrawer] = React.useState(false);
+  const menuButtonRef = React.useRef(null);
+  const mobileMenuRef = React.useRef(null);
   const { cartCount, setIsCartOpen } = useCart();
   const { user } = useAuth();
   const location = useLocation();
@@ -44,6 +46,41 @@ const Navbar = () => {
     return () => {
       document.body.style.overflow = originalBodyOverflow;
       document.documentElement.style.overflow = originalHtmlOverflow;
+    };
+  }, [isOpen]);
+
+  React.useEffect(() => {
+    if (!isOpen) return undefined;
+
+    const menu = mobileMenuRef.current;
+    const menuButton = menuButtonRef.current;
+    const focusable = menu?.querySelectorAll('a[href], button:not([disabled]), [tabindex]:not([tabindex="-1"])');
+    focusable?.[0]?.focus();
+
+    const handleKeyDown = (event) => {
+      if (event.key === 'Escape') {
+        event.preventDefault();
+        setIsOpen(false);
+        menuButton?.focus();
+        return;
+      }
+      if (event.key !== 'Tab' || !focusable?.length) return;
+
+      const first = focusable[0];
+      const last = focusable[focusable.length - 1];
+      if (event.shiftKey && document.activeElement === first) {
+        event.preventDefault();
+        last.focus();
+      } else if (!event.shiftKey && document.activeElement === last) {
+        event.preventDefault();
+        first.focus();
+      }
+    };
+
+    document.addEventListener('keydown', handleKeyDown);
+    return () => {
+      document.removeEventListener('keydown', handleKeyDown);
+      if (menu?.contains(document.activeElement)) menuButton?.focus();
     };
   }, [isOpen]);
 
@@ -71,7 +108,7 @@ const Navbar = () => {
 
           <div className="flex items-center gap-2 sm:gap-4">
             <button
-              className="relative rounded-full p-2 text-white/80 transition-colors duration-200 hover:scale-110 hover:text-primary active:scale-95"
+              className="relative inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-white/80 transition-colors duration-200 hover:scale-110 hover:text-primary active:scale-95"
               onClick={handleOpenCart}
               onMouseEnter={() => setShouldLoadCartDrawer(true)}
               onFocus={() => setShouldLoadCartDrawer(true)}
@@ -99,7 +136,7 @@ const Navbar = () => {
             ) : (
               <Link
                 to="/login"
-                className="rounded-full p-2 text-white/80 transition-colors hover:text-primary"
+                className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full p-2 text-white/80 transition-colors hover:text-primary"
                 aria-label="Przejdź do logowania"
               >
                 <User size={20} />
@@ -107,10 +144,12 @@ const Navbar = () => {
             )}
 
             <button
-              className="rounded-full border border-white/10 p-2 text-white transition-colors hover:border-primary/40 hover:text-primary md:hidden"
+              ref={menuButtonRef}
+              className="inline-flex min-h-11 min-w-11 items-center justify-center rounded-full border border-white/10 p-2 text-white transition-colors hover:border-primary/40 hover:text-primary md:hidden"
               onClick={() => setIsOpen((current) => !current)}
               aria-label={isOpen ? 'Zamknij menu' : 'Otwórz menu'}
               aria-expanded={isOpen}
+              aria-controls="mobile-navigation"
               type="button"
             >
               {isOpen ? <X /> : <Menu />}
@@ -120,10 +159,16 @@ const Navbar = () => {
       </div>
 
       <div
+        ref={mobileMenuRef}
+        id="mobile-navigation"
         className={`fixed inset-0 z-40 flex h-[100svh] flex-col overflow-y-auto bg-black/95 px-6 pb-10 pt-24 backdrop-blur-xl transition-all duration-300 md:hidden ${
           isOpen ? 'pointer-events-auto translate-x-0 opacity-100' : 'pointer-events-none translate-x-full opacity-0'
         }`}
         aria-hidden={!isOpen}
+        role="dialog"
+        aria-modal="true"
+        aria-label="Menu główne"
+        inert={!isOpen}
       >
         <button
           onClick={() => setIsOpen(false)}

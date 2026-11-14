@@ -97,18 +97,6 @@ const Dashboard = () => {
         return labels[status] || status;
     };
 
-    const handleReturnOrder = (orderId) => {
-        const subject = `Zwrot zamówienia #${orderId}`;
-        const body = `Dzień dobry,\n\nChciałbym zgłosić zwrot zamówienia #${orderId}.\n\nPowód zwrotu:\n\nPreferowana forma zwrotu środków:\n`;
-        window.location.href = `mailto:kontakt@animalsshop.pl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    };
-
-    const handleReportIssue = (orderId) => {
-        const subject = `Zgłoszenie problemu - zamówienie #${orderId}`;
-        const body = `Dzień dobry,\n\nChciałbym zgłosić problem z zamówieniem #${orderId}.\n\nOpis problemu:\n`;
-        window.location.href = `mailto:kontakt@animalsshop.pl?subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
-    };
-
     const handleCancelOrder = async (orderId) => {
         if (!confirm('Czy na pewno chcesz anulować to zamówienie?')) return;
         try {
@@ -154,7 +142,7 @@ const Dashboard = () => {
                                 {user?.name?.charAt(0) || 'U'}
                             </div>
                             <h2 className="text-lg font-bold">{user.name}</h2>
-                            <p className="text-xs text-gray-500">{user.email}</p>
+                            <p className="text-xs text-gray-400">{user.email}</p>
                         </div>
 
                         <nav className="space-y-1">
@@ -219,7 +207,7 @@ const Dashboard = () => {
                                     </div>
                                     <div className="glass p-6 rounded-xl border border-white/5">
                                         <div className="text-gray-400 text-sm mb-1">Data założenia konta</div>
-                                        {user.created_at ? new Date(user.created_at).toLocaleDateString('pl-PL') : 'Dzisiaj'}
+                                        {user.created_at ? new Date(user.created_at).toLocaleDateString('pl-PL') : 'Nie podano'}
                                     </div>
                                 </div>
                             </motion.div>
@@ -234,11 +222,23 @@ const Dashboard = () => {
                                 className="space-y-4"
                             >
                                 <h2 className="text-2xl font-bold mb-6">Historia zamówień</h2>
+                                <p className="max-w-2xl rounded-xl border border-white/10 bg-white/5 p-4 text-sm text-gray-400">
+                                    Kanał kontaktu nie jest obecnie dostępny w panelu. Przed wysłaniem zgłoszenia sprawdź potwierdzone dane kontaktowe sklepu.
+                                </p>
+                                {orders.length === 0 ? (
+                                    <div className="rounded-2xl border border-white/10 bg-bg-secondary p-8">
+                                        <h3 className="text-lg font-semibold">Nie masz jeszcze zamówień</h3>
+                                        <p className="mt-2 text-sm text-gray-400">Gdy złożysz zamówienie, jego status i szczegóły pojawią się tutaj.</p>
+                                        <Link to="/shop" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2 font-semibold text-black transition-colors hover:bg-white">
+                                            Przejdź do asortymentu
+                                        </Link>
+                                    </div>
+                                ) : null}
                                 {orders.map((order) => (
                                     <div key={order.id} className="glass p-6 rounded-xl border border-white/5 flex flex-col gap-4">
                                         <div className="flex justify-between items-start border-b border-white/5 pb-4">
                                             <div>
-                                                <p className="text-xs text-gray-500 uppercase tracking-widest mb-1">Zamówienie #{order.id.slice(0, 8)}</p>
+                                                <p className="text-xs text-gray-400 uppercase tracking-widest mb-1">Zamówienie #{order.id.slice(0, 8)}</p>
                                                 <p className="text-sm font-bold text-gray-300">
                                                     {new Date(order.created_at).toLocaleDateString('pl-PL', {
                                                         year: 'numeric', month: 'long', day: 'numeric',
@@ -262,7 +262,7 @@ const Dashboard = () => {
                                                     <span className="text-gray-300">
                                                         <span className="text-primary font-bold">{item.quantity}x</span> {item.name || 'Produkt'}
                                                     </span>
-                                                    <span className="text-gray-500">{(item.price * item.quantity).toFixed(2)} zł</span>
+                                                    <span className="text-gray-400">{(item.price * item.quantity).toFixed(2)} zł</span>
                                                 </div>
                                             ))}
                                         </div>
@@ -273,7 +273,7 @@ const Dashboard = () => {
                                                 <p className="text-xl font-bold text-primary">{parseFloat(order.total_amount).toFixed(2)} zł</p>
                                             </div>
 
-                                            <div className="flex gap-3">
+                                            <div className="flex flex-col items-end gap-3">
                                                 {(order.status === 'pending' || order.status === 'accepted') && (
                                                     <button
                                                         onClick={() => handleCancelOrder(order.id)}
@@ -282,18 +282,6 @@ const Dashboard = () => {
                                                         Anuluj
                                                     </button>
                                                 )}
-                                                <button
-                                                    onClick={() => handleReturnOrder(order.id)}
-                                                    className="text-gray-400 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-white/10 hover:bg-white/5"
-                                                >
-                                                    Zwróć
-                                                </button>
-                                                <button
-                                                    onClick={() => handleReportIssue(order.id)}
-                                                    className="text-gray-400 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-white/10 hover:bg-white/5"
-                                                >
-                                                    Zgłoś problem
-                                                </button>
                                             </div>
                                         </div>
                                     </div>
@@ -332,8 +320,9 @@ const Dashboard = () => {
                                     )}
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Kraj</label>
+                                            <label htmlFor="profile-country" className="block text-sm font-medium text-gray-400 mb-2">Kraj</label>
                                             <input
+                                                id="profile-country"
                                                 value={formData.country}
                                                 onChange={(e) => setFormData({ ...formData, country: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-primary focus:outline-none transition-all"
@@ -341,8 +330,9 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Miasto</label>
+                                            <label htmlFor="profile-city" className="block text-sm font-medium text-gray-400 mb-2">Miasto</label>
                                             <input
+                                                id="profile-city"
                                                 value={formData.city}
                                                 onChange={(e) => setFormData({ ...formData, city: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-primary focus:outline-none transition-all"
@@ -350,8 +340,9 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Kod Pocztowy</label>
+                                            <label htmlFor="profile-postal-code" className="block text-sm font-medium text-gray-400 mb-2">Kod Pocztowy</label>
                                             <input
+                                                id="profile-postal-code"
                                                 value={formData.postalCode}
                                                 onChange={(e) => setFormData({ ...formData, postalCode: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-primary focus:outline-none transition-all"
@@ -359,8 +350,9 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Ulica</label>
+                                            <label htmlFor="profile-street" className="block text-sm font-medium text-gray-400 mb-2">Ulica</label>
                                             <input
+                                                id="profile-street"
                                                 value={formData.street}
                                                 onChange={(e) => setFormData({ ...formData, street: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-primary focus:outline-none transition-all"
@@ -368,8 +360,9 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Numer domu</label>
+                                            <label htmlFor="profile-house-number" className="block text-sm font-medium text-gray-400 mb-2">Numer domu</label>
                                             <input
+                                                id="profile-house-number"
                                                 value={formData.houseNumber}
                                                 onChange={(e) => setFormData({ ...formData, houseNumber: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-primary focus:outline-none transition-all"
@@ -377,8 +370,9 @@ const Dashboard = () => {
                                             />
                                         </div>
                                         <div>
-                                            <label className="block text-sm font-medium text-gray-400 mb-2">Numer lokalu (opcjonalnie)</label>
+                                            <label htmlFor="profile-apartment-number" className="block text-sm font-medium text-gray-400 mb-2">Numer lokalu (opcjonalnie)</label>
                                             <input
+                                                id="profile-apartment-number"
                                                 value={formData.apartmentNumber}
                                                 onChange={(e) => setFormData({ ...formData, apartmentNumber: e.target.value })}
                                                 className="w-full bg-black/50 border border-white/10 rounded-xl py-3 px-4 text-white focus:border-primary focus:outline-none transition-all"

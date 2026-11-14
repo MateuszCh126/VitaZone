@@ -1,7 +1,17 @@
 import * as db from './db.js';
 import { catalogCategories, catalogProducts } from './catalogData.js';
+import { assertDemoDataDatabaseAccess } from './demoDataSafety.js';
 
 const syncCatalog = async () => {
+    try {
+        assertDemoDataDatabaseAccess('catalog sync');
+    } catch (error) {
+        console.error(error.message);
+        process.exitCode = 1;
+        await db.poolInstance.end();
+        return;
+    }
+
     console.log('Starting catalog sync...');
     const client = await db.poolInstance.connect();
 

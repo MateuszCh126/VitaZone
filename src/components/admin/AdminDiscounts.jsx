@@ -266,7 +266,7 @@ const AdminDiscounts = () => {
 
                             <form onSubmit={handleSubmit} className="space-y-4">
                                 <div>
-                                    <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod</label>
+                                    <label className="mb-2 block text-xs font-bold uppercase text-gray-400">Kod</label>
                                     <input
                                         type="text"
                                         required
@@ -279,7 +279,7 @@ const AdminDiscounts = () => {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Typ</label>
+                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-400">Typ</label>
                                         <select
                                             value={formData.type}
                                             onChange={(e) => setFormData({ ...formData, type: e.target.value })}
@@ -291,7 +291,7 @@ const AdminDiscounts = () => {
                                     </div>
 
                                     <div>
-                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Wartość</label>
+                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-400">Wartość</label>
                                         <input
                                             type="number"
                                             required
@@ -305,7 +305,7 @@ const AdminDiscounts = () => {
 
                                 <div className="grid grid-cols-2 gap-4">
                                     <div>
-                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Start</label>
+                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-400">Start</label>
                                         <input
                                             type="datetime-local"
                                             value={formData.startsAt}
@@ -315,7 +315,7 @@ const AdminDiscounts = () => {
                                     </div>
 
                                     <div>
-                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Koniec</label>
+                                        <label className="mb-2 block text-xs font-bold uppercase text-gray-400">Koniec</label>
                                         <input
                                             type="datetime-local"
                                             value={formData.expiresAt}
@@ -326,7 +326,7 @@ const AdminDiscounts = () => {
                                 </div>
 
                                 <div>
-                                    <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Limit użyć</label>
+                                    <label className="mb-2 block text-xs font-bold uppercase text-gray-400">Limit użyć</label>
                                     <input
                                         type="number"
                                         min="1"

@@ -7,6 +7,8 @@ import { useCart } from '../context/CartContext';
 import { getOptimizedImageUrl, getSrcSet } from '../utils/imageUtils';
 import { getProductBadges } from '../utils/productBadges';
 import { trackEvent } from '../utils/analytics';
+import { serializeJsonLd } from '../utils/jsonLd';
+import { buildProductSchema } from '../utils/productSchema';
 
 const liveAnimalCategories = new Set([
   'Jaszczurki i gekony',
@@ -64,10 +66,21 @@ const ProductDetail = () => {
     setCurrentImageIndex((previous) => (previous === 0 ? product.image_urls.length - 1 : previous - 1));
   };
 
+  const handleGalleryKeyDown = (event) => {
+    if (event.altKey || event.ctrlKey || event.metaKey) return;
+    if (event.key === 'ArrowRight') {
+      event.preventDefault();
+      nextImage();
+    } else if (event.key === 'ArrowLeft') {
+      event.preventDefault();
+      previousImage();
+    }
+  };
+
   if (loading) {
     return (
       <div className="container mx-auto px-4 py-20 text-center sm:px-6">
-        <div className="text-xl font-mono text-gray-500">Ładowanie produktu...</div>
+        <div className="text-xl font-mono text-gray-400">Ładowanie produktu...</div>
       </div>
     );
   }
@@ -86,28 +99,19 @@ const ProductDetail = () => {
   const imageUrls = product.image_urls?.length ? product.image_urls : ['/hero-bg.webp'];
   const currentImage = imageUrls[currentImageIndex];
 
-  const structuredData = {
-    '@context': 'https://schema.org/',
-    '@type': 'Product',
-    name: product.name,
-    image: imageUrls[0],
-    description: product.description,
-    sku: product.id,
-    offers: {
-      '@type': 'Offer',
-      url: window.location.href,
-      priceCurrency: 'PLN',
-      price: product.price,
-      availability: product.stock > 0 ? 'https://schema.org/InStock' : 'https://schema.org/OutOfStock'
-    }
-  };
+  const canonicalUrl = `https://vitazone.vercel.app/product/${product.id}`;
+  const structuredData = buildProductSchema(product, {
+    canonicalUrl,
+    imageBaseUrl: 'https://vitazone.vercel.app'
+  });
 
   return (
     <div className="container mx-auto px-4 py-8 sm:px-6 sm:py-12">
       <Helmet>
         <title>{`${product.name} | ${product.category_name} | VitaZone`}</title>
         <meta name="description" content={product.description?.substring(0, 160)} />
-        <script type="application/ld+json">{JSON.stringify(structuredData)}</script>
+        <link rel="canonical" href={canonicalUrl} />
+        {structuredData && <script type="application/ld+json">{serializeJsonLd(structuredData)}</script>}
       </Helmet>
 
       <Link to="/shop" className="mb-6 inline-flex items-center gap-2 text-gray-400 transition-colors hover:text-white sm:mb-8">
@@ -115,13 +119,27 @@ const ProductDetail = () => {
       </Link>
 
       <div className="grid grid-cols-1 gap-8 sm:gap-12 lg:grid-cols-[1.1fr_0.9fr]">
-        <div className="space-y-4">
-          <div className="group relative h-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-bg-secondary shadow-2xl sm:h-[420px] sm:rounded-[2rem] lg:h-[520px]">
+        <div
+          className="space-y-4"
+          role="region"
+          aria-label={`Zdjęcia produktu ${product.name}`}
+          onKeyDown={handleGalleryKeyDown}
+        >
+          <p className="sr-only" role="status" aria-live="polite" aria-atomic="true">
+            Zdjęcie {currentImageIndex + 1} z {imageUrls.length}: {product.name}
+          </p>
+          <div
+            id="product-gallery-slide"
+            className="group relative h-[340px] overflow-hidden rounded-[1.75rem] border border-white/10 bg-bg-secondary shadow-2xl sm:h-[420px] sm:rounded-[2rem] lg:h-[520px]"
+            role="group"
+            aria-roledescription="slajd"
+            aria-label={`Zdjęcie ${currentImageIndex + 1} z ${imageUrls.length}`}
+          >
             <img
               src={getOptimizedImageUrl(currentImage, 1400)}
               srcSet={getSrcSet(currentImage)}
               sizes="(max-width: 1024px) 100vw, 55vw"
-              alt={`${product.name} - zdjęcie ${currentImageIndex + 1}`}
+              alt={`${product.name}, zdjęcie ${currentImageIndex + 1} z ${imageUrls.length}`}
               width="1400"
               height="1050"
               fetchPriority="high"
@@ -132,16 +150,20 @@ const ProductDetail = () => {
             {imageUrls.length > 1 && (
               <>
                 <button
+                  type="button"
                   onClick={previousImage}
-                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:left-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100"
-                  aria-label="Poprzednie zdjęcie"
+                  className="absolute left-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:left-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                  aria-label={`Poprzednie zdjęcie produktu ${product.name}`}
+                  aria-controls="product-gallery-slide"
                 >
                   <ChevronLeft size={24} />
                 </button>
                 <button
+                  type="button"
                   onClick={nextImage}
-                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:right-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100"
-                  aria-label="Następne zdjęcie"
+                  className="absolute right-3 top-1/2 -translate-y-1/2 rounded-full bg-black/50 p-2.5 text-white opacity-100 backdrop-blur-sm transition-all hover:bg-primary hover:text-black sm:right-4 sm:p-3 md:opacity-0 md:group-hover:opacity-100 md:focus-visible:opacity-100"
+                  aria-label={`Następne zdjęcie produktu ${product.name}`}
+                  aria-controls="product-gallery-slide"
                 >
                   <ChevronRight size={24} />
                 </button>
@@ -154,10 +176,10 @@ const ProductDetail = () => {
               {imageUrls.map((imageUrl, index) => (
                 <button
                   key={`${imageUrl}-${index}`}
-                  onClick={() => setCurrentImageIndex(index)}
-                  aria-label={`Pokaż zdjęcie ${index + 1} produktu ${product.name}`}
-                  aria-pressed={index === currentImageIndex}
                   type="button"
+                  onClick={() => setCurrentImageIndex(index)}
+                  aria-label={`Pokaż zdjęcie ${index + 1} z ${imageUrls.length} produktu ${product.name}`}
+                  aria-pressed={index === currentImageIndex}
                   className={`overflow-hidden rounded-2xl border ${
                     index === currentImageIndex ? 'border-primary' : 'border-white/10'
                   }`}
@@ -188,17 +210,17 @@ const ProductDetail = () => {
 
           <div className="mb-8 grid gap-3 sm:grid-cols-3 sm:gap-4">
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Cena</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Cena</p>
               <p className="mt-2 text-2xl font-bold text-white">{product.price} zł</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Dostępność</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Dostępność</p>
               <p className="mt-2 text-2xl font-bold text-white">{product.stock} szt.</p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-4">
-              <p className="text-xs uppercase tracking-[0.3em] text-gray-500">Status</p>
+              <p className="text-xs uppercase tracking-[0.3em] text-gray-400">Status</p>
               <p className="mt-2 text-base font-semibold text-primary">
-                {product.stock > 0 ? 'Gotowe do zamówienia' : 'Chwilowo niedostępne'}
+                {product.stock > 0 ? 'Dostępny' : 'Chwilowo niedostępny'}
               </p>
             </div>
           </div>
@@ -216,12 +238,10 @@ const ProductDetail = () => {
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">
               <div className="mb-3 flex items-center gap-2 text-white">
                 <CheckCircle2 size={18} className="text-primary" />
-                Co warto wiedzieć
+                Przed zakupem
               </div>
               <p>
-                {isLiveAnimal
-                  ? 'To żywe zwierzę, dlatego przed zakupem upewnij się, że masz gotowe terrarium, temperaturę, UVB i plan żywienia.'
-                  : 'Ten produkt jest częścią wyposażenia i dobrze pracuje w duecie z odpowiednio dobranym terrarium oraz kontrolą temperatury.'}
+                Sprawdź opis, dostępność i informacje właściwe dla tego produktu. Ogólne treści nie potwierdzają wymagań konkretnego zwierzęcia ani kompatybilności zestawu.
               </p>
             </div>
             <div className="rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm text-gray-300">
@@ -230,17 +250,17 @@ const ProductDetail = () => {
                 Dostawa
               </div>
               <p>
-                {isLiveAnimal
-                  ? 'Żywe zwierzęta wysyłamy wyłącznie w bezpiecznych oknach logistycznych. Po zamówieniu potwierdzamy dogodny termin kontaktowo.'
-                  : 'Akcesoria, terraria i pokarm wysyłamy standardowo w 24-48 godzin, zależnie od typu produktu i dostępności.'}
+                Koszt dostawy zobaczysz w podsumowaniu przed płatnością. Termin i sposób realizacji mogą zależeć od produktu — sprawdź aktualne{' '}
+                <Link to="/faq" className="text-emerald-300 underline underline-offset-4">warunki dostawy w FAQ</Link>.
               </p>
             </div>
           </div>
 
           {isLiveAnimal && (
-            <div className="mt-6 rounded-2xl border border-orange-500/20 bg-orange-500/10 p-5 text-sm leading-relaxed text-orange-100">
-              <strong>Uwaga:</strong> dla żywych zwierząt nie stosuje się standardowego zwrotu jak dla zwykłych akcesoriów.
-              Szczegóły znajdziesz w zakładce odstąpienia od umowy i FAQ.
+            <div className="mt-6 rounded-2xl border border-white/10 bg-white/[0.03] p-5 text-sm leading-relaxed text-gray-300">
+              <strong className="text-white">Przed zamówieniem:</strong> przeczytaj aktualne warunki{' '}
+              <Link to="/faq" className="text-emerald-300 underline underline-offset-4">dostawy</Link> i{' '}
+              <Link to="/withdrawal" className="text-emerald-300 underline underline-offset-4">odstąpienia od umowy</Link> dla tej kategorii. W razie wątpliwości nie opieraj decyzji na ogólnym opisie produktu.
             </div>
           )}
         </div>

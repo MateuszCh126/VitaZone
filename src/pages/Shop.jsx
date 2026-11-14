@@ -10,6 +10,7 @@ import { getOptimizedImageUrl, getSrcSet } from '../utils/imageUtils';
 import { CATEGORY_ORDER } from '../data/storefrontData';
 import { getProductBadges } from '../utils/productBadges';
 import { fetchJsonWithRetry } from '../utils/fetchJson';
+import { sortProducts } from '../utils/productSorting';
 
 const categoryRank = new Map(CATEGORY_ORDER.map((name, index) => [name, index]));
 
@@ -29,6 +30,8 @@ const Shop = () => {
   const [searchParams] = useSearchParams();
   const queryCategory = searchParams.get('category');
   const querySearch = searchParams.get('search');
+  const journey = searchParams.get('journey');
+  const [sortBy, setSortBy] = useState('catalog');
   const paramToken = `${queryCategory || ''}|${querySearch || ''}`;
 
   const [products, setProducts] = useState([]);
@@ -115,14 +118,23 @@ const Shop = () => {
     });
   }, [priceRange, products, searchQuery, selectedCategory]);
 
+  const sortedProducts = useMemo(() => sortProducts(filteredProducts, sortBy), [filteredProducts, sortBy]);
+  const hasActiveFilters = selectedCategory !== 'Wszystkie' || Boolean(searchQuery) || priceRange < maxPrice;
+
+  const clearFilters = () => {
+    setLocalFilters({ token: paramToken, selectedCategory: 'Wszystkie', searchQuery: '' });
+    setPriceRange(maxPrice);
+  };
+
   const renderFilters = () => (
     <div className="glass sticky top-24 rounded-3xl p-6">
       <div className="mb-8">
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold">
+        <h3 id="catalog-search-heading" className="mb-4 flex items-center gap-2 text-lg font-bold">
           <Search size={18} className="text-primary" /> Szukaj
         </h3>
         <input
           type="text"
+          aria-labelledby="catalog-search-heading"
           placeholder="Szukaj produktu lub gatunku"
           value={searchQuery}
           onChange={(event) => handleSearchChange(event.target.value)}
@@ -138,10 +150,11 @@ const Shop = () => {
           {categories.map((category) => (
             <button
               key={category}
+              aria-pressed={selectedCategory === category}
               onClick={() => handleCategoryChange(category)}
               className={`rounded-2xl px-4 py-3 text-left text-sm transition-all ${
                 selectedCategory === category
-                  ? 'bg-primary font-semibold text-black shadow-glow'
+                  ? 'border border-primary/70 bg-primary/[0.08] font-semibold text-primary'
                   : 'text-gray-400 hover:bg-white/5 hover:text-white'
               }`}
             >
@@ -153,10 +166,12 @@ const Shop = () => {
 
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold">Budżet</h3>
+          <h3 id="catalog-budget-heading" className="text-lg font-bold">Budżet</h3>
           <span className="text-sm font-mono text-primary">do {priceRange} zł</span>
         </div>
         <input
+          aria-labelledby="catalog-budget-heading"
+          aria-valuetext={`Do ${priceRange} zł`}
           type="range"
           min="0"
           max={maxPrice}
@@ -164,7 +179,7 @@ const Shop = () => {
           onChange={(event) => setPriceRange(Number(event.target.value))}
           className="h-6 w-full cursor-pointer appearance-none rounded-lg bg-white/20 accent-primary"
         />
-        <div className="mt-2 flex justify-between font-mono text-xs text-gray-500">
+        <div className="mt-2 flex justify-between font-mono text-xs text-gray-400">
           <span>0 zł</span>
           <span>{maxPrice} zł</span>
         </div>
@@ -182,9 +197,22 @@ const Shop = () => {
         </title>
         <meta
           name="description"
-          content="Przeglądaj ofertę VitaZone: zwierzęta egzotyczne, terraria oraz akcesoria do kompletnego i bezpiecznego setupu."
+          content="Przeglądaj katalog VitaZone: zwierzęta egzotyczne, terraria, ogrzewanie, oświetlenie, podłoża, dekoracje, pokarm i suplementy."
         />
       </Helmet>
+
+      {journey === 'existing' && (
+        <section className="mb-8 rounded-3xl border border-primary/20 bg-primary/[0.04] p-6" aria-labelledby="existing-journey-title">
+          <h2 id="existing-journey-title" className="text-xl font-bold text-white">Czego szukasz?</h2>
+          <p className="mt-2 text-sm text-gray-400">Wybierz dział albo przejdź do pełnej oferty.</p>
+          <div className="mt-4 flex flex-wrap gap-3">
+            {['Ogrzewanie i oświetlenie', 'Podłoża i dekoracje', 'Pokarm i suplementy'].map((category) => (
+              <button key={category} type="button" onClick={() => handleCategoryChange(category)} className="min-h-11 rounded-full border border-white/15 px-4 py-2 text-sm text-white hover:border-primary">{category}</button>
+            ))}
+            <button type="button" onClick={() => handleCategoryChange('Wszystkie')} className="min-h-11 px-4 py-2 text-sm text-primary underline underline-offset-4">Cały katalog</button>
+          </div>
+        </section>
+      )}
 
       <section className="mb-10 rounded-[2rem] border border-white/10 bg-white/[0.03] px-8 py-10 md:px-10">
         <p className="mb-3 text-sm font-semibold uppercase tracking-[0.3em] text-primary/80">Asortyment</p>
@@ -194,18 +222,23 @@ const Shop = () => {
               {selectedCategory === 'Wszystkie' ? 'Sklep terrarystyczny VitaZone' : selectedCategory}
             </h1>
             <p className="max-w-2xl text-base leading-relaxed text-gray-400">
-              Zwierzęta egzotyczne, terraria i wyposażenie do gotowych setupów. Filtruj ofertę po kategorii, cenie lub nazwie produktu.
+              Zwierzęta egzotyczne, terraria i wyposażenie terrarystyczne. Filtruj ofertę po kategorii, cenie lub nazwie produktu.
             </p>
           </div>
           <div className="rounded-2xl border border-primary/20 bg-primary/8 px-5 py-4 text-sm text-gray-200">
-            <span className="font-semibold text-white">{filteredProducts.length}</span>{' '}
-            {getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])} po aktywnych filtrach
+            {catalogError ? 'Liczba produktów będzie widoczna po załadowaniu katalogu.' : <>
+              <span className="font-semibold text-white">{filteredProducts.length}</span>{' '}
+              {getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])}{' '}
+              {hasActiveFilters ? 'po wybranych filtrach' : 'w katalogu'}
+            </>}
           </div>
         </div>
       </section>
 
       <div className="mb-6 md:hidden">
         <button
+          aria-expanded={isFilterOpen}
+          aria-controls="mobile-product-filters"
           className="flex items-center gap-2 rounded-2xl bg-white/10 px-4 py-3 text-white"
           onClick={() => setIsFilterOpen((current) => !current)}
         >
@@ -216,22 +249,20 @@ const Shop = () => {
       <div className="flex flex-col gap-12 md:flex-row md:items-start">
         <aside className="hidden w-72 flex-shrink-0 md:block">{renderFilters()}</aside>
 
-        <AnimatePresence>
-          {isFilterOpen && (
-            <motion.div
-              initial={{ opacity: 0, height: 0 }}
-              animate={{ opacity: 1, height: 'auto' }}
-              exit={{ opacity: 0, height: 0 }}
-              className="overflow-hidden md:hidden"
-            >
-              <div className="mb-6">{renderFilters()}</div>
-            </motion.div>
-          )}
-        </AnimatePresence>
+        <motion.div
+          id="mobile-product-filters"
+          initial={false}
+          animate={{ opacity: isFilterOpen ? 1 : 0, height: isFilterOpen ? 'auto' : 0 }}
+          aria-hidden={!isFilterOpen}
+          inert={!isFilterOpen}
+          className="overflow-hidden md:hidden"
+        >
+          <div className="mb-6">{renderFilters()}</div>
+        </motion.div>
 
         <div className="flex-1">
           {catalogError && (
-            <div className="mb-6 rounded-3xl border border-amber-500/20 bg-amber-500/10 px-6 py-5 text-sm text-amber-100">
+            <div role="alert" className="mb-6 rounded-3xl border border-amber-500/20 bg-amber-500/10 px-6 py-5 text-sm text-amber-100">
               <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <p>Nie udało się pobrać pełnej oferty. Spróbuj ponownie za moment.</p>
                 <button
@@ -249,10 +280,12 @@ const Shop = () => {
             {categories.slice(0, 6).map((category) => (
               <button
                 key={category}
+                type="button"
                 onClick={() => handleCategoryChange(category)}
+                aria-pressed={selectedCategory === category}
                 className={`rounded-full px-4 py-2 text-sm transition-all ${
                   selectedCategory === category
-                    ? 'bg-primary text-black'
+                    ? 'border border-primary/70 bg-primary/[0.08] font-semibold text-primary'
                     : 'border border-white/10 bg-white/[0.03] text-gray-300 hover:border-primary/40 hover:text-white'
                 }`}
               >
@@ -261,9 +294,28 @@ const Shop = () => {
             ))}
           </div>
 
+          <div className="mb-5 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+            <p className="text-sm text-gray-400" role="status" aria-live="polite">
+              {catalogError ? 'Wyniki pojawią się po ponownym pobraniu oferty.' : `Znaleziono ${filteredProducts.length} ${getPolishPlural(filteredProducts.length, ['produkt', 'produkty', 'produktów'])}`}
+            </p>
+            <label className="flex items-center gap-3 text-sm text-gray-300">Sortuj
+              <select value={sortBy} onChange={(event) => setSortBy(event.target.value)} className="min-h-11 rounded-xl border border-white/15 bg-bg-secondary px-3 text-white focus:border-primary focus:outline-none focus:ring-2 focus:ring-primary/50">
+                <option value="catalog">Kolejność katalogu</option><option value="price-asc">Cena: od najniższej</option><option value="price-desc">Cena: od najwyższej</option><option value="newest">Najnowsze</option>
+              </select>
+            </label>
+          </div>
+          {(selectedCategory !== 'Wszystkie' || searchQuery || priceRange < maxPrice) && (
+            <div className="mb-5 flex flex-wrap items-center gap-2" role="region" aria-label="Aktywne filtry">
+              {selectedCategory !== 'Wszystkie' && <button type="button" onClick={() => handleCategoryChange('Wszystkie')} className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">{selectedCategory} ×</button>}
+              {searchQuery && <button type="button" onClick={() => handleSearchChange('')} className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Szukaj: {searchQuery} ×</button>}
+              {priceRange < maxPrice && <button type="button" onClick={() => setPriceRange(maxPrice)} className="min-h-11 rounded-full border border-white/15 px-3 py-1.5 text-sm text-white">Do {priceRange} zł ×</button>}
+              <button type="button" onClick={clearFilters} className="min-h-10 px-2 text-sm text-primary underline underline-offset-4">Wyczyść filtry</button>
+            </div>
+          )}
+
           <motion.div layout className="grid grid-cols-1 gap-6 md:grid-cols-2 xl:grid-cols-3">
             <AnimatePresence>
-              {filteredProducts.map((product, index) => (
+              {sortedProducts.map((product, index) => (
                 <ProductCard
                   key={product.id}
                   product={product}
@@ -275,15 +327,13 @@ const Shop = () => {
             </AnimatePresence>
           </motion.div>
 
-          {filteredProducts.length === 0 && (
+          {!catalogError && filteredProducts.length === 0 && (
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-8 py-16 text-center">
               <h2 className="text-2xl font-bold text-white">
-                {catalogError ? 'Oferta chwilowo niedostępna' : 'Brak produktów dla wybranych filtrów'}
+                Brak produktów dla wybranych filtrów
               </h2>
               <p className="mt-3 text-gray-400">
-                {catalogError
-                  ? 'Jeśli problem się powtarza, odśwież stronę lub wróć za chwilę.'
-                  : 'Spróbuj poszerzyć budżet, zmienić kategorię albo użyć krótszej frazy wyszukiwania.'}
+                Spróbuj poszerzyć budżet, zmienić kategorię albo użyć krótszej frazy wyszukiwania.
               </p>
             </div>
           )}
@@ -303,7 +353,7 @@ const ProductCard = ({ product, index, addToCart, newProductThreshold }) => {
       animate={{ opacity: 1, scale: 1 }}
       exit={{ opacity: 0, scale: 0.985 }}
       transition={{ duration: 0.22 }}
-      className="group overflow-hidden rounded-3xl border border-white/5 bg-bg-secondary transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
+      className="group overflow-hidden rounded-card border border-white/5 bg-bg-secondary transition-all duration-300 hover:border-primary/40 hover:shadow-lg hover:shadow-primary/5"
     >
       <div className="relative h-72 overflow-hidden">
         <Link to={`/product/${product.id}`} className="block h-full w-full">
@@ -345,14 +395,14 @@ const ProductCard = ({ product, index, addToCart, newProductThreshold }) => {
             addToCart(product);
           }}
           aria-label={`Dodaj produkt ${product.name} do koszyka`}
-          className="absolute bottom-4 right-4 z-10 translate-y-4 rounded-full bg-white p-3 text-black opacity-0 shadow-xl transition-all duration-300 group-hover:translate-y-0 group-hover:opacity-100 hover:bg-primary"
+          className="absolute bottom-4 right-4 z-10 min-h-11 min-w-11 translate-y-0 rounded-full bg-white p-3.5 text-black opacity-100 shadow-xl transition-all duration-quick hover:bg-primary md:translate-y-4 md:opacity-0 md:group-hover:translate-y-0 md:group-hover:opacity-100 group-focus-within:translate-y-0 group-focus-within:opacity-100"
         >
           <ShoppingBag size={18} aria-hidden="true" />
         </button>
       </div>
 
       <div className="p-5">
-        <p className="mb-2 text-xs uppercase tracking-[0.3em] text-gray-500">{product.species}</p>
+        <p className="mb-2 text-xs uppercase tracking-[0.3em] text-gray-400">{product.species}</p>
         <Link to={`/product/${product.id}`}>
           <h3 className="text-xl font-bold text-white transition-colors group-hover:text-primary">{product.name}</h3>
         </Link>

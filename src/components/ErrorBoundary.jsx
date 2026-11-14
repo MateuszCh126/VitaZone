@@ -61,14 +61,14 @@ class ErrorBoundary extends React.Component {
                         </button>
                     </div>
 
-                    {!chunkError && this.state.error && (
+                    {!chunkError && this.state.error && import.meta.env.DEV && (
                         <details className="mt-8 rounded-2xl border border-white/10 bg-black/30 p-4 text-sm text-gray-400">
                             <summary className="cursor-pointer font-semibold text-white">Szczegóły techniczne</summary>
                             <p className="mt-4 whitespace-pre-wrap break-words">
                                 {this.state.error.toString()}
                             </p>
                             {this.state.errorInfo?.componentStack && (
-                                <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs text-gray-500">
+                                <pre className="mt-4 overflow-x-auto whitespace-pre-wrap text-xs text-gray-400">
                                     {this.state.errorInfo.componentStack}
                                 </pre>
                             )}

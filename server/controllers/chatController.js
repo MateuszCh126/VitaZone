@@ -47,8 +47,6 @@ const CATEGORY_ALIASES = {
     'Pokarm i suplementy': ['pokarm', 'karma', 'owady', 'suplementy', 'wapn', 'wapń', 'mlecznik', 'swierszcz', 'świerszcz', 'karaczan']
 };
 
-const BEGINNER_HINTS = ['poczatkuj', 'początkuj', 'na start', 'pierwsze', 'latwy', 'łatwy', 'spokojny', 'dla nowicjusza'];
-
 const sanitizeAssistantMessage = (text) => text
     .replace(/\*\*(.*?)\*\*/gs, '$1')
     .replace(/__(.*?)__/gs, '$1')
@@ -64,8 +62,8 @@ Nigdy nie podajesz swojego imienia, nie wymyslasz sobie imienia, nie proponujesz
 Twoj cel: doradzac klientom w wyborze zwierzat egzotycznych i akcesoriow, ale zawsze w oparciu o realna oferte sklepu, jesli dostajesz kontekst katalogu.
 Zasady:
 1. ZAWSZE promuj odpowiedzialna hodowle.
-2. Dla poczatkujacych polecaj gatunki latwe w hodowli, ale tylko jesli sa zgodne z dostepna oferta.
-3. Odradzaj gatunki agresywne lub trudne osobom bez doswiadczenia.
+2. Nie oznaczaj gatunkow jako latwych, polecanych na start ani odpowiednich bez potwierdzonego, produktowego zrodla. Gdy brak takich danych, przedstawiaj tylko fakty widoczne w katalogu.
+3. Nie klasyfikuj gatunku jako agresywnego, trudnego ani latwego bez potwierdzonego zrodla. Jesli katalog nie zawiera takich informacji, powiedz to wprost.
 4. Badz mily, pomocny i uzywaj fachowego, ale zrozumialego jezyka.
 4a. Pisz naturalnie i bez nadmiernego formalizmu. Nie uzywaj form typu "Szanowny Panie/Pani", chyba ze klient sam pisze bardzo formalnie.
 5. Jesli ktos pyta o psy, koty lub chomiki, uprzejmie wyjasnij, ze zajmujesz sie tylko zwierzetami egzotycznymi i terrariowymi.
@@ -75,7 +73,8 @@ Zasady:
 9. Gdy klient pyta o dostepne produkty, wymien 3-6 najlepiej pasujacych pozycji z oferty i przy kazdej napisz w jednym zdaniu, co ja wyroznia.
 10. Koncz odpowiedzi pelnym, domknietym zdaniem.
 11. Gdy sie witasz, uzyj formy: "Czesc, jestem Asystentem terrarystyki. Jak moge pomoc?" (or the English equivalent if greeted in English).
-12. Dostosuj jezyk odpowiedzi (polski lub angielski) do jezyka, w ktorym pisze uzytkownik. Pisz naturalnie i plynnie.`;
+12. Dostosuj jezyk odpowiedzi (polski lub angielski) do jezyka, w ktorym pisze uzytkownik. Pisz naturalnie i plynnie.
+13. Odpowiadaj w zakresie informacji z katalogu i zakupow. Nie diagnozuj, nie proponuj leczenia ani nie zastępuj lekarza weterynarii. Nie przedstawiaj ogolnych porad hodowlanych jako potwierdzonych wymagan danego osobnika.`;
 
 const normalizeText = (value) => (value || '')
     .toLowerCase()
@@ -184,13 +183,6 @@ const scoreProductAgainstQuery = (product, normalizedQuery, matchedCategories) =
         if (normalizeText(product.category_name || '').includes(token)) score += 2;
         if (haystack.includes(token)) score += 1;
     });
-
-    if (BEGINNER_HINTS.some((hint) => normalizedQuery.includes(hint))) {
-        const beginnerFriendly = ['Gekon lamparci', 'Agama brodata', 'Wąż zbożowy', 'Żółw grecki'];
-        if (beginnerFriendly.some((phrase) => product.name.includes(phrase))) {
-            score += 4;
-        }
-    }
 
     return score;
 };

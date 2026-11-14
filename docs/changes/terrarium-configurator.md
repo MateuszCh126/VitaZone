@@ -1,6 +1,6 @@
 # Terrarium configurator implementation
 
-- Status: implemented locally on `codex/terrarium-configurator-3d`; review and merge remain pending.
+- Status: implemented on `codex/terrarium-configurator-3d`; locally reconciled with the `main` tree after PR #2 and reviewed. Final PR #3 push/merge remains pending; migration and deployment are not authorized.
 - Scope: lazy 3D builder, SKU metadata contract, project submission/review, quote acceptance and Stripe checkout integration.
 - Data: no live inventory or GLB models were supplied. The local development catalog is clearly marked demo-only and cannot be submitted. Production displays an empty catalog state until real SKUs are configured.
 - Database: additive migration `server/scripts/migrations/006_create_terrarium_projects.sql`; not applied. Apply using `pnpm migrate:terrarium` only in the intended environment after review.
@@ -14,6 +14,9 @@
 - `pnpm exec playwright test --config playwright.terrarium-production.config.js`: 1 production-preview scenario passed: storefront does not load the 3D scene chunk and an empty SKU catalog shows no demo products.
 - Read-only GPT-6 Luna reviews found and helped close the race between a paid webhook and attaching its order to a project; checkout now reconciles the order after attachment. Delayed payment success and failure events are handled explicitly. Reviews also found a malformed-SKU metadata trust gap and possible PostgreSQL integer overflow; both are guarded and covered by regression tests.
 - The controller/middleware integration tests use mocked repositories and Stripe. Actual SQL execution, migration application, Stripe API/webhooks and live WebGL/model calibration have not been exercised because no database service, credentials, production SKUs or GLB assets are available in this workspace.
+- The integration review found a process-crash window after a terrarium project entered `payment_pending`. Recovery now reclaims only stale attempts without a stored Stripe session, keeps the same order/Stripe idempotency key, reuses the immutable order snapshot, and stops expired/ambiguous attempts with HTTP 409. Regression verification: `pnpm exec vitest run tests/unit/terrariumRepository.test.js tests/integration/terrariumLifecycle.test.js` — 2 files / 9 tests passed.
+- After reconciling current `main`, combined verification passed: `pnpm test --run` — 31 files / 149 tests; `pnpm lint`; `pnpm build`; `pnpm check:secrets`; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21 storefront tests; `pnpm exec playwright test --config playwright.terrarium.config.js` — 3 tests; and `pnpm exec playwright test --config playwright.terrarium-production.config.js` — 1 preview-build test. Default Playwright config now scopes to `storefront.spec.js` so the production-preview test runs under its dedicated `vite preview` config.
+- Build warnings: `caniuse-lite` data is 11 months old; the lazy Three.js scene bundle is about 1,068 KB / 288 KB gzip and remains a target-device performance risk. Playwright APIs and Stripe are mocked; no real database, Stripe account, migration or WebGL model calibration was used.
 
 ## Operational prerequisites
 

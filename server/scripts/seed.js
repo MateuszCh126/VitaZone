@@ -1,11 +1,20 @@
 import * as db from './db.js';
 import { createRequire } from 'module';
 import { catalogCategories, catalogProducts } from './catalogData.js';
+import { assertDemoDataDatabaseAccess } from './demoDataSafety.js';
 
 const require = createRequire(import.meta.url);
 const bcrypt = require('bcrypt');
 
 const seed = async () => {
+    try {
+        assertDemoDataDatabaseAccess('seed');
+    } catch (error) {
+        console.error(error.message);
+        process.exitCode = 1;
+        await db.poolInstance.end();
+        return;
+    }
     console.log('Starting database seeding...');
 
     try {
@@ -61,8 +70,9 @@ const seed = async () => {
         console.log('Seeding completed successfully.');
     } catch (error) {
         console.error('Seeding failed:', error);
+        process.exitCode = 1;
     } finally {
-        process.exit();
+        await db.poolInstance.end();
     }
 };
 

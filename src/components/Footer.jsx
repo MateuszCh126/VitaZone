@@ -1,6 +1,6 @@
 ﻿import React from 'react';
 import { Link } from 'react-router-dom';
-import { Mail, MapPin, MessageSquareMore, Phone } from 'lucide-react';
+import { MessageSquareMore } from 'lucide-react';
 import { FEATURED_CATEGORY_NAMES, STOREFRONT_CATEGORIES, getCategoryHref } from '../data/storefrontData';
 
 const featuredLinks = STOREFRONT_CATEGORIES.filter((category) => FEATURED_CATEGORY_NAMES.includes(category.name));
@@ -21,11 +21,11 @@ const Footer = () => {
               dekoracje, pokarm i wsparcie przed pierwszym zakupem.
             </p>
             <div className="flex flex-wrap gap-3 text-sm">
-              <a href="mailto:kontakt@animalsshop.pl" className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-gray-300 transition-colors hover:border-primary/40 hover:text-white sm:w-auto">
-                <Mail size={14} className="text-primary" /> Napisz do sklepu
-              </a>
+              <Link to="/contact" className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-gray-300 transition-colors hover:border-primary/40 hover:text-white sm:w-auto">
+                <MessageSquareMore size={14} className="text-primary" /> Dane kontaktowe
+              </Link>
               <Link to="/faq" className="inline-flex w-full items-center justify-center gap-2 rounded-full border border-white/10 px-4 py-2 text-gray-300 transition-colors hover:border-primary/40 hover:text-white sm:w-auto">
-                <MessageSquareMore size={14} className="text-primary" /> FAQ i wysyłka
+                <MessageSquareMore size={14} className="text-primary" /> FAQ: dostawa, płatności i zwroty
               </Link>
             </div>
           </div>
@@ -47,11 +47,12 @@ const Footer = () => {
             <h3 className="mb-6 font-bold text-white">Informacje</h3>
             <ul className="space-y-4 text-sm text-gray-400">
               <li><Link to="/about" className="transition-colors hover:text-primary">O sklepie</Link></li>
-              <li><Link to="/faq" className="transition-colors hover:text-primary">FAQ i wysyłka</Link></li>
+              <li><Link to="/faq" className="transition-colors hover:text-primary">FAQ: dostawa, płatności i zwroty</Link></li>
               <li><Link to="/contact" className="transition-colors hover:text-primary">Kontakt</Link></li>
               <li><Link to="/privacy" className="transition-colors hover:text-primary">Polityka prywatności</Link></li>
               <li><Link to="/terms" className="transition-colors hover:text-primary">Regulamin</Link></li>
               <li><Link to="/cookies" className="transition-colors hover:text-primary">Cookies</Link></li>
+              <li><button id="cookie-settings-trigger" type="button" onClick={() => window.dispatchEvent(new Event('open_cookie_settings'))} className="rounded-sm text-left transition-colors hover:text-primary focus-visible:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-primary focus-visible:outline-offset-4">Ustawienia prywatności</button></li>
               <li><Link to="/withdrawal" className="transition-colors hover:text-primary">Odstąpienie od umowy</Link></li>
             </ul>
           </div>
@@ -60,27 +61,14 @@ const Footer = () => {
             <h3 className="mb-6 font-bold text-white">Kontakt</h3>
             <ul className="space-y-4 text-sm text-gray-400">
               <li className="flex items-start gap-3">
-                <MapPin size={16} className="mt-0.5 text-primary" />
-                <span>ul. Terrarystyczna 10, 00-001 Warszawa</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Phone size={16} className="mt-0.5 text-primary" />
-                <span>+48 123 456 789</span>
-              </li>
-              <li className="flex items-start gap-3">
-                <Mail size={16} className="mt-0.5 text-primary" />
-                <a href="mailto:kontakt@animalsshop.pl" className="transition-colors hover:text-primary">
-                  Napisz do sklepu
-                </a>
+                <MessageSquareMore size={16} className="mt-0.5 text-primary" />
+                <Link to="/contact" className="transition-colors hover:text-primary">Dane kontaktowe</Link>
               </li>
             </ul>
-            <p className="mt-6 text-xs leading-relaxed text-gray-500">
-              Zwierzęta wysyłamy wyłącznie w bezpiecznych oknach logistycznych. Akcesoria i pokarm nadajemy szybciej, zwykle w 24-48 h.
-            </p>
           </div>
         </div>
 
-        <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-500">
+        <div className="border-t border-white/10 pt-8 text-center text-sm text-gray-400">
           <p>&copy; {new Date().getFullYear()} VitaZone. Sklep terrarystyczny online.</p>
         </div>
       </div>

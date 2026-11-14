@@ -1,95 +1,483 @@
 import { test, expect } from '@playwright/test';
 
-test.describe('VitaZone D2C Storefront E2E Tests', () => {
+const demoProduct = {
+  id: '00000000-0000-4000-8000-000000000001',
+  name: 'Terrarium demonstracyjne',
+  price: 249,
+  stock: 3,
+  category_name: 'Terraria i zestawy',
+  species: '',
+  description: 'Dane demonstracyjne używane wyłącznie w lokalnych testach interfejsu.',
+  image_urls: ['/hero-bg-1280.avif'],
+  is_active: true,
+  created_at: '2020-01-01T00:00:00.000Z'
+};
 
+test.describe('VitaZone storefront (demo data)', () => {
   test.beforeEach(async ({ page }) => {
-    // Navigate to homepage first
-    await page.goto('/');
-    
-    // Inject cookie consent directly into localStorage to bypass the cookie banner
-    await page.evaluate(() => {
-      localStorage.setItem('cookie_consent', JSON.stringify({
-        necessary: true,
-        analytics: true,
-        marketing: true,
-        timestamp: new Date().toISOString()
-      }));
+    await page.addInitScript(() => {
+      if (!window.location.search.includes('consent-test')) {
+        localStorage.setItem('cookie_consent_v1', JSON.stringify({
+          necessary: true,
+          analytics: true,
+          timestamp: new Date().toISOString()
+        }));
+      }
     });
-    
-    // Reload or visit the page again to apply consent state
+
+    await page.route('**/api/auth/me', (route) => {
+      const searchParams = new URL(page.url()).searchParams;
+      if (searchParams.has('dashboard-demo') || searchParams.has('admin-demo')) {
+        const role = searchParams.has('admin-demo') ? 'admin' : 'user';
+        return route.fulfill({
+          status: 200,
+          json: {
+            id: 'demo-user-0001',
+            email: 'demo@example.test',
+            name: 'Użytkownik demo',
+            firstName: 'Użytkownik',
+            lastName: 'Demo',
+            role,
+            created_at: '2026-01-01T00:00:00.000Z'
+          }
+        });
+      }
+      return route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
+    });
+    await page.route('**/api/consent', (route) => route.fulfill({ status: 204, body: '' }));
+    await page.route('**/api/stripe/config', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ shippingAmountCents: 1500 })
+    }));
+    await page.route('**/api/orders/user/**', (route) => route.fulfill({ status: 200, json: [] }));
+    await page.route('**/api/admin/stats', (route) => route.fulfill({
+      status: 200,
+      json: { totalRevenue: 0, revenueGrowth: '0.0', totalOrders: 0, ordersProcessing: 0, activeUsers: 0 }
+    }));
+    await page.route('**/api/admin/orders', (route) => route.fulfill({ status: 200, json: [] }));
+    await page.route('**/api/admin/products', (route) => route.fulfill({ status: 200, json: [demoProduct] }));
+    await page.route('**/api/admin/users', (route) => route.fulfill({ status: 200, json: [] }));
+    await page.route('**/api/products**', async (route) => {
+      if (new URL(page.url()).searchParams.has('catalog-error-test')) {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Demo catalog failure' })
+        });
+        return;
+      }
+
+      const url = new URL(route.request().url());
+      const isProductDetail = url.pathname.endsWith(`/api/products/${demoProduct.id}`);
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify(isProductDetail ? demoProduct : [demoProduct])
+      });
+    });
+    await page.route('**/api/chat', async (route) => {
+      await route.fulfill({
+        status: 200,
+        contentType: 'application/json',
+        body: JSON.stringify({ message: 'To odpowiedź demonstracyjna oparta na informacjach z testowego katalogu.' })
+      });
+    });
+  });
+
+  test('shows both shopping journeys and the main heading', async ({ page }) => {
     await page.goto('/');
-  });
-  
-  test('should load the homepage and check elements', async ({ page }) => {
-    // Check navigation title / branding
-    const headerBranding = page.locator('header a, nav a').first();
-    await expect(headerBranding).toContainText(/VitaZone/i);
-    
-    // Check home page sections
-    const mainTitle = page.locator('h1');
-    await expect(mainTitle).toBeVisible();
+
+    await expect(page.getByRole('heading', { level: 1 })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Urządzam pierwsze terrarium/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Mam już zwierzę/ })).toBeVisible();
   });
 
-  test('should navigate to shop and add a product to the cart', async ({ page }) => {
+  test('gives both homepage shopping journeys equal visual weight', async ({ page }) => {
+    await page.goto('/');
+
+    const firstJourney = page.getByRole('link', { name: /Urządzam pierwsze terrarium/ });
+    const existingOwnerJourney = page.getByRole('link', { name: /Mam już zwierzę/ });
+    const visualTreatment = (element) => element.evaluate((node) => {
+      const style = window.getComputedStyle(node);
+      return {
+        backgroundColor: style.backgroundColor,
+        borderColor: style.borderColor,
+        borderStyle: style.borderStyle,
+        borderWidth: style.borderWidth,
+        borderRadius: style.borderRadius,
+        fontWeight: style.fontWeight,
+        padding: style.padding
+      };
+    });
+
+    await expect(firstJourney).toBeVisible();
+    await expect(existingOwnerJourney).toBeVisible();
+    expect(await visualTreatment(firstJourney)).toEqual(await visualTreatment(existingOwnerJourney));
+  });
+
+  test('keeps one main landmark and provides a keyboard skip link on the about page', async ({ page }) => {
+    await page.goto('/about');
+
+    await expect(page.getByRole('main')).toHaveCount(1);
+    const skipLink = page.getByRole('link', { name: 'Przejdź do treści' });
+    await expect(skipLink).toBeAttached();
+    await page.keyboard.press('Tab');
+    await expect(skipLink).toBeFocused();
+    await page.keyboard.press('Enter');
+    await expect(page.locator('#main-content')).toBeFocused();
+  });
+
+  test('labels account fields and connects validation errors to their inputs', async ({ page }) => {
+    await page.goto('/login');
+    await expect(page.getByRole('heading', { level: 1, name: 'Witaj ponownie' })).toBeVisible();
+    await expect(page.getByLabel('Adres email')).toBeVisible();
+    await expect(page.getByLabel('Hasło')).toBeVisible();
+
+    await page.goto('/register');
+    await expect(page.getByRole('heading', { level: 1, name: 'Utwórz konto' })).toBeVisible();
+    await expect(page.getByLabel('Imię')).toBeVisible();
+    await expect(page.getByLabel('Nazwisko')).toBeVisible();
+    await expect(page.getByLabel('Adres email')).toBeVisible();
+    await page.getByRole('button', { name: /Zarejestruj się/ }).click();
+
+    await expect(page.getByLabel('Nazwisko')).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.getByLabel('Nazwisko')).toHaveAttribute('aria-describedby', 'register-last-name-error');
+    await expect(page.locator('#register-last-name-error')).toHaveAttribute('role', 'alert');
+    await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toHaveAttribute('aria-invalid', 'true');
+    await expect(page.locator('#register-age-error')).toHaveAttribute('role', 'alert');
+  });
+
+  test('keeps the mobile chat launcher clear of registration choices and submit action', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.goto('/register');
+    const chatLauncher = page.locator('button[aria-label="Otwórz czat"]');
+    await expect(chatLauncher).toBeAttached({ timeout: 5000 });
+
+    const hasChatOverlap = await page.evaluate(() => {
+      const chat = document.querySelector('button[aria-label="Otwórz czat"]');
+      const consent = document.querySelector('#newsletter')?.closest('div');
+      const submit = document.querySelector('button[type="submit"]');
+      if (!chat || !consent || !submit || getComputedStyle(chat).display === 'none') return false;
+
+      const intersects = (left, right) => {
+        const a = left.getBoundingClientRect();
+        const b = right.getBoundingClientRect();
+        return a.left < b.right && a.right > b.left && a.top < b.bottom && a.bottom > b.top;
+      };
+
+      return intersects(chat, consent) || intersects(chat, submit);
+    });
+
+    expect(hasChatOverlap).toBe(false);
+  });
+
+  test('finds a demo product, opens its details, and adds it to the cart', async ({ page }) => {
     await page.goto('/shop');
-    
-    // Search for an in-stock product (like "Gekon")
-    const searchInput = page.locator('input[placeholder*="Szukaj"]').first();
-    await expect(searchInput).toBeVisible();
-    await searchInput.fill('Gekon');
-    
-    // Click the details link of the filtered in-stock product card
-    const detailsLink = page.locator('text=Szczegóły →').first();
-    await expect(detailsLink).toBeVisible();
-    await detailsLink.click();
-    
-    // Wait for the product details page
-    await page.waitForURL(/\/product\/.+/);
-    
-    // Click the add to cart button (should be enabled for in-stock gecko)
-    const addToCartBtn = page.locator('button:has-text("Dodaj do koszyka")').first();
-    await expect(addToCartBtn).toBeVisible();
-    await expect(addToCartBtn).toBeEnabled();
-    await addToCartBtn.click();
-    
-    // Open the cart drawer manually by clicking the navbar shopping bag button
-    const cartNavBtn = page.locator('button[aria-label^="Otwórz koszyk"]').first();
-    await expect(cartNavBtn).toBeVisible();
-    await cartNavBtn.click();
-    
-    // Verify the cart drawer opens
-    const cartDrawerHeader = page.locator('h2:has-text("Koszyk"), h3:has-text("Koszyk"), :has-text("Twój koszyk")').first();
-    await expect(cartDrawerHeader).toBeVisible();
+    await page.locator('aside').getByPlaceholder('Szukaj produktu lub gatunku').fill('Terrarium demonstracyjne');
+
+    await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
+    await page.getByRole('link', { name: /Szczegóły/ }).click();
+    await expect(page).toHaveURL(new RegExp(`/product/${demoProduct.id}`));
+    await expect(page.getByRole('heading', { name: demoProduct.name })).toBeVisible();
+    await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+    await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: /Twój koszyk/ })).toBeVisible();
+    await expect(page.getByRole('heading', { name: demoProduct.name, level: 3 })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Zamknij koszyk' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: /Otwórz koszyk/ })).toBeFocused();
   });
 
-  test('should interact with the AI terrarium assistant', async ({ page }) => {
-    // Check if the chat widget trigger button is present
-    const chatTrigger = page.locator('button[aria-label*="czat"], button[aria-label*="Czat"]').first();
-    await expect(chatTrigger).toBeVisible();
-    
-    // Open the chat widget (Cookie banner is dismissed, so it should not block)
-    await chatTrigger.click();
-    
-    // Verify the assistant window is open
-    const chatTitle = page.locator('h3:has-text("Asystent terrarystyki")');
-    await expect(chatTitle).toBeVisible();
-    
-    // Send a message
-    const chatInput = page.locator('input[placeholder*="Napisz"], input[placeholder*="wiadomość"]').first();
-    const chatSubmitBtn = page.locator('button[aria-label="Wyślij wiadomość"]').first();
-    await expect(chatInput).toBeVisible();
-    await expect(chatSubmitBtn).toBeVisible();
-    
-    await chatInput.fill('Hi, recommend a reptile for a beginner');
-    await chatSubmitBtn.click();
-    
-    // Check that our message appears in the conversation list
-    const userMsg = page.locator('div:has-text("Hi, recommend a reptile for a beginner")').last();
-    await expect(userMsg).toBeVisible();
-    
-    // Wait for the assistant reply bubble (which has the .justify-start layout class) to appear
-    const assistantBubble = page.locator('.custom-scrollbar .justify-start').first();
-    await expect(assistantBubble).toBeVisible({ timeout: 15000 });
+  test('explains an empty search result and offers a direct filter reset', async ({ page }) => {
+    await page.goto('/shop');
+    await expect(page.getByRole('textbox', { name: 'Szukaj' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Budżet' })).toBeVisible();
+    await page.locator('aside').getByPlaceholder('Szukaj produktu lub gatunku').fill('fraza bez wyników');
+
+    await expect(page.getByRole('heading', { name: 'Brak produktów dla wybranych filtrów' })).toBeVisible();
+    await page.getByRole('button', { name: 'Wyczyść filtry' }).click();
+    await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
   });
 
+  test('shows one actionable catalog error instead of duplicating an empty state', async ({ page }) => {
+    await page.goto('/shop?catalog-error-test');
+
+    await expect(page.getByRole('alert')).toContainText('Nie udało się pobrać pełnej oferty');
+    await expect(page.getByRole('button', { name: 'Spróbuj ponownie' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Oferta chwilowo niedostępna' })).toHaveCount(0);
+  });
+
+  test('renders every application route at a narrow viewport without a React crash', async ({ page }) => {
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    const routes = [
+      '/',
+      '/shop',
+      `/product/${demoProduct.id}`,
+      '/about',
+      '/contact',
+      '/faq',
+      '/terms',
+      '/privacy',
+      '/cookies',
+      '/withdrawal',
+      '/login',
+      '/register',
+      '/checkout',
+      '/dashboard',
+      '/admin',
+      '/not-a-real-route'
+    ];
+
+    for (const route of routes) {
+      await page.goto(route);
+      await expect(page.getByRole('main')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
+    }
+
+    expect(pageErrors).toEqual([]);
+  });
+
+  test('shows a useful empty state in the authenticated order history', async ({ page }) => {
+    await page.goto('/dashboard?dashboard-demo');
+    await page.getByRole('button', { name: 'Moje zamówienia' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Nie masz jeszcze zamówień' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Przejdź do asortymentu' })).toHaveAttribute('href', '/shop');
+  });
+
+  test('renders the admin dashboard using isolated demo account and API data', async ({ page }) => {
+    await page.goto('/admin?admin-demo');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Zarządzanie sklepem' })).toBeVisible();
+    await expect(page.getByText('Produkty w katalogu')).toBeVisible();
+    await expect(page.getByText('Unikalne Gatunki')).toHaveCount(0);
+  });
+
+  test('does not show live-animal withdrawal guidance in an accessory-only cart', async ({ page }) => {
+    await page.goto(`/product/${demoProduct.id}`);
+    await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+
+    await expect(page.getByText(/Przed zakupem żywego zwierzęcia/)).toHaveCount(0);
+    await expect(page.getByText(/dla żywych zwierząt nie obowiązuje standardowy zwrot/)).toHaveCount(0);
+  });
+
+  test('completes the guest checkout handoff without trusting browser identity', async ({ page }) => {
+    let checkoutPayload;
+    await page.route('**/api/shipping/quotes', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/json',
+      body: JSON.stringify({ quotes: [{ method: 'inpost', label: 'InPost', amountCents: 1500, currency: 'pln' }] })
+    }));
+    await page.route('**/api/stripe/create-checkout-session', async (route) => {
+      checkoutPayload = route.request().postDataJSON();
+      await route.fulfill({
+        status: 201,
+        contentType: 'application/json',
+        body: JSON.stringify({ sessionId: 'cs_test_demo1234567890', url: '/mock-stripe-checkout' })
+      });
+    });
+    await page.goto(`/product/${demoProduct.id}`);
+    await page.getByRole('button', { name: 'Dodaj produkt Terrarium demonstracyjne do koszyka' }).click();
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+    await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Finalizacja zamówienia' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Dane dostawy' })).toHaveAttribute('aria-current', 'step');
+    await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
+    await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');
+    await expect(page.getByText(/Przy wycenie kosztu dostawy Furgonetka otrzyma dane odbiorcy/)).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Informacje o danych' })).toHaveAttribute('href', '/privacy');
+    await page.getByLabel('Imię i nazwisko').fill('Jan Kowalski');
+    await page.getByLabel('Adres e-mail').fill('jan@example.com');
+    await page.getByLabel('Telefon do dostawy').fill('500600700');
+    await page.getByLabel('Kraj').fill('Polska');
+    await page.getByLabel('Miasto').fill('Warszawa');
+    await page.getByLabel('Kod pocztowy').fill('00-001');
+    await page.getByLabel('Ulica').fill('Testowa');
+    await page.getByLabel('Numer domu').fill('1');
+    await page.getByRole('main').getByRole('button', { name: 'Sprawdź metody i koszt dostawy' }).click();
+    await page.getByRole('radio', { name: /InPost/ }).check();
+    await expect(page.getByRole('group').getByText('15.00 zł')).toBeVisible();
+    await page.getByRole('main').getByRole('button', { name: 'Przejdź do płatności' }).click();
+    await expect(page.getByRole('heading', { name: 'Płatność' })).toBeFocused();
+    await expect(page.getByRole('heading', { name: 'Płatność' })).toHaveAttribute('aria-current', 'step');
+    await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
+    await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toBeFocused();
+    await expect(page.getByText('Zaznacz to oświadczenie, aby przejść do płatności.', { exact: true })).toBeVisible();
+    await expect(page.getByLabel(/Oświadczam, że mam ukończone 18 lat/)).toHaveAttribute('aria-invalid', 'true');
+    await page.getByLabel(/Oświadczam, że mam ukończone 18 lat/).check();
+    await page.getByRole('button', { name: 'Przejdź do Stripe Checkout' }).click();
+
+    await expect(page).toHaveURL(/\/mock-stripe-checkout$/);
+    expect(checkoutPayload).toMatchObject({
+      items: [{ productId: demoProduct.id, quantity: 1 }],
+      shipping: { email: 'jan@example.com', phone: '500600700', postal_code: '00-001' },
+      deliveryMethod: 'inpost',
+      expectedShippingAmountCents: 1500
+    });
+    expect(checkoutPayload).not.toHaveProperty('userId');
+  });
+
+  test('gives an empty checkout a direct path back to the catalog', async ({ page }) => {
+    await page.goto('/checkout');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Koszyk jest pusty' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Wróć do asortymentu' })).toHaveAttribute('href', '/shop');
+    await expect(page.getByLabel('Adres e-mail')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Sprawdź metody i koszt dostawy' })).toHaveCount(0);
+  });
+
+  test('explains the chat scope and displays its response', async ({ page }) => {
+    await page.goto('/');
+    await page.getByRole('button', { name: 'Otwórz czat' }).click();
+
+    await expect(page.getByText('Informacje o ofercie sklepu')).toBeVisible();
+    await expect(page.getByText(/nie zastępuje lekarza weterynarii/)).toBeVisible();
+    await page.getByLabel('Wiadomość do asystenta').fill('Pokaż informacje o terrarium');
+    await page.getByRole('button', { name: 'Wyślij wiadomość' }).click();
+    await expect(page.getByText(/To odpowiedź demonstracyjna/)).toBeVisible();
+  });
+
+  test('keeps a permanent green halo off the floating chat launcher', async ({ page }) => {
+    await page.goto('/');
+
+    const launcher = page.getByRole('button', { name: 'Otwórz czat' });
+    await expect(launcher).toBeVisible({ timeout: 5000 });
+    const boxShadow = await launcher.evaluate((element) => getComputedStyle(element).boxShadow);
+
+    expect(boxShadow).not.toMatch(/0,\s*255,\s*136/);
+  });
+
+  test('stores a refusal of optional analytics', async ({ page }) => {
+    const optionalScriptRequests = [];
+    page.on('request', (request) => {
+      if (request.url().includes('va.vercel-scripts.com/v1/')) optionalScriptRequests.push(request.url());
+    });
+    await page.goto('/?consent-test');
+    await page.getByRole('button', { name: 'Odrzuć analitykę' }).click();
+
+    await expect(page.getByRole('region', { name: 'Ustawienia cookies' })).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Ustawienia prywatności' })).toBeFocused();
+    const consent = await page.evaluate(() => JSON.parse(localStorage.getItem('cookie_consent_v1')));
+    expect(consent).toMatchObject({ necessary: true, analytics: false });
+    expect(consent).not.toHaveProperty('marketing');
+    expect(optionalScriptRequests).toEqual([]);
+    await expect(page.locator('script[src*="vercel-scripts.com"]')).toHaveCount(0);
+  });
+
+  test('lets a visitor reopen privacy settings after saving a choice', async ({ page }) => {
+    await page.goto('/?consent-test');
+    await page.getByRole('button', { name: 'Odrzuć analitykę' }).click();
+    await page.getByRole('button', { name: 'Ustawienia prywatności' }).click();
+    await expect(page.getByRole('heading', { name: 'Ustawienia prywatności' })).toBeFocused();
+    await page.getByRole('button', { name: 'Wróć do wyboru zgody' }).click();
+    await expect(page.getByRole('button', { name: 'Odrzuć analitykę' })).toBeFocused();
+    await page.getByRole('button', { name: 'Dostosuj' }).click();
+    await expect(page.getByLabel(/Analityka Vercel/)).not.toBeChecked();
+    await page.getByLabel(/Analityka Vercel/).check();
+    await page.getByRole('button', { name: 'Zapisz wybór' }).click();
+    await expect.poll(() => page.evaluate(() => JSON.parse(localStorage.getItem('cookie_consent_v1'))?.analytics)).toBe(true);
+    await expect(page.getByRole('button', { name: 'Ustawienia prywatności' })).toBeFocused();
+  });
+
+  test('loads optional analytics scripts only after consent is accepted', async ({ page }) => {
+    const optionalScriptRequests = [];
+    page.on('request', (request) => {
+      if (request.url().includes('va.vercel-scripts.com/v1/')) optionalScriptRequests.push(request.url());
+    });
+    await page.route('https://va.vercel-scripts.com/v1/**', (route) => route.fulfill({
+      status: 200,
+      contentType: 'application/javascript',
+      body: 'window.__vercelConsentScriptLoaded = true;'
+    }));
+    await page.goto('/?consent-test');
+    await page.getByRole('button', { name: 'Akceptuj analitykę' }).click();
+
+    await expect.poll(() => optionalScriptRequests.length).toBe(2);
+    expect(optionalScriptRequests).toEqual(expect.arrayContaining([
+      expect.stringContaining('/v1/script.debug.js'),
+      expect.stringContaining('/v1/speed-insights/script.debug.js')
+    ]));
+  });
+
+  test('keeps the primary shopping choices visible on a narrow screen', async ({ page }) => {
+    await page.setViewportSize({ width: 390, height: 844 });
+    await page.emulateMedia({ reducedMotion: 'reduce' });
+    await page.goto('/');
+
+    await expect(page.getByRole('link', { name: /Urządzam pierwsze terrarium/ })).toBeVisible();
+    await expect(page.getByRole('link', { name: /Mam już zwierzę/ })).toBeVisible();
+    const menuToggle = page.getByRole('button', { name: 'Otwórz menu' });
+    await expect(menuToggle).toHaveAttribute('aria-controls', 'mobile-navigation');
+    await expect(page.locator('#mobile-navigation')).toHaveAttribute('inert', '');
+    await menuToggle.click();
+    await expect(page.getByRole('dialog', { name: 'Menu główne' })).toBeVisible();
+    await expect(page.getByRole('button', { name: 'Zamknij menu mobilne' })).toBeFocused();
+    await page.keyboard.press('Shift+Tab');
+    await expect(page.getByRole('link', { name: 'Logowanie' })).toBeFocused();
+    await page.keyboard.press('Escape');
+    await expect(page.getByRole('dialog', { name: 'Menu główne' })).toHaveCount(0);
+    await expect(menuToggle).toBeFocused();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+
+    await page.goto('/shop');
+    await expect(page.getByText('1 produkt w katalogu')).toBeVisible();
+    const filterToggle = page.getByRole('button', { name: 'Pokaż filtry' });
+    await expect(filterToggle).toHaveAttribute('aria-controls', 'mobile-product-filters');
+    await expect(page.locator('#mobile-product-filters')).toHaveAttribute('inert', '');
+    await expect(filterToggle).toHaveAttribute('aria-expanded', 'false');
+    await filterToggle.click();
+    await expect(page.getByRole('button', { name: 'Ukryj filtry' })).toHaveAttribute('aria-expanded', 'true');
+    await page.locator('#mobile-product-filters').getByRole('textbox', { name: 'Szukaj' }).fill('Terrarium demonstracyjne');
+    await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
+    await page.getByRole('link', { name: /Szczegóły/ }).click();
+    await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+    await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+    await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toBeVisible();
+    expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth)).toBe(true);
+  });
+
+  test('reflows shopping and checkout at 200-percent equivalent and phone widths', async ({ page }) => {
+    for (const width of [720, 360]) {
+      await page.setViewportSize({ width, height: 450 });
+      const hasNoHorizontalOverflow = () => page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth);
+
+      await page.goto('/shop');
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+      await page.getByRole('button', { name: 'Pokaż filtry' }).click();
+      await page.locator('#mobile-product-filters').getByRole('textbox', { name: 'Szukaj' }).fill('Terrarium demonstracyjne');
+      await page.getByRole('link', { name: /Szczegóły/ }).click();
+      await expect(page.getByRole('heading', { name: demoProduct.name })).toBeVisible();
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+
+      await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
+      await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
+      await expect(page.getByRole('dialog', { name: /Twój koszyk/ })).toBeVisible();
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+      await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
+      await expect(page.getByRole('heading', { name: 'Podsumowanie zamówienia' })).toBeVisible();
+      await expect.poll(hasNoHorizontalOverflow).toBe(true);
+
+      if (width === 360) {
+        const chatCoversCheckoutAction = await page.evaluate(() => {
+          const chat = document.querySelector('button[aria-label="Otwórz czat"]');
+          const action = [...document.querySelectorAll('button')].find((button) => button.textContent.includes('Sprawdź metody i koszt dostawy'));
+          if (!chat || !action || getComputedStyle(chat).display === 'none') return false;
+          const launcher = chat.getBoundingClientRect();
+          const target = action.getBoundingClientRect();
+          return launcher.left < target.right && launcher.right > target.left && launcher.top < target.bottom && launcher.bottom > target.top;
+        });
+
+        expect(chatCoversCheckoutAction).toBe(false);
+      }
+    }
+  });
 });

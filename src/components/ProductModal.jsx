@@ -1,4 +1,4 @@
-import React, { useEffect } from 'react';
+import React, { useEffect, useRef } from 'react';
 import { useForm } from 'react-hook-form';
 import { X } from 'lucide-react';
 import { API_BASE } from '../utils/config';
@@ -10,6 +10,11 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
     });
     const [uploading, setUploading] = React.useState(false);
     const [specsError, setSpecsError] = React.useState('');
+    const dialogRef = useRef(null);
+    const openerRef = useRef(null);
+    const closeButtonRef = useRef(null);
+    const onCloseRef = useRef(onClose);
+    onCloseRef.current = onClose;
 
     const handleFileUpload = async (e) => {
         const files = e.target.files;
@@ -64,6 +69,59 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
         setSpecsError('');
     }, [editingProduct, isOpen, reset, setValue]);
 
+    useEffect(() => {
+        if (!isOpen) return undefined;
+
+        openerRef.current = document.activeElement;
+        const originalBodyOverflow = document.body.style.overflow;
+        document.body.style.overflow = 'hidden';
+
+        const dialog = dialogRef.current;
+        const initialFocusTarget = dialog?.querySelector('[data-autofocus]') || closeButtonRef.current;
+        initialFocusTarget?.focus();
+
+        const handleKeyDown = (event) => {
+            if (event.key === 'Escape') {
+                event.preventDefault();
+                onCloseRef.current();
+                return;
+            }
+            if (event.key !== 'Tab') return;
+
+            const focusable = dialog?.querySelectorAll(
+                'a[href], button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex]:not([tabindex="-1"])'
+            );
+            if (!focusable?.length) {
+                event.preventDefault();
+                dialog?.focus();
+                return;
+            }
+
+            const first = focusable[0];
+            const last = focusable[focusable.length - 1];
+            const activeIndex = Array.prototype.indexOf.call(focusable, document.activeElement);
+            if (activeIndex < 0) {
+                event.preventDefault();
+                (event.shiftKey ? last : first).focus();
+            } else if (event.shiftKey && activeIndex === 0) {
+                event.preventDefault();
+                last.focus();
+            } else if (!event.shiftKey && activeIndex === focusable.length - 1) {
+                event.preventDefault();
+                first.focus();
+            }
+        };
+
+        document.addEventListener('keydown', handleKeyDown);
+        return () => {
+            document.removeEventListener('keydown', handleKeyDown);
+            document.body.style.overflow = originalBodyOverflow;
+            if (openerRef.current instanceof HTMLElement && openerRef.current.isConnected) {
+                openerRef.current.focus();
+            }
+        };
+    }, [isOpen]);
+
     if (!isOpen) return null;
 
     const onFormSubmit = (data) => {
@@ -78,14 +136,14 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
             return;
         }
         setSpecsError('');
+        const { specsJson: _specsJson, ...formData } = data;
         const payload = {
-            ...data,
+            ...formData,
+            specs,
             price: parseFloat(data.price),
             stock: parseInt(data.stock),
-            imageUrls: data.imageUrls || [],
-            specs
+            imageUrls: data.imageUrls || []
         };
-        delete payload.specsJson;
         onSubmit(payload);
     };
 
@@ -95,11 +153,19 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
     };
 
     return (
-        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm p-4">
-            <div className="bg-[#1a1a1a] border border-white/10 rounded-2xl w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 p-4 backdrop-blur-sm">
+            <div
+                ref={dialogRef}
+                id="product-dialog"
+                role="dialog"
+                aria-modal="true"
+                aria-labelledby="product-dialog-title"
+                tabIndex={-1}
+                className="max-h-[90vh] w-full max-w-2xl overflow-y-auto rounded-2xl border border-white/10 bg-[#1a1a1a]"
+            >
                 <div className="flex items-center justify-between p-6 border-b border-white/5">
-                    <h2 className="text-xl font-bold">{editingProduct ? 'Edytuj Produkt' : 'Dodaj Nowy Produkt'}</h2>
-                    <button onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Zamknij okno produktu" type="button">
+                    <h2 id="product-dialog-title" className="text-xl font-bold">{editingProduct ? 'Edytuj produkt' : 'Dodaj produkt'}</h2>
+                    <button ref={closeButtonRef} onClick={onClose} className="p-2 hover:bg-white/5 rounded-lg transition-colors" aria-label="Zamknij okno produktu" type="button">
                         <X size={20} />
                     </button>
                 </div>
@@ -107,20 +173,21 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                 <form onSubmit={handleSubmit(onFormSubmit, onError)} className="p-6 space-y-4">
                     <div className="grid grid-cols-2 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-400">Nazwa Produktu</label>
-                            <input {...register('name', { required: "Nazwa jest wymagana" })} className={`w-full bg-black/50 border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-lg p-3 outline-none focus:border-primary/50`} />
-                            {errors.name && <span className="text-red-500 text-xs">{errors.name.message}</span>}
+                            <label htmlFor="product-name" className="text-sm text-gray-400">Nazwa produktu</label>
+                            <input id="product-name" data-autofocus {...register('name', { required: "Nazwa jest wymagana" })} aria-invalid={Boolean(errors.name)} aria-describedby={errors.name ? 'product-name-error' : undefined} className={`w-full bg-black/50 border ${errors.name ? 'border-red-500' : 'border-white/10'} rounded-lg p-3 outline-none focus:border-primary/50`} />
+                            {errors.name && <span id="product-name-error" className="text-red-400 text-xs">{errors.name.message}</span>}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-400">Gatunek (Łacina)</label>
-                            <input {...register('species')} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary/50" />
+                            <label htmlFor="product-species" className="text-sm text-gray-400">Gatunek (łacina)</label>
+                            <input id="product-species" {...register('species')} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary/50" />
                         </div>
                     </div>
 
                     <div className="grid grid-cols-3 gap-4">
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-400">Cena (zł)</label>
+                            <label htmlFor="product-price" className="text-sm text-gray-400">Cena (zł)</label>
                             <input
+                                id="product-price"
                                 type="number"
                                 step="0.01"
                                 {...register('price', {
@@ -128,6 +195,8 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                                     min: { value: 0.01, message: "Musi być > 0" },
                                     pattern: { value: /^\d+(\.\d{1,2})?$/, message: "Zły format" }
                                 })}
+                                aria-invalid={Boolean(errors.price)}
+                                aria-describedby={errors.price ? 'product-price-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.price ? 'border-red-500' : 'border-white/10'} rounded-lg p-3 outline-none focus:border-primary/50`}
                                 onKeyDown={(e) => {
                                     if (!/[0-9]|\.|Backspace|Tab|Enter|Arrow|Delete/.test(e.key)) {
@@ -135,17 +204,20 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                                     }
                                 }}
                             />
-                            {errors.price && <span className="text-red-500 text-xs">{errors.price.message}</span>}
+                            {errors.price && <span id="product-price-error" className="text-red-400 text-xs">{errors.price.message}</span>}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-400">Stan Magazynowy</label>
+                            <label htmlFor="product-stock" className="text-sm text-gray-400">Stan magazynowy</label>
                             <input
+                                id="product-stock"
                                 type="number"
                                 {...register('stock', {
                                     required: "Stan jest wymagany",
                                     min: { value: 0, message: "Musi być >= 0" },
                                     pattern: { value: /^\d+$/, message: "Tylko liczby całk." }
                                 })}
+                                aria-invalid={Boolean(errors.stock)}
+                                aria-describedby={errors.stock ? 'product-stock-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.stock ? 'border-red-500' : 'border-white/10'} rounded-lg p-3 outline-none focus:border-primary/50`}
                                 onKeyDown={(e) => {
                                     if (!/[0-9]|Backspace|Tab|Enter|Arrow|Delete/.test(e.key)) {
@@ -153,12 +225,15 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                                     }
                                 }}
                             />
-                            {errors.stock && <span className="text-red-500 text-xs">{errors.stock.message}</span>}
+                            {errors.stock && <span id="product-stock-error" className="text-red-400 text-xs">{errors.stock.message}</span>}
                         </div>
                         <div className="space-y-2">
-                            <label className="text-sm text-gray-400">Kategoria</label>
+                            <label htmlFor="product-category" className="text-sm text-gray-400">Kategoria</label>
                             <select
+                                id="product-category"
                                 {...register('categoryId', { required: "Wybierz kategorię" })}
+                                aria-invalid={Boolean(errors.categoryId)}
+                                aria-describedby={errors.categoryId ? 'product-category-error' : undefined}
                                 className={`w-full bg-black/50 border ${errors.categoryId ? 'border-red-500' : 'border-white/10'} rounded-lg p-3 outline-none focus:border-primary/50`}
                             >
                                 <option value="">Wybierz...</option>
@@ -166,31 +241,32 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                                     <option key={c.id} value={c.id}>{c.name}</option>
                                 ))}
                             </select>
-                            {errors.categoryId && <span className="text-red-500 text-xs">{errors.categoryId.message}</span>}
+                            {errors.categoryId && <span id="product-category-error" className="text-red-400 text-xs">{errors.categoryId.message}</span>}
                         </div>
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm text-gray-400" htmlFor="product-specs-json">Specyfikacja SKU (JSON)</label>
+                        <label className="text-sm text-gray-400" htmlFor="product-specs-json">Specyfikacja produktu i paczki (JSON)</label>
                         <textarea
                             id="product-specs-json"
                             {...register('specsJson')}
                             rows={8}
                             spellCheck="false"
-                            placeholder={'{\n  "terrariumDesigner": {\n    "role": "element",\n    "dimensionsMm": { "width": 120, "height": 80, "depth": 100 },\n    "allowedMountSurfaces": ["floor"],\n    "model": { "url": "/models/terrarium/SKU.glb", "version": "1" }\n  }\n}'}
+                            placeholder={'{\n  "terrariumDesigner": {\n    "role": "element",\n    "dimensionsMm": { "width": 120, "height": 80, "depth": 100 },\n    "allowedMountSurfaces": ["floor"],\n    "model": { "url": "/models/terrarium/SKU.glb", "version": "1" }\n  },\n  "shipping_parcels": [{ "width": 30, "depth": 20, "height": 10, "weight": 2 }]\n}'}
                             className="w-full rounded-lg border border-white/10 bg-black/50 p-3 font-mono text-xs leading-5 text-gray-200 outline-none focus:border-primary/50"
                             aria-describedby="product-specs-help"
                         />
                         <p id="product-specs-help" className="text-xs leading-5 text-gray-500">
-                            Wymiary konfiguratora zapisuj jako liczby całkowite w mm pod `terrariumDesigner.dimensionsMm`; dodaj lokalny model w `terrariumDesigner.model` i dozwolone powierzchnie.
+                            W `terrariumDesigner.dimensionsMm` wpisz wymiary elementu w milimetrach, dodaj lokalny model w `terrariumDesigner.model` i dozwolone powierzchnie montażu. Dla wyceny dostawy wpisz w `shipping_parcels` wymiary spakowanej paczki w centymetrach oraz masę w kilogramach.
                         </p>
                         {specsError && <p role="alert" className="text-xs text-red-400">{specsError}</p>}
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm text-gray-400">Zdjęcia Produktu (Upload)</label>
+                        <label htmlFor="product-images" className="text-sm text-gray-400">Zdjęcia produktu</label>
                         <div className="flex gap-2">
                             <input
+                                id="product-images"
                                 type="file"
                                 accept="image/*"
                                 multiple
@@ -204,7 +280,7 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                             {/* Watch existing URLs to display thumbnails/list */}
                             {watch('imageUrls')?.map((url, idx) => (
                                 <div key={idx} className="relative group aspect-square bg-white/5 rounded-lg overflow-hidden border border-white/10">
-                                    <img src={url} alt={`Upload ${idx}`} className="w-full h-full object-cover" />
+                                    <img src={url} alt={`Podgląd zdjęcia ${idx + 1}`} className="w-full h-full object-cover" />
                                     <button
                                         type="button"
                                         onClick={() => {
@@ -222,14 +298,14 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                     </div>
 
                     <div className="space-y-2">
-                        <label className="text-sm text-gray-400">Opis Produktu</label>
-                        <textarea {...register('description')} rows={4} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary/50 resize-none"></textarea>
+                        <label htmlFor="product-description" className="text-sm text-gray-400">Opis produktu</label>
+                        <textarea id="product-description" {...register('description')} rows={4} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary/50 resize-none"></textarea>
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4">
                         <button type="button" onClick={onClose} className="px-6 py-2 rounded-lg hover:bg-white/5 transition-colors">Anuluj</button>
                         <button type="submit" className="px-6 py-2 bg-primary text-black font-bold rounded-lg hover:bg-primary/90 transition-colors">
-                            {editingProduct ? 'Zapisz Zmiany' : 'Utwórz Produkt'}
+                            {editingProduct ? 'Zapisz zmiany' : 'Utwórz produkt'}
                         </button>
                     </div>
                 </form>

@@ -1,7 +1,8 @@
 ﻿import React from 'react';
 import { motion } from 'framer-motion';
-import { CreditCard, HelpCircle, Mail, RefreshCcw, Truck } from 'lucide-react';
+import { CreditCard, HelpCircle, Info, RefreshCcw, Truck } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import { Link } from 'react-router-dom';
 
 const sections = [
   {
@@ -11,17 +12,17 @@ const sections = [
       {
         question: 'Jak wygląda wysyłka żywych zwierząt?',
         answer:
-          'Żywe zwierzęta wysyłamy wyłącznie w bezpiecznych oknach logistycznych, po wcześniejszym potwierdzeniu warunków i terminu. Chodzi o ograniczenie ryzyka w transporcie i utrzymanie właściwej temperatury.'
+          'Warunki i dostępność dostawy żywych zwierząt wymagają potwierdzenia dla konkretnej oferty przed zamówieniem. Ogólna informacja na stronie nie potwierdza terminu realizacji.'
       },
       {
         question: 'Jak szybko wysyłacie akcesoria i pokarm?',
         answer:
-          'Akcesoria, terraria, pokarm i suplementy nadajemy standardowo w 24-48 godzin roboczych, o ile produkt jest dostępny od ręki.'
+          'Nie podajemy jednego potwierdzonego terminu dla wszystkich produktów. Aktualne informacje o realizacji należy sprawdzić dla wybranej oferty przed płatnością.'
       },
       {
         question: 'Czy mogę zamówić kilka kategorii w jednym koszyku?',
         answer:
-          'Tak. Katalog jest właśnie po to uporządkowany, żeby łatwo połączyć zwierzę, terrarium, ogrzewanie i wyposażenie w jednym zamówieniu.'
+          'Produkty z różnych kategorii możesz dodać do jednego koszyka i złożyć jako jedno zamówienie. Nie oznacza to jednej przesyłki: produkty mogą być wysyłane osobno, zależnie od oferty. Przed płatnością sprawdź podsumowanie dostawy; jeśli sposób lub koszt wysyłki nie są jasne, wstrzymaj finalizację do czasu potwierdzenia ich przez sklep.'
       }
     ]
   },
@@ -32,7 +33,7 @@ const sections = [
       {
         question: 'Jakie metody płatności są dostępne?',
         answer:
-          'Zamówienia finalizujemy przez Stripe Checkout. W zależności od konfiguracji konta Stripe mogą być dostępne karty, Link oraz inne metody aktywne dla rynku polskiego.'
+          'Dostępne metody zobaczysz na stronie Stripe Checkout przed potwierdzeniem płatności. To, które z nich będą aktywne, zależy od konfiguracji konta sklepu.'
       },
       {
         question: 'Kiedy zamówienie trafia do realizacji?',
@@ -46,19 +47,19 @@ const sections = [
     icon: RefreshCcw,
     items: [
       {
-        question: 'Czy mogę zwrócić akcesoria?',
+        question: 'Jakie zasady odstąpienia dotyczą zamówienia?',
         answer:
-          'Tak, dla zwykłych produktów obowiązują standardowe zasady odstąpienia od umowy. Szczegóły znajdziesz na stronie odstąpienia od umowy oraz w regulaminie.'
+          'Prawo odstąpienia przy zakupie online wynosi co do zasady 14 dni. Ustawa przewiduje wyjątki dla określonych sytuacji i towarów; nie potwierdzono jeszcze ich zastosowania dla wszystkich produktów w katalogu.'
       },
       {
         question: 'Czy żywe zwierzęta podlegają standardowemu zwrotowi?',
         answer:
-          'Nie w taki sam sposób jak zwykłe akcesoria. Przy żywych zwierzętach obowiązują ograniczenia wynikające z charakteru świadczenia i dobrostanu zwierzęcia.'
+          'Nie zakładamy automatycznego wyłączenia dla całej kategorii. Zastosowanie ustawowych wyjątków trzeba potwierdzić dla konkretnego produktu; ta informacja wymaga jeszcze akceptacji sprzedawcy i prawnika.'
       },
       {
         question: 'Jak zgłosić problem z zamówieniem?',
         answer:
-          'Najlepiej napisać do sklepu i podać numer zamówienia, opis sytuacji oraz zdjęcia, jeśli sprawa dotyczy stanu przesyłki lub produktu.'
+          'Zachowaj numer zamówienia, krótki opis sytuacji oraz zdjęcia, jeśli dotyczą stanu przesyłki lub produktu. Kanał zgłoszenia zostanie podany po potwierdzeniu danych kontaktowych sklepu.'
       }
     ]
   }
@@ -71,7 +72,7 @@ const FAQ = () => {
         <title>FAQ | VitaZone</title>
         <meta
           name="description"
-          content="Najczęściej zadawane pytania dotyczące wysyłki, płatności, zwrotów i obsługi zamówień w VitaZone."
+          content="Informacje o dostawie, płatnościach, zwrotach i obsłudze zamówień w VitaZone."
         />
       </Helmet>
 
@@ -80,51 +81,62 @@ const FAQ = () => {
           initial={{ opacity: 0, y: 20 }}
           animate={{ opacity: 1, y: 0 }}
           transition={{ duration: 0.5 }}
-          className="mx-auto max-w-5xl space-y-8"
+          className="mx-auto max-w-4xl space-y-10"
         >
-          <div className="space-y-4 text-center">
-            <h1 className="flex items-center justify-center gap-3 bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent md:text-5xl">
-              <HelpCircle className="text-emerald-500" size={40} />
+          <div className="space-y-3 text-center">
+            <h1 className="flex items-center justify-center gap-3 text-4xl font-bold text-primary md:text-5xl">
+              <HelpCircle aria-hidden="true" className="text-primary/80" size={36} />
               FAQ
             </h1>
-            <p className="mx-auto max-w-3xl text-neutral-400">
-              Zebraliśmy najważniejsze informacje o dostawie, płatnościach i realizacji zamówień.
-              Dzięki temu szybciej znajdziesz odpowiedź jeszcze przed zakupem.
+            <p className="mx-auto max-w-2xl text-neutral-400">
+              Odpowiedzi o zamówieniach, dostawie i zwrotach. Wybierz temat albo rozwiń pytanie.
             </p>
           </div>
 
-          <div className="space-y-6">
-            {sections.map((section) => {
+          <nav aria-label="Przejdź do tematu" className="flex flex-wrap justify-center gap-2">
+            {sections.map((section, index) => (
+              <a
+                key={section.title}
+                href={`#faq-section-${index + 1}`}
+                className="rounded-full border border-neutral-700 px-4 py-2 text-sm text-neutral-300 transition-colors hover:border-primary/60 hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
+              >
+                {section.title}
+              </a>
+            ))}
+          </nav>
+
+          <div className="space-y-9">
+            {sections.map((section, index) => {
               const Icon = section.icon;
               return (
-                <div key={section.title} className="rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-6 shadow-xl backdrop-blur-sm">
-                  <h2 className="mb-4 flex items-center gap-2 text-xl font-bold text-emerald-400">
-                    <Icon size={24} /> {section.title}
+                <section key={section.title} id={`faq-section-${index + 1}`} className="scroll-mt-8">
+                  <h2 className="mb-3 flex items-center gap-2 border-b border-neutral-800 pb-3 text-xl font-semibold text-primary">
+                    <Icon aria-hidden="true" size={21} /> {section.title}
                   </h2>
-                  <div className="space-y-4">
+                  <div className="divide-y divide-neutral-800">
                     {section.items.map((item) => (
-                      <details key={item.question} className="group rounded-2xl bg-neutral-900/50 p-4">
-                        <summary className="flex cursor-pointer list-none items-center justify-between gap-4 font-semibold text-neutral-200">
+                      <details key={item.question} className="group py-1">
+                        <summary className="flex min-h-12 cursor-pointer list-none items-center justify-between gap-4 rounded px-1 py-3 font-medium text-neutral-200 marker:hidden hover:text-primary focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary">
                           {item.question}
-                          <span className="transition-transform group-open:rotate-180">⌄</span>
+                          <span aria-hidden="true" className="shrink-0 text-lg text-primary/80 transition-transform group-open:rotate-180">⌄</span>
                         </summary>
-                        <p className="mt-3 text-sm leading-relaxed text-neutral-400">{item.answer}</p>
+                        <p className="max-w-3xl px-1 pb-4 text-sm leading-relaxed text-neutral-400">{item.answer}</p>
                       </details>
                     ))}
                   </div>
-                </div>
+                </section>
               );
             })}
           </div>
 
-          <div className="rounded-[2rem] border border-white/10 bg-white/[0.03] px-8 py-10 text-center">
-            <p className="mb-4 text-neutral-400">Nie ma tu odpowiedzi na Twoją sytuację?</p>
-            <a
-              href="mailto:kontakt@animalsshop.pl"
-              className="inline-flex items-center gap-2 rounded-full bg-emerald-600 px-8 py-3 font-bold text-white transition-all hover:bg-emerald-500"
+          <div className="border-t border-neutral-800 pt-7 text-center">
+            <p className="mb-4 text-neutral-400">Potrzebujesz potwierdzić szczegóły zamówienia?</p>
+            <Link
+              to="/contact"
+              className="inline-flex min-h-11 items-center gap-2 rounded-full border border-primary/50 px-6 py-2.5 font-semibold text-primary transition-colors hover:bg-primary/10 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-primary"
             >
-              <Mail size={20} /> Napisz do sklepu
-            </a>
+              <Info aria-hidden="true" size={20} /> Dane kontaktowe
+            </Link>
           </div>
         </motion.div>
       </div>

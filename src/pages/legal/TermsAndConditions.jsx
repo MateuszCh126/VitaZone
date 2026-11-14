@@ -2,6 +2,7 @@
 import { motion } from 'framer-motion';
 import { FileText, Scale } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
+import LegalDraftNotice from '../../components/LegalDraftNotice';
 
 const TermsAndConditions = () => {
   return (
@@ -22,15 +23,17 @@ const TermsAndConditions = () => {
           className="mx-auto max-w-4xl space-y-8"
         >
           <div className="space-y-4 text-center">
-            <h1 className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent">
+            <h1 className="text-4xl font-bold text-white">
               Regulamin sklepu
             </h1>
-            <p className="text-neutral-400">Wersja obowiązująca od {new Date().toLocaleDateString('pl-PL')}</p>
+            <p className="text-neutral-400">Projekt regulaminu — data wejścia w życie do uzupełnienia po zatwierdzeniu.</p>
           </div>
+
+          <LegalDraftNotice />
 
           <div className="space-y-6 rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-8 shadow-xl backdrop-blur-sm">
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-2xl font-semibold text-emerald-400">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold text-primary">
                 <Scale className="h-6 w-6" /> 1. Postanowienia ogólne
               </h2>
               <p className="leading-relaxed text-neutral-300">
@@ -40,7 +43,7 @@ const TermsAndConditions = () => {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-semibold text-emerald-400">2. Składanie zamówień</h2>
+              <h2 className="text-2xl font-semibold text-primary">2. Składanie zamówień</h2>
               <p className="leading-relaxed text-neutral-300">
                 Zamówienia można składać przez stronę internetową przez całą dobę. Warunkiem realizacji jest poprawne wypełnienie danych,
                 akceptacja regulaminu oraz skuteczne ukończenie procesu płatności, jeśli wybrana metoda tego wymaga.
@@ -48,7 +51,7 @@ const TermsAndConditions = () => {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-semibold text-emerald-400">3. Płatności</h2>
+              <h2 className="text-2xl font-semibold text-primary">3. Płatności</h2>
               <p className="leading-relaxed text-neutral-300">
                 Płatności elektroniczne obsługiwane są przez Stripe Checkout. Zamówienie uznaje się za opłacone po potwierdzeniu płatności przez operatora.
                 Nieukończona lub nieudana płatność może skutkować anulowaniem zamówienia.
@@ -56,28 +59,25 @@ const TermsAndConditions = () => {
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-semibold text-emerald-400">4. Dostawa</h2>
+              <h2 className="text-2xl font-semibold text-primary">4. Dostawa</h2>
               <p className="leading-relaxed text-neutral-300">
-                Akcesoria, terraria, pokarm i suplementy wysyłamy standardowo w czasie wskazanym przy realizacji zamówienia.
-                Żywe zwierzęta przekazujemy wyłącznie w bezpiecznych oknach logistycznych, po uwzględnieniu warunków transportu i dobrostanu.
+                Koszt dostawy jest pokazany w podsumowaniu zamówienia przed przejściem do płatności. Metody, terminy realizacji i zasady transportu poszczególnych produktów wymagają potwierdzenia przez sprzedawcę przed publikacją.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-semibold text-emerald-400">5. Reklamacje i zwroty</h2>
+              <h2 className="text-2xl font-semibold text-primary">5. Reklamacje i zwroty</h2>
               <p className="leading-relaxed text-neutral-300">
-                Reklamacje można zgłaszać drogą mailową. Dla zwykłych produktów obowiązują standardowe zasady odstąpienia od umowy,
-                natomiast w przypadku żywych zwierząt stosuje się ograniczenia wynikające z charakteru świadczenia i dobrostanu zwierzęcia.
+                Reklamacje i odstąpienie od umowy podlegają przepisom mającym zastosowanie do konkretnego towaru i umowy. Nie zakładamy automatycznego wyłączenia prawa odstąpienia dla całej kategorii produktów; szczegóły wymagają zatwierdzenia przez prawnika.
               </p>
             </section>
 
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-2xl font-semibold text-emerald-400">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold text-primary">
                 <FileText className="h-6 w-6" /> 6. Kontakt
               </h2>
               <p className="leading-relaxed text-neutral-300">
-              W sprawach dotyczących sklepu, zamówień i dokumentów prosimy o kontakt mailowy
-                lub telefonicznie pod numerem +48 123 456 789.
+              W sprawach dotyczących sklepu, zamówień i dokumentów prosimy o kontakt przez aktualny kanał wskazany na stronie kontaktowej.
               </p>
             </section>
           </div>

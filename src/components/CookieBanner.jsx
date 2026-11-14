@@ -1,183 +1,128 @@
-import React, { useState, useEffect } from 'react';
-import { motion, AnimatePresence } from 'framer-motion';
+import React, { useEffect, useRef, useState } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { API_BASE } from '../utils/config';
-import { Cookie, X, Check, Shield, Settings } from 'lucide-react';
+import { Cookie, Settings, X } from 'lucide-react';
 import { Link } from 'react-router-dom';
 import { CONSENT_STORAGE_KEY } from '../utils/consent';
 
 const CookieBanner = () => {
-    const [isVisible, setIsVisible] = useState(false);
-    const [showDetails, setShowDetails] = useState(false);
+  const [isVisible, setIsVisible] = useState(false);
+  const [showDetails, setShowDetails] = useState(false);
+  const [analytics, setAnalytics] = useState(false);
+  const openerRef = useRef(null);
+  const detailsHeadingRef = useRef(null);
+  const rejectButtonRef = useRef(null);
+  const focusViewRef = useRef(false);
 
-    const [preferences, setPreferences] = useState({
-        necessary: true,
-        analytics: false,
-        marketing: false
+  useEffect(() => {
+    if (!isVisible || !focusViewRef.current) return;
+    focusViewRef.current = false;
+    window.requestAnimationFrame(() => {
+      (showDetails ? detailsHeadingRef.current : rejectButtonRef.current)?.focus();
     });
+  }, [isVisible, showDetails]);
 
-    useEffect(() => {
-        const consent = localStorage.getItem(CONSENT_STORAGE_KEY);
-        if (!consent) {
-            // Simulate delay for smoother UX
-            const timer = setTimeout(() => setIsVisible(true), 1000);
-            return () => clearTimeout(timer);
-        }
-    }, []);
+  useEffect(() => {
+    if (!localStorage.getItem(CONSENT_STORAGE_KEY)) {
+      const timer = setTimeout(() => setIsVisible(true), 250);
+      return () => clearTimeout(timer);
+    }
+    return undefined;
+  }, []);
 
-    const handleAcceptAll = () => {
-        const allConsent = { necessary: true, analytics: true, marketing: true };
-        saveConsent(allConsent);
+  useEffect(() => {
+    const openSettings = () => {
+      openerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null;
+      let savedConsent = null;
+      try {
+        savedConsent = JSON.parse(localStorage.getItem(CONSENT_STORAGE_KEY) || 'null');
+      } catch {
+        savedConsent = null;
+      }
+      setAnalytics(savedConsent?.analytics === true);
+      focusViewRef.current = true;
+      setShowDetails(true);
+      setIsVisible(true);
     };
+    window.addEventListener('open_cookie_settings', openSettings);
+    return () => window.removeEventListener('open_cookie_settings', openSettings);
+  }, []);
 
-    const handleSavePreferences = () => {
-        saveConsent(preferences);
-    };
+  const saveConsent = async (analyticsChoice) => {
+    const settings = { necessary: true, analytics: analyticsChoice };
+    localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({ ...settings, timestamp: new Date().toISOString() }));
+    window.dispatchEvent(new Event('cookie_consent_updated'));
+    setIsVisible(false);
+    const focusReturnTarget = openerRef.current;
+    openerRef.current = null;
+    const fallbackFocusTarget = document.getElementById('cookie-settings-trigger');
+    const target = focusReturnTarget?.isConnected ? focusReturnTarget : fallbackFocusTarget;
+    if (target instanceof HTMLElement) {
+      window.requestAnimationFrame(() => target.focus());
+    }
+    try {
+      await fetch(`${API_BASE}/api/consent`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(settings)
+      });
+    } catch (error) {
+      console.error('Failed to log consent:', error);
+    }
+  };
 
-    const saveConsent = async (settings) => {
-        localStorage.setItem(CONSENT_STORAGE_KEY, JSON.stringify({
-            ...settings,
-            timestamp: new Date().toISOString()
-        }));
-        window.dispatchEvent(new Event('cookie_consent_updated'));
-        setIsVisible(false);
-
-        try {
-            // Send to backend
-            // Send to backend
-            const API_URL = `${API_BASE}/api`;
-            await fetch(`${API_URL}/consent`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(settings)
-            });
-        } catch (error) {
-            console.error('Failed to log consent:', error);
-        }
-    };
-
-    const togglePreference = (key) => {
-        if (key === 'necessary') return; // Cannot toggle necessary
-        setPreferences(prev => ({ ...prev, [key]: !prev[key] }));
-    };
-
-    return (
-        <AnimatePresence>
-            {isVisible && (
-                <motion.div
-                    initial={{ y: 100, opacity: 0 }}
-                    animate={{ y: 0, opacity: 1 }}
-                    exit={{ y: 100, opacity: 0 }}
-                    className="fixed bottom-0 left-0 right-0 z-50 p-4"
-                >
-                    <div className="max-w-6xl mx-auto bg-neutral-900/95 backdrop-blur-md border border-neutral-700 rounded-2xl shadow-2xl p-6 md:p-8">
-                        {!showDetails ? (
-                            // Simple View
-                            <div className="flex flex-col md:flex-row gap-6 items-center justify-between">
-                                <div className="flex items-start gap-4">
-                                    <div className="bg-emerald-500/10 p-3 rounded-xl hidden sm:block">
-                                        <Cookie className="w-8 h-8 text-emerald-400" />
-                                    </div>
-                                    <div className="space-y-2">
-                                        <h3 className="text-xl font-bold text-white">Szanujemy Twoją prywatność</h3>
-                                        <p className="text-neutral-400 text-sm max-w-2xl">
-                                            Używamy plików cookies, aby zapewnić najlepszą jakość naszej strony.
-                                            Możesz zaakceptować wszystkie lub dostosować ustawienia do swoich potrzeb.
-                                            Dowiedz się więcej w naszej <Link to="/cookies" className="text-emerald-400 hover:underline">Polityce Cookies</Link>.
-                                        </p>
-                                    </div>
-                                </div>
-                                <div className="flex flex-col sm:flex-row gap-3 w-full md:w-auto">
-                                    <button
-                                        onClick={() => setShowDetails(true)}
-                                        className="px-6 py-2.5 rounded-lg border border-neutral-600 text-neutral-300 hover:bg-neutral-800 transition-colors font-medium text-sm"
-                                    >
-                                        Dostosuj
-                                    </button>
-                                    <button
-                                        onClick={handleAcceptAll}
-                                        className="px-8 py-2.5 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-900/20 transition-all transform hover:scale-105"
-                                    >
-                                        Akceptuj wszystkie
-                                    </button>
-                                </div>
-                            </div>
-                        ) : (
-                            // Detailed View
-                            <div className="space-y-6">
-                                <div className="flex justify-between items-start">
-                                    <h3 className="text-xl font-bold text-white flex items-center gap-2">
-                                        <Settings className="w-5 h-5 text-emerald-400" />
-                                        Ustawienia prywatności
-                                    </h3>
-                                    <button onClick={() => setShowDetails(false)} className="text-neutral-400 hover:text-white p-1">
-                                        <X className="w-6 h-6" />
-                                    </button>
-                                </div>
-
-                                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                                    {/* Necessary */}
-                                    <div className="bg-neutral-800/50 p-4 rounded-xl border border-neutral-700/50 relative overflow-hidden group">
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-semibold text-white flex items-center gap-2">
-                                                <Shield className="w-4 h-4 text-emerald-400" /> Niezbędne
-                                            </span>
-                                            <div className="bg-emerald-500/20 text-emerald-400 text-xs px-2 py-0.5 rounded-full">Wymagane</div>
-                                        </div>
-                                        <p className="text-xs text-neutral-400">Kluczowe dla działania strony i bezpieczeństwa.</p>
-                                    </div>
-
-                                    {/* Analytics */}
-                                    <div
-                                        onClick={() => togglePreference('analytics')}
-                                        className={`bg-neutral-800/50 p-4 rounded-xl border cursor-pointer transition-all ${preferences.analytics ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-neutral-700/50 hover:border-neutral-600'}`}
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-semibold text-white">Analityczne</span>
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${preferences.analytics ? 'bg-emerald-500 border-emerald-500' : 'border-neutral-600'}`}>
-                                                {preferences.analytics && <Check className="w-3 h-3 text-white" />}
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-neutral-400">Pomagają nam ulepszać stronę poprzez statystyki.</p>
-                                    </div>
-
-                                    {/* Marketing */}
-                                    <div
-                                        onClick={() => togglePreference('marketing')}
-                                        className={`bg-neutral-800/50 p-4 rounded-xl border cursor-pointer transition-all ${preferences.marketing ? 'border-emerald-500/50 bg-emerald-500/5' : 'border-neutral-700/50 hover:border-neutral-600'}`}
-                                    >
-                                        <div className="flex justify-between items-start mb-2">
-                                            <span className="font-semibold text-white">Marketingowe</span>
-                                            <div className={`w-5 h-5 rounded border flex items-center justify-center transition-colors ${preferences.marketing ? 'bg-emerald-500 border-emerald-500' : 'border-neutral-600'}`}>
-                                                {preferences.marketing && <Check className="w-3 h-3 text-white" />}
-                                            </div>
-                                        </div>
-                                        <p className="text-xs text-neutral-400">Dopasowanie reklam do Twoich zainteresowań.</p>
-                                    </div>
-                                </div>
-
-                                <div className="flex justify-end gap-3 pt-4 border-t border-neutral-800">
-                                    <button
-                                        onClick={handleAcceptAll}
-                                        className="px-6 py-2 rounded-lg text-neutral-400 hover:text-white transition-colors text-sm font-medium"
-                                    >
-                                        Zaakceptuj wszystkie
-                                    </button>
-                                    <button
-                                        onClick={handleSavePreferences}
-                                        className="px-8 py-2 rounded-lg bg-emerald-600 hover:bg-emerald-500 text-white font-semibold shadow-lg shadow-emerald-900/20"
-                                    >
-                                        Zapisz wybrane
-                                    </button>
-                                </div>
-                            </div>
-                        )}
-                    </div>
-                </motion.div>
+  return (
+    <AnimatePresence>
+      {isVisible && (
+        <motion.section initial={{ y: 40, opacity: 0 }} animate={{ y: 0, opacity: 1 }} exit={{ y: 40, opacity: 0 }}
+          role="region" aria-label="Ustawienia cookies" aria-describedby={showDetails ? undefined : "cookie-description"}
+          className="fixed bottom-0 left-0 right-0 z-50 p-4">
+          <div className="mx-auto max-w-6xl rounded-2xl border border-neutral-700 bg-neutral-950 p-5 shadow-2xl md:p-7">
+            {!showDetails ? (
+              <div className="flex flex-col items-start justify-between gap-5 md:flex-row md:items-center">
+                <div className="flex items-start gap-4">
+                  <Cookie aria-hidden="true" className="mt-1 hidden h-7 w-7 text-primary sm:block" />
+                  <div>
+                    <h2 id="cookie-title" className="text-xl font-bold text-white">Ustawienia prywatności</h2>
+                    <p id="cookie-description" className="mt-2 max-w-2xl text-sm text-neutral-300">
+                      Niezbędne elementy działają zawsze. Narzędzia analityczne Vercel uruchamiają się tylko po zgodzie. Możesz ją zaakceptować lub odrzucić.{' '}
+                      <Link to="/cookies" className="text-primary underline underline-offset-4">Szczegóły w polityce cookies</Link>.
+                    </p>
+                  </div>
+                </div>
+                <div className="flex w-full flex-col gap-2 sm:w-auto sm:flex-row">
+                  <button ref={rejectButtonRef} type="button" onClick={() => saveConsent(false)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2.5 font-semibold text-white hover:bg-neutral-800">Odrzuć analitykę</button>
+                  <button type="button" onClick={() => { focusViewRef.current = true; setShowDetails(true); }} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2.5 font-medium text-neutral-200 hover:bg-neutral-800">Dostosuj</button>
+                  <button type="button" onClick={() => saveConsent(true)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2.5 font-semibold text-white hover:bg-neutral-800">Akceptuj analitykę</button>
+                </div>
+              </div>
+            ) : (
+              <div>
+                <div className="flex items-start justify-between gap-4">
+                  <div>
+                    <h2 ref={detailsHeadingRef} id="cookie-title" tabIndex={-1} className="flex items-center gap-2 text-xl font-bold text-white focus:outline-none focus-visible:ring-2 focus-visible:ring-primary"><Settings aria-hidden="true" className="h-5 w-5 text-primary" /> Ustawienia prywatności</h2>
+                    <p className="mt-2 text-sm text-neutral-300">Wybierz, czy zezwalasz na analitykę. Niezbędne elementy są zawsze aktywne.</p>
+                  </div>
+                  <button type="button" onClick={() => { focusViewRef.current = true; setShowDetails(false); }} aria-label="Wróć do wyboru zgody" className="rounded p-2 text-neutral-300 hover:text-white"><X aria-hidden="true" /></button>
+                </div>
+                <div className="mt-5 grid gap-4 sm:grid-cols-2">
+                  <div className="rounded-xl border border-neutral-700 p-4"><h3 className="font-semibold text-white">Niezbędne</h3><p className="mt-1 text-sm text-neutral-300">Wymagane do działania strony, koszyka i sesji.</p><p className="mt-3 text-sm text-primary">Zawsze aktywne</p></div>
+                  <label className="flex cursor-pointer items-start gap-3 rounded-xl border border-neutral-700 p-4 text-white">
+                    <input type="checkbox" checked={analytics} onChange={(event) => setAnalytics(event.target.checked)} className="mt-1 h-5 w-5 accent-primary" />
+                    <span><span className="font-semibold">Analityka Vercel</span><span className="mt-1 block text-sm text-neutral-300">Pomiar wydajności i sposobu korzystania ze sklepu.</span></span>
+                  </label>
+                </div>
+                <div className="mt-5 flex flex-col justify-end gap-2 border-t border-neutral-800 pt-4 sm:flex-row">
+                  <button type="button" onClick={() => saveConsent(false)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2 font-semibold text-white hover:bg-neutral-800">Odrzuć analitykę</button>
+                  <button type="button" onClick={() => saveConsent(analytics)} className="min-h-11 rounded-lg border border-neutral-600 px-5 py-2 font-semibold text-white hover:bg-neutral-800">Zapisz wybór</button>
+                </div>
+              </div>
             )}
-        </AnimatePresence>
-    );
+          </div>
+        </motion.section>
+      )}
+    </AnimatePresence>
+  );
 };
 
 export default CookieBanner;

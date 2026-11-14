@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
     AlertCircle,
     Check,
@@ -12,11 +13,8 @@ import {
 import { useCart } from '../context/CartContext';
 import { useAuth } from '../context/AuthContext';
 import { API_BASE } from '../utils/config';
-import { DEFAULT_SHIPPING_AMOUNT_CENTS } from '../../shared/commerce.js';
 import { trackEvent } from '../utils/analytics';
 import { readCheckoutReturn } from '../utils/checkoutSession.js';
-
-const SHIPPING_AMOUNT = DEFAULT_SHIPPING_AMOUNT_CENTS / 100;
 
 const Checkout = () => {
     const {
@@ -37,16 +35,27 @@ const Checkout = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
+    const [ageAgreementError, setAgeAgreementError] = useState('');
+    const [shippingQuotes, setShippingQuotes] = useState([]);
+    const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('');
+    const [shippingQuoteError, setShippingQuoteError] = useState('');
+    const [isQuotingShipping, setIsQuotingShipping] = useState(false);
     const [errors, setErrors] = useState({});
     const [checkoutState, setCheckoutState] = useState({
         type: 'idle',
         message: ''
     });
     const didClearCartRef = useRef(false);
+    const cartRef = useRef(cart);
+    const deliveryHeadingRef = useRef(null);
+    const paymentHeadingRef = useRef(null);
+    const previousStepRef = useRef(step);
+    const ageAgreementRef = useRef(null);
 
     const [formData, setFormData] = useState({
         fullName: user?.full_name || user?.name || '',
         email: user?.email || '',
+        phone: user?.phone || '',
         country: user?.country || '',
         city: user?.city || '',
         postal_code: user?.postalCode || '',
@@ -54,12 +63,14 @@ const Checkout = () => {
         house_number: user?.houseNumber || '',
         apartment_number: user?.apartmentNumber || ''
     });
+    cartRef.current = cart;
 
     useEffect(() => {
         setFormData((current) => ({
             ...current,
             fullName: current.fullName || user?.full_name || user?.name || '',
             email: current.email || user?.email || '',
+            phone: current.phone || user?.phone || '',
             country: current.country || user?.country || '',
             city: current.city || user?.city || '',
             postal_code: current.postal_code || user?.postalCode || '',
@@ -69,11 +80,21 @@ const Checkout = () => {
         }));
     }, [user]);
 
+    useEffect(() => {
+        if (previousStepRef.current === step) return;
+        previousStepRef.current = step;
+        window.requestAnimationFrame(() => {
+            (step === 1 ? deliveryHeadingRef.current : paymentHeadingRef.current)?.focus();
+        });
+    }, [step]);
+
     const subtotal = useMemo(() => cartTotal, [cartTotal]);
     const discountValue = useMemo(() => (appliedDiscount ? appliedDiscount.amount / 100 : 0), [appliedDiscount]);
+    const selectedDelivery = shippingQuotes.find((quote) => quote.method === selectedDeliveryMethod);
+    const shippingAmount = selectedDelivery ? selectedDelivery.amountCents / 100 : 0;
     const total = useMemo(
-        () => Math.max(subtotal + SHIPPING_AMOUNT - discountValue, 0),
-        [subtotal, discountValue]
+        () => selectedDelivery ? Math.max(subtotal + shippingAmount - discountValue, 0) : null,
+        [subtotal, shippingAmount, discountValue, selectedDelivery]
     );
 
     useEffect(() => {
@@ -84,10 +105,12 @@ const Checkout = () => {
                 type: 'cancelled',
                 message: 'Płatność została przerwana. Koszyk i dane dostawy nadal czekają na Ciebie.'
             });
+            window.history.replaceState(window.history.state, '', window.location.pathname);
             return;
         }
 
-        if (!sessionId || !user) return;
+        if (!sessionId || loading) return;
+        window.history.replaceState(window.history.state, '', window.location.pathname);
 
         let isActive = true;
         let pollTimer = null;
@@ -102,9 +125,12 @@ const Checkout = () => {
 
             try {
                 const response = await fetch(
-                    `${API_BASE}/api/stripe/checkout-session/${sessionId}/status`,
+                    `${API_BASE}/api/stripe/checkout-session/status`,
                     {
-                        credentials: 'include'
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        credentials: 'include',
+                        body: JSON.stringify({ sessionId })
                     }
                 );
 
@@ -118,13 +144,14 @@ const Checkout = () => {
                         didClearCartRef.current = true;
                         const trackedPurchaseKey = `purchase:${sessionId}`;
                         if (!window.sessionStorage.getItem(trackedPurchaseKey)) {
-                            trackEvent('purchase', {
-                                sessionId,
-                                orderId: data.orderId || null,
-                                value: total,
-                                currency: 'PLN',
-                                itemCount: cart.length
-                            });
+                            const purchaseEvent = {
+                                currency: typeof data.currency === 'string' ? data.currency : 'PLN',
+                                itemCount: cartRef.current.reduce((count, item) => count + item.quantity, 0)
+                            };
+                            if (Number.isInteger(data.amountTotalCents)) {
+                                purchaseEvent.value = data.amountTotalCents / 100;
+                            }
+                            trackEvent('purchase', purchaseEvent);
                             window.sessionStorage.setItem(trackedPurchaseKey, '1');
                         }
                         await clearCart();
@@ -132,17 +159,21 @@ const Checkout = () => {
 
                     setCheckoutState({
                         type: 'paid',
-                        message: 'Płatność zakończyła się sukcesem. Zamówienie trafiło już do panelu klienta.'
+                        message: user
+                            ? 'Płatność zakończyła się sukcesem. Potwierdzenie otrzymasz e-mailem, a zamówienie znajdziesz w panelu klienta.'
+                            : 'Płatność zakończyła się sukcesem. Potwierdzenie i informacje o realizacji wyślemy na podany adres e-mail.'
                     });
 
-                    pollTimer = window.setTimeout(() => navigate('/dashboard'), 2500);
+                    if (user) {
+                        pollTimer = window.setTimeout(() => navigate('/dashboard'), 2500);
+                    }
                     return;
                 }
 
                 if (data.checkoutStatus === 'expired') {
                     setCheckoutState({
                         type: 'expired',
-                        message: 'Sesja płatności wygasła. Stock został zwolniony, możesz rozpocząć checkout ponownie.'
+                        message: 'Sesja płatności wygasła. Rezerwacja produktów została zwolniona. Możesz rozpocząć zakup ponownie.'
                     });
                     return;
                 }
@@ -154,7 +185,9 @@ const Checkout = () => {
 
                 setCheckoutState({
                     type: 'pending',
-                    message: 'Płatność została przyjęta, ale webhook jeszcze kończy synchronizację. Sprawdź panel klienta za kilka sekund.'
+                    message: user
+                        ? 'Płatność została przyjęta. Aktualizujemy status zamówienia; potwierdzenie wyślemy e-mailem.'
+                        : 'Płatność została przyjęta. Aktualizujemy status zamówienia; potwierdzenie wyślemy e-mailem.'
                 });
             } catch (error) {
                 setCheckoutState({
@@ -170,11 +203,14 @@ const Checkout = () => {
             isActive = false;
             if (pollTimer) window.clearTimeout(pollTimer);
         };
-    }, [searchParams, user, clearCart, navigate, total, cart.length]);
+    }, [searchParams, user, loading, clearCart, navigate, total, cart.length]);
 
     const handleChange = (event) => {
         const { name, value } = event.target;
         setFormData((current) => ({ ...current, [name]: value }));
+        setShippingQuotes([]);
+        setSelectedDeliveryMethod('');
+        setShippingQuoteError('');
         if (errors[name]) {
             setErrors((current) => ({ ...current, [name]: null }));
         }
@@ -189,6 +225,8 @@ const Checkout = () => {
         } else if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email)) {
             nextErrors.email = 'Wpisz poprawny adres e-mail';
         }
+        if (!formData.phone.trim()) nextErrors.phone = 'Numer telefonu jest wymagany do dostawy';
+        else if (formData.phone.replace(/\D/g, '').length < 6) nextErrors.phone = 'Wpisz poprawny numer telefonu';
         if (!formData.country.trim()) nextErrors.country = 'Kraj jest wymagany';
         if (!formData.city.trim()) nextErrors.city = 'Miasto jest wymagane';
         if (!formData.postal_code.trim()) {
@@ -203,18 +241,42 @@ const Checkout = () => {
         return Object.keys(nextErrors).length === 0;
     };
 
-    const handleNextStep = () => {
+    const handleNextStep = async () => {
         if (!validateShipping()) return;
-        setStep(2);
-        window.scrollTo({ top: 0, behavior: 'smooth' });
-    };
-
-    const handleStartCheckout = async () => {
-        if (!user) {
-            navigate('/login');
+        if (shippingQuotes.length > 0) {
+            if (!selectedDeliveryMethod) {
+                setShippingQuoteError('Wybierz metodę dostawy.');
+                return;
+            }
+            setStep(2);
+            window.scrollTo({ top: 0, behavior: 'smooth' });
             return;
         }
 
+        setIsQuotingShipping(true);
+        setShippingQuoteError('');
+        try {
+            const response = await fetch(`${API_BASE}/api/shipping/quotes`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                credentials: 'include',
+                body: JSON.stringify({
+                    items: cart.map((item) => ({ productId: item.id || item.productId, quantity: item.quantity })),
+                    shipping: formData
+                })
+            });
+            const data = await response.json();
+            if (!response.ok) throw new Error(data.error || 'Nie udało się obliczyć kosztu dostawy.');
+            if (!data.quotes?.length) throw new Error('Brak dostępnych metod dostawy dla tego adresu.');
+            setShippingQuotes(data.quotes);
+        } catch (error) {
+            setShippingQuoteError(error.message || 'Nie udało się obliczyć kosztu dostawy.');
+        } finally {
+            setIsQuotingShipping(false);
+        }
+    };
+
+    const handleStartCheckout = async () => {
         if (cart.length === 0) {
             setCheckoutState({
                 type: 'error',
@@ -229,10 +291,14 @@ const Checkout = () => {
         }
 
         if (!isAgreed) {
-            setCheckoutState({
-                type: 'error',
-                message: 'Musisz potwierdzić pełnoletność oraz akceptację zasad wydania żywych zwierząt opisanych w regulaminie.'
-            });
+            setAgeAgreementError('Zaznacz to oświadczenie, aby przejść do płatności.');
+            window.requestAnimationFrame(() => ageAgreementRef.current?.focus());
+            return;
+        }
+
+        if (!selectedDeliveryMethod) {
+            setCheckoutState({ type: 'error', message: 'Najpierw wybierz i sprawdź metodę dostawy.' });
+            setStep(1);
             return;
         }
 
@@ -253,17 +319,26 @@ const Checkout = () => {
                 },
                 credentials: 'include',
                 body: JSON.stringify({
-                    userId: user.id,
                     items: cart.map((item) => ({
                         productId: item.id || item.productId,
                         quantity: item.quantity
                     })),
                     shipping: formData,
+                    deliveryMethod: selectedDeliveryMethod,
+                    expectedShippingAmountCents: selectedDelivery.amountCents,
                     discountCode: appliedDiscount?.code || null
                 })
             });
 
             const data = await response.json();
+            if (response.status === 409 && data.code === 'SHIPPING_QUOTE_CHANGED') {
+                setShippingQuotes(Array.isArray(data.quotes) ? data.quotes : []);
+                setSelectedDeliveryMethod('');
+                setShippingQuoteError('Cena została zaktualizowana. Sprawdź dostępną metodę i ponownie zatwierdź dostawę.');
+                setStep(1);
+                window.scrollTo({ top: 0, behavior: 'smooth' });
+                return;
+            }
             if (!response.ok) {
                 throw new Error(data.error || 'Nie udało się rozpocząć płatności Stripe');
             }
@@ -312,7 +387,7 @@ const Checkout = () => {
                             {checkoutState.type === 'pending' && 'Synchronizacja w toku'}
                             {checkoutState.type === 'cancelled' && 'Płatność przerwana'}
                             {checkoutState.type === 'expired' && 'Sesja wygasła'}
-                            {checkoutState.type === 'error' && 'Nie udało się dokończyć checkoutu'}
+                            {checkoutState.type === 'error' && 'Nie udało się zakończyć płatności'}
                         </h2>
                         <p className="text-sm text-gray-200">{checkoutState.message}</p>
                     </div>
@@ -321,80 +396,133 @@ const Checkout = () => {
         );
     };
 
-    useEffect(() => {
-        if (!loading && !user) {
-            navigate('/login', { replace: true });
-        }
-    }, [loading, navigate, user]);
-
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center px-6 py-12 text-center">
-                <div className="text-sm text-gray-400">Ładowanie checkoutu...</div>
+                <div className="text-sm text-gray-400">Ładowanie podsumowania zamówienia...</div>
             </div>
         );
     }
 
-    if (!user) return null;
+    if (cart.length === 0) {
+        const hasPaymentStatus = checkoutState.type !== 'idle';
+
+        return (
+            <div className="min-h-screen px-6 py-16">
+                <Helmet>
+                    <title>{hasPaymentStatus ? 'Status płatności | VitaZone' : 'Pusty koszyk | VitaZone'}</title>
+                    <meta name="robots" content="noindex,follow" />
+                </Helmet>
+                <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-bg-secondary p-8 sm:p-12">
+                    {hasPaymentStatus && renderCheckoutStatus()}
+                    <h1 className="text-3xl font-bold">{hasPaymentStatus ? 'Status płatności' : 'Koszyk jest pusty'}</h1>
+                    {!hasPaymentStatus && (
+                        <p className="mt-3 max-w-xl leading-relaxed text-gray-300">
+                            Dodaj produkty do koszyka, zanim wybierzesz dostawę i przejdziesz do płatności.
+                        </p>
+                    )}
+                    <Link to="/shop" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2 font-semibold text-black transition-colors hover:bg-white">
+                        Wróć do asortymentu
+                    </Link>
+                </div>
+            </div>
+        );
+    }
 
     return (
         <div className="min-h-screen px-6 py-12">
+            <Helmet>
+                <title>Finalizacja zamówienia | VitaZone</title>
+                <meta name="robots" content="noindex,follow" />
+            </Helmet>
             <div className="mx-auto max-w-5xl">
                 {renderCheckoutStatus()}
 
                 <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Bezpieczna kasa</h1>
+                        <h1 className="text-3xl font-bold">Finalizacja zamówienia</h1>
                         <p className="mt-2 text-sm text-gray-400">
                             Finalizacja zamówienia odbywa się w Stripe Checkout. Dane karty wpisujesz wyłącznie w infrastrukturze Stripe.
                         </p>
                     </div>
                     <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-4 md:block">
                         <div className="flex items-center gap-2 text-sm font-bold text-primary">
-                            <ShieldCheck size={16} /> Stripe + HTTPS
+                            <ShieldCheck size={16} /> Płatność przez Stripe
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">Platnosc przebiega na zabezpieczonej stronie Stripe.</div>
+                        <div className="mt-1 text-xs text-gray-400">Dane płatności podajesz bezpośrednio w Stripe.</div>
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-12 lg:flex-row">
                     <div className="flex-1">
                         <div className="mb-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>1</div>
-                            <h2 className={`text-xl font-bold ${step === 1 ? 'text-white' : 'text-gray-500'}`}>Dane dostawy</h2>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>1</div>
+                            <h2 ref={deliveryHeadingRef} tabIndex={-1} aria-current={step === 1 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 1 ? 'text-white' : 'text-gray-400'}`}>Dane dostawy</h2>
                         </div>
 
                         {step === 1 && (
                             <motion.div initial={{ opacity: 0 }} animate={{ opacity: 1 }} className="space-y-4">
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="fullName" placeholder="Imię i nazwisko" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="email" placeholder="Adres e-mail" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="fullName" label="Imię i nazwisko" placeholder="np. Jan Kowalski" autoComplete="name" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="email" label="Adres e-mail" type="email" placeholder="np. jan@example.com" autoComplete="email" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="phone" label="Telefon do dostawy" type="tel" placeholder="np. 500 600 700" autoComplete="tel" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="country" placeholder="Kraj" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="city" placeholder="Miasto" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="country" label="Kraj" placeholder="Polska" autoComplete="country-name" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="city" label="Miasto" placeholder="np. Jelenia Góra" autoComplete="address-level2" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="postal_code" placeholder="Kod pocztowy (00-000)" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="street" placeholder="Ulica" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="postal_code" label="Kod pocztowy" placeholder="00-000" autoComplete="postal-code" inputMode="numeric" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="street" label="Ulica" placeholder="Nazwa ulicy" autoComplete="address-line1" formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
                                 <div className="grid grid-cols-1 gap-4 md:grid-cols-2">
-                                    <InputField name="house_number" placeholder="Numer domu" formData={formData} handleChange={handleChange} errors={errors} />
-                                    <InputField name="apartment_number" placeholder="Numer lokalu (opcjonalnie)" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="house_number" label="Numer domu" placeholder="np. 12" autoComplete="address-line2" formData={formData} handleChange={handleChange} errors={errors} />
+                                    <InputField name="apartment_number" label="Numer lokalu (opcjonalnie)" placeholder="np. 4" autoComplete="address-line3" required={false} formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
 
+                                <p className="text-xs leading-relaxed text-gray-400">
+                                    Przy wycenie kosztu dostawy Furgonetka otrzyma dane odbiorcy z formularza i parametry paczki.{' '}
+                                    <Link to="/privacy" className="text-primary underline underline-offset-2 hover:text-white">Informacje o danych</Link>
+                                </p>
+
+                                {shippingQuotes.length > 0 && (
+                                    <fieldset className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-5">
+                                        <legend className="px-2 font-bold">Wybierz dostawę</legend>
+                                        {shippingQuotes.map((quote) => (
+                                            <label key={quote.method} className="flex cursor-pointer items-center justify-between gap-4 rounded-xl border border-white/10 p-4">
+                                                <span className="flex items-center gap-3">
+                                                    <input
+                                                        type="radio"
+                                                        name="deliveryMethod"
+                                                        value={quote.method}
+                                                        checked={selectedDeliveryMethod === quote.method}
+                                                        onChange={() => {
+                                                            setSelectedDeliveryMethod(quote.method);
+                                                            setShippingQuoteError('');
+                                                        }}
+                                                    />
+                                                    <span className="font-semibold">{quote.label}</span>
+                                                </span>
+                                                <span className="font-bold">{(quote.amountCents / 100).toFixed(2)} zł</span>
+                                            </label>
+                                        ))}
+                                        <p className="text-xs text-gray-400">Koszt pochodzi z aktualnej wyceny przewoźnika i zostanie ponownie sprawdzony przed płatnością.</p>
+                                    </fieldset>
+                                )}
+                                {shippingQuoteError && <p role="alert" className="text-sm text-red-400">{shippingQuoteError}</p>}
                                 <button
                                     onClick={handleNextStep}
-                                    className="mt-6 w-full rounded-xl bg-primary py-4 font-bold text-black transition-colors hover:bg-white"
+                                    disabled={isQuotingShipping}
+                                    className="mt-6 w-full rounded-xl bg-primary py-4 font-bold text-black transition-colors hover:bg-white disabled:opacity-60"
                                 >
-                                    Przejdź do płatności
+                                    {isQuotingShipping ? 'Sprawdzanie dostawy...' : shippingQuotes.length ? 'Przejdź do płatności' : 'Sprawdź metody i koszt dostawy'}
                                 </button>
                             </motion.div>
                         )}
 
                         <div className="mb-8 mt-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>2</div>
-                            <h2 className={`text-xl font-bold ${step === 2 ? 'text-white' : 'text-gray-500'}`}>Płatność</h2>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>2</div>
+                            <h2 ref={paymentHeadingRef} tabIndex={-1} aria-current={step === 2 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 2 ? 'text-white' : 'text-gray-400'}`}>Płatność</h2>
                         </div>
 
                         {step === 2 && (
@@ -402,7 +530,7 @@ const Checkout = () => {
                                 <div className="rounded-2xl border border-primary/30 bg-white/5 p-5">
                                     <div className="flex items-center gap-3 text-lg font-bold">
                                         <CreditCard className="text-primary" />
-                                        Bezpieczna płatność w Stripe Checkout
+                                        Płatność przez Stripe Checkout
                                     </div>
                                     <p className="mt-2 text-sm text-gray-400">
                                         Po kliknięciu przycisku przejdziesz do hostowanej strony Stripe, gdzie opłacisz zamówienie kartą lub inną metodą aktywną na koncie.
@@ -410,9 +538,10 @@ const Checkout = () => {
                                 </div>
 
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                    <label className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod rabatowy</label>
+                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-400">Kod rabatowy</label>
                                     <div className="flex gap-2">
                                         <input
+                                            id="checkout-promo-code"
                                             value={promoCode}
                                             onChange={(event) => setPromoCode(event.target.value.toUpperCase())}
                                             disabled={Boolean(appliedDiscount)}
@@ -464,16 +593,23 @@ const Checkout = () => {
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                                     <div className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${!isAgreed && isSubmitting ? 'border-red-500 bg-red-500/10' : 'border-white/10 bg-black/20'}`}>
                                         <input
+                                            ref={ageAgreementRef}
                                             type="checkbox"
                                             id="checkoutAge"
                                             checked={isAgreed}
-                                            onChange={(event) => setIsAgreed(event.target.checked)}
+                                            aria-invalid={Boolean(ageAgreementError)}
+                                            aria-describedby={ageAgreementError ? 'checkout-age-error' : undefined}
+                                            onChange={(event) => {
+                                                setIsAgreed(event.target.checked);
+                                                if (event.target.checked) setAgeAgreementError('');
+                                            }}
                                             className="mt-1 h-4 w-4 rounded border-white/20 bg-black/50 text-primary focus:ring-primary"
                                         />
                                         <label htmlFor="checkoutAge" className="cursor-pointer text-sm leading-relaxed text-gray-300">
                                             <span className="font-bold text-red-400">[Wymagane]</span> Oświadczam, że mam ukończone 18 lat oraz że (jeśli zamówienie obejmuje żywe zwierzęta) akceptuję zasady ich wydania i transportu opisane w Regulaminie.
                                         </label>
                                     </div>
+                                    {ageAgreementError && <p id="checkout-age-error" role="alert" className="mt-2 text-sm text-red-400">{ageAgreementError}</p>}
                                 </div>
 
                                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -485,7 +621,7 @@ const Checkout = () => {
                                     </button>
                                     <button
                                         onClick={handleStartCheckout}
-                                        disabled={!isAgreed || isSubmitting}
+                                        disabled={isSubmitting || !selectedDeliveryMethod}
                                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 font-bold text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {isSubmitting ? (
@@ -502,9 +638,9 @@ const Checkout = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                                     <ShieldCheck size={14} />
-                                    Bezpieczne szyfrowane polaczenie
+                                    Dane płatności podajesz na stronie Stripe.
                                 </div>
                             </motion.div>
                         )}
@@ -517,7 +653,7 @@ const Checkout = () => {
                             <div className="max-h-80 space-y-4 overflow-y-auto pr-2">
                                 {cart.length === 0 && (
                                     <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-5 text-sm text-gray-400">
-                                        Koszyk jest pusty. Dodaj produkty, aby rozpocząć checkout.
+                                        Koszyk jest pusty. Dodaj produkty, aby przejść do płatności.
                                     </div>
                                 )}
 
@@ -548,7 +684,7 @@ const Checkout = () => {
                                             Dostawa kurierska
                                         </span>
                                     }
-                                    value={`${SHIPPING_AMOUNT.toFixed(2)} zł`}
+                                    value={selectedDelivery ? `${shippingAmount.toFixed(2)} zł` : 'Wybierz metodę'}
                                 />
                                 {appliedDiscount && (
                                     <SummaryRow
@@ -559,7 +695,7 @@ const Checkout = () => {
                                 )}
                                 <div className="flex items-center justify-between border-t border-white/10 pt-4 text-xl font-bold text-primary">
                                     <span>Razem</span>
-                                    <span>{total.toFixed(2)} zł</span>
+                                    <span>{Number.isFinite(total) ? `${total.toFixed(2)} zł` : 'Wyceń dostawę'}</span>
                                 </div>
                             </div>
                         </div>
@@ -570,20 +706,41 @@ const Checkout = () => {
     );
 };
 
-const InputField = ({ name, placeholder, formData, handleChange, errors }) => (
+const InputField = ({
+    name,
+    label,
+    placeholder,
+    type = 'text',
+    autoComplete,
+    inputMode,
+    required = true,
+    formData,
+    handleChange,
+    errors
+}) => (
     <div>
+        <label htmlFor={`checkout-${name}`} className="mb-2 block text-sm font-medium text-gray-200">
+            {label}{required ? ' *' : ''}
+        </label>
         <input
+            id={`checkout-${name}`}
             name={name}
+            type={type}
+            autoComplete={autoComplete}
+            inputMode={inputMode}
+            required={required}
+            aria-invalid={Boolean(errors[name])}
+            aria-describedby={errors[name] ? `checkout-${name}-error` : undefined}
             value={formData[name]}
             onChange={handleChange}
             placeholder={placeholder}
-            className={`w-full rounded-xl border p-3 outline-none transition-colors focus:ring-1 ${errors[name]
+            className={`min-h-12 w-full rounded-xl border p-3 outline-none transition-colors focus:ring-1 ${errors[name]
                 ? 'border-red-500 bg-red-500/5 focus:border-red-500 focus:ring-red-500'
                 : 'border-white/10 bg-white/5 focus:border-primary focus:ring-primary'
                 }`}
         />
         {errors[name] && (
-            <p className="mt-1 ml-1 text-xs font-semibold text-red-500">{errors[name]}</p>
+            <p id={`checkout-${name}-error`} role="alert" className="mt-1 ml-1 text-xs font-semibold text-red-400">{errors[name]}</p>
         )}
     </div>
 );

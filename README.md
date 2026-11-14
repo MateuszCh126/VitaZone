@@ -1,6 +1,6 @@
 # VitaZone
 
-Production-hardened storefront for exotic animals and terrarium accessories.
+React storefront for terrarium equipment and exotic animal products.
 
 ## Stack
 
@@ -14,16 +14,23 @@ Production-hardened storefront for exotic animals and terrarium accessories.
 
 ## Local Development
 
-- Install dependencies: `pnpm install` or `npm install`
-- Start frontend + API: `npm run dev`
-- Run lint: `npm run lint`
-- Run tests with coverage: `npm run test:coverage`
-- Build production bundle: `npm run build`
+- Install dependencies with the pinned package manager: `pnpm install`
+- Start frontend + API: `pnpm dev`
+- Run lint: `pnpm lint`
+- Run tests with coverage: `pnpm test:coverage`
+- Build production bundle: `pnpm build`
+
+`pnpm migrate` is a legacy, destructive schema reset and is blocked by default. It drops tables and must only be used with a disposable local database after explicitly setting `ALLOW_DESTRUCTIVE_SCHEMA_RESET=true`. A remote target needs a second opt-in, and production/Vercel targets are always refused. This command is not the routine forward-migration workflow; the migration system is documented for replacement in the technical roadmap.
 
 ## Deployment
-
 - Production deploys are triggered from `origin/main` through Vercel Git Integration.
 - Vercel uses `pnpm` deterministically via `packageManager` in `package.json` and `pnpm-lock.yaml`.
+
+## Demo Data Safety
+
+- `server/scripts/catalogData.js` contains synthetic development data, not a verified product catalog.
+- `pnpm seed` deletes existing users, addresses, categories, products, orders, and order items before inserting demo records. `pnpm sync:catalog` can overwrite prices/stock and archive products. Both scripts are blocked by default and refuse Vercel/production environments.
+- Use only a disposable local database. Explicitly set `ALLOW_DEMO_SEED=true` or `ALLOW_DEMO_CATALOG_SYNC=true` for the matching local operation. Remote database targets additionally require `ALLOW_REMOTE_DEMO_DATABASE=true`; never use demo data against the production database.
 
 ## Security: Secrets Policy
 
