@@ -1,8 +1,8 @@
 # VitaZone engineering audit and implementation plan
 
-**Status:** Audit documentation is integrated through PR #2 squash commit `005f272` on `main`. PR #3 remains a separate configurator integration. No deployment or production migration is authorized.
+**Status:** Storefront audit and implementation are integrated through PR #2 squash commit `005f272` on `main`. The configurator implementation and its separate verification record are in [terrarium-configurator.md](terrarium-configurator.md). No deployment or production migration is authorized.
 **Date:** 2026-11-14
-**Branch / MR:** PR #2 merged to `main` on 2026-11-14; PR #3 is separately under integration review.
+**Branch / MR:** PR #2 merged to `main` on 2026-11-14; configurator changes and verification are recorded separately.
 **Task:** project owner requested a fact-based technical description and detailed implementation roadmap, including modules/files, data architecture, every route and user-facing copy, visual quality, workflows/tools and research.
 
 ## Scope completed in this iteration

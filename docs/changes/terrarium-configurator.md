@@ -1,6 +1,6 @@
 # Terrarium configurator implementation
 
-- Status: implemented on `codex/terrarium-configurator-3d`; locally reconciled with the `main` tree after PR #2 and reviewed. Final PR #3 push/merge remains pending; migration and deployment are not authorized.
+- Status: implemented and reviewed against the post-PR-#2 `main` tree; the additive migration remains unapplied and deployment is not authorized.
 - Scope: lazy 3D builder, SKU metadata contract, project submission/review, quote acceptance and Stripe checkout integration.
 - Data: no live inventory or GLB models were supplied. The local development catalog is clearly marked demo-only and cannot be submitted. Production displays an empty catalog state until real SKUs are configured.
 - Database: additive migration `server/scripts/migrations/006_create_terrarium_projects.sql`; not applied. Apply using `pnpm migrate:terrarium` only in the intended environment after review.
