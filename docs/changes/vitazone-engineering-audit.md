@@ -1,8 +1,8 @@
 # VitaZone engineering audit and implementation plan
 
-**Status:** In progress — audit/doc updates are being finalized on `codex/vitazone-visual-refresh`; owner authorized integration to `main` after review and verification. No deployment is authorized.
+**Status:** Storefront audit and implementation are integrated through PR #2 squash commit `005f272` on `main`. The configurator implementation and its separate verification record are in [terrarium-configurator.md](terrarium-configurator.md). No deployment or production migration is authorized.
 **Date:** 2026-11-14
-**Branch / MR:** PR #2, draft; base `codex/vitazone-trust-checkout`.
+**Branch / MR:** PR #2 merged to `main` on 2026-11-14; configurator changes and verification are recorded separately.
 **Task:** project owner requested a fact-based technical description and detailed implementation roadmap, including modules/files, data architecture, every route and user-facing copy, visual quality, workflows/tools and research.
 
 ## Scope completed in this iteration
@@ -44,9 +44,9 @@
 - Expanded the code reference to map 191 selected source/config candidates and distinguish code, mock-test evidence, and owner/environment-dependent unknowns. Expanded the route audit to 16 routes, with explicit limits for historic renders and mock-based observations.
 - Updated skill/tool inventory with the five scanned skill roots, exact snapshot counts, and a clear distinction between skills fully read and workflows only inventoried.
 - Corrected an FAQ answer that implied an unverified contact channel; added a regression assertion.
-- PR #2 was draft/open against `codex/vitazone-trust-checkout` with no GitHub checks. Direct comparison with `main` exposed 19 conflicts. The current branch now contains a local merge commit from `origin/main`; conflicts were reconciled and the tree passes the verification suite. The merge commit has not yet been pushed and PR #2's base still needs updating/review on GitHub.
-- PR #3 was `DIRTY` against `main`; its independent review found five code conflicts plus a checkout-session recovery edge case. Resolution and regression verification are pending. Do not deploy or migrate production data.
-- Verification after PR #2/main reconciliation: `pnpm exec vitest run` — 26 files / 112 tests passed; `pnpm lint` passed; `pnpm build` passed with the existing 11-month-old Browserslist data warning; `pnpm check:secrets` passed; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 passed on demo/mock data.
+- PR #2 had no GitHub checks. After reconciling 19 conflicts with `main`, the branch passed the full local suite and merged to `main` via squash as `005f272be5d7e4d868490058f37848ef224d752c`.
+- PR #3's independent review found code conflicts and an abandoned checkout retry edge case. The recovery fix and conflict resolution are now in the local PR #3 integration tree; its full verification is recorded in `docs/changes/terrarium-configurator.md`. The migration and live services remain untouched.
+- Verification for PR #2 before its merge: `pnpm exec vitest run` — 26 files / 112 tests passed; `pnpm lint` passed; `pnpm build` passed with the existing 11-month-old Browserslist data warning; `pnpm check:secrets` passed; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 passed on demo/mock data.
 
 ## Sources
 

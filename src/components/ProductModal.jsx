@@ -6,7 +6,7 @@ import { API_BASE } from '../utils/config';
 const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories }) => {
     // Destructure errors from formState
     const { register, handleSubmit, reset, setValue, watch, formState: { errors } } = useForm({
-        defaultValues: { imageUrls: [] }
+        defaultValues: { imageUrls: [], specsJson: '{}' }
     });
     const [uploading, setUploading] = React.useState(false);
     const [specsError, setSpecsError] = React.useState('');
@@ -64,9 +64,9 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
             setValue('species', editingProduct.species || '');
             setValue('specsJson', JSON.stringify(editingProduct.specs || {}, null, 2));
         } else {
-            reset({ imageUrls: [] });
-            setSpecsError('');
+            reset({ imageUrls: [], specsJson: '{}' });
         }
+        setSpecsError('');
     }, [editingProduct, isOpen, reset, setValue]);
 
     useEffect(() => {
@@ -125,24 +125,24 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
     if (!isOpen) return null;
 
     const onFormSubmit = (data) => {
-        let specs = {};
+        let specs;
         try {
-            specs = data.specsJson?.trim() ? JSON.parse(data.specsJson) : {};
+            specs = JSON.parse(data.specsJson || '{}');
             if (!specs || typeof specs !== 'object' || Array.isArray(specs)) {
-                throw new Error('JSON musi zawierać obiekt.');
+                throw new Error('Specyfikacja musi być obiektem JSON.');
             }
-            setSpecsError('');
         } catch {
-            setSpecsError('Wpisz poprawny obiekt JSON. Wymiary muszą być rzeczywistymi wymiarami zapakowanego produktu.');
+            setSpecsError('Wpisz poprawny obiekt JSON. Nie zapisaliśmy zmian.');
             return;
         }
+        setSpecsError('');
         const { specsJson: _specsJson, ...formData } = data;
         const payload = {
             ...formData,
             specs,
             price: parseFloat(data.price),
             stock: parseInt(data.stock),
-            imageUrls: data.imageUrls || [] // Use array from form
+            imageUrls: data.imageUrls || []
         };
         onSubmit(payload);
     };
@@ -246,6 +246,23 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                     </div>
 
                     <div className="space-y-2">
+                        <label className="text-sm text-gray-400" htmlFor="product-specs-json">Specyfikacja produktu i paczki (JSON)</label>
+                        <textarea
+                            id="product-specs-json"
+                            {...register('specsJson')}
+                            rows={8}
+                            spellCheck="false"
+                            placeholder={'{\n  "terrariumDesigner": {\n    "role": "element",\n    "dimensionsMm": { "width": 120, "height": 80, "depth": 100 },\n    "allowedMountSurfaces": ["floor"],\n    "model": { "url": "/models/terrarium/SKU.glb", "version": "1" }\n  },\n  "shipping_parcels": [{ "width": 30, "depth": 20, "height": 10, "weight": 2 }]\n}'}
+                            className="w-full rounded-lg border border-white/10 bg-black/50 p-3 font-mono text-xs leading-5 text-gray-200 outline-none focus:border-primary/50"
+                            aria-describedby="product-specs-help"
+                        />
+                        <p id="product-specs-help" className="text-xs leading-5 text-gray-500">
+                            W `terrariumDesigner.dimensionsMm` wpisz wymiary elementu w milimetrach, dodaj lokalny model w `terrariumDesigner.model` i dozwolone powierzchnie montażu. Dla wyceny dostawy wpisz w `shipping_parcels` wymiary spakowanej paczki w centymetrach oraz masę w kilogramach.
+                        </p>
+                        {specsError && <p role="alert" className="text-xs text-red-400">{specsError}</p>}
+                    </div>
+
+                    <div className="space-y-2">
                         <label htmlFor="product-images" className="text-sm text-gray-400">Zdjęcia produktu</label>
                         <div className="flex gap-2">
                             <input
@@ -283,19 +300,6 @@ const ProductModal = ({ isOpen, onClose, onSubmit, editingProduct, categories })
                     <div className="space-y-2">
                         <label htmlFor="product-description" className="text-sm text-gray-400">Opis produktu</label>
                         <textarea id="product-description" {...register('description')} rows={4} className="w-full bg-black/50 border border-white/10 rounded-lg p-3 outline-none focus:border-primary/50 resize-none"></textarea>
-                    </div>
-
-                    <div className="space-y-2">
-                        <label htmlFor="product-specs-json" className="text-sm text-gray-400">Specyfikacja produktu i paczki (JSON)</label>
-                        <textarea
-                            id="product-specs-json"
-                            {...register('specsJson')}
-                            rows={5}
-                            className="w-full rounded-lg border border-white/10 bg-black/50 p-3 font-mono text-xs outline-none focus:border-primary/50"
-                            placeholder={'{\n  "shipping_parcels": [{ "width": 30, "depth": 20, "height": 10, "weight": 2 }]\n}'}
-                        />
-                        <p className="text-xs text-gray-400">Pola wymiarów (cm) i masy (kg) wpisz po spakowaniu produktu. Do wyceny wymagane są width, depth, height i weight.</p>
-                        {specsError && <p role="alert" className="text-xs text-red-400">{specsError}</p>}
                     </div>
 
                     <div className="flex justify-end gap-3 pt-4">

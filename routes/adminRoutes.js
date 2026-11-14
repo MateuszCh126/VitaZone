@@ -11,8 +11,17 @@ import { UpdateOrderStatusSchema } from '../schemas/orderSchema.js';
 import { ProductSchema, ToggleActiveSchema } from '../schemas/productSchema.js';
 import { CreateDiscountSchema, UpdateDiscountSchema } from '../schemas/discountSchema.js';
 import { sendOrderStatusEmail } from '../server/services/emailService.js';
+import {
+    createAdminQuote,
+    getAdminProject,
+    getAdminProjects
+} from '../server/controllers/terrariumController.js';
 
 const router = express.Router();
+
+router.get('/terrarium/projects', getAdminProjects);
+router.get('/terrarium/projects/:projectId', getAdminProject);
+router.post('/terrarium/projects/:projectId/quote', createAdminQuote);
 
 router.get('/stats', async (req, res) => {
     let client;

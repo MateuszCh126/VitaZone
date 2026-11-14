@@ -47,6 +47,7 @@ const env = cleanEnv(process.env, {
     RESEND_API_KEY: str({ default: '' }),
     RESEND_FROM_EMAIL: str({ default: '' }),
     RESEND_REPLY_TO_EMAIL: str({ default: '' }),
+    TERRARIUM_ADMIN_EMAIL: str({ default: '' }),
 });
 
 export default env;

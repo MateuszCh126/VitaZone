@@ -207,7 +207,7 @@ describe('Stripe checkout controller contract', () => {
     it('fulfills a delayed Checkout payment only after Stripe confirms success', async () => {
         mocks.stripeConstructEvent.mockReturnValue({
             type: 'checkout.session.async_payment_succeeded',
-            data: { object: { id: 'cs_test_delayed123456', metadata: { orderId: 'order-demo-1' }, payment_intent: 'pi_delayed_1' } }
+            data: { object: { id: 'cs_test_delayed123456', payment_status: 'paid', metadata: { orderId: 'order-demo-1' }, payment_intent: 'pi_delayed_1' } }
         });
         const res = makeResponse();
 

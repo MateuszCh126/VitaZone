@@ -23,6 +23,8 @@ const Login = lazyWithRetry(() => import('./pages/Login'));
 const Checkout = lazyWithRetry(() => import('./pages/Checkout'));
 const Dashboard = lazyWithRetry(() => import('./pages/Dashboard'));
 const AdminDashboard = lazyWithRetry(() => import('./pages/AdminDashboard'));
+const TerrariumConfigurator = lazyWithRetry(() => import('./pages/TerrariumConfigurator'));
+const TerrariumQuoteCheckout = lazyWithRetry(() => import('./pages/TerrariumQuoteCheckout'));
 const About = lazyWithRetry(() => import('./pages/About'));
 const Contact = lazyWithRetry(() => import('./pages/Contact'));
 const TermsAndConditions = lazyWithRetry(() => import('./pages/legal/TermsAndConditions'));
@@ -165,6 +167,8 @@ function App() {
                     <Route path="/checkout" element={<Checkout />} />
                     <Route path="/dashboard" element={<Dashboard />} />
                     <Route path="/admin" element={<AdminDashboard />} />
+                    <Route path="/terrarium" element={<TerrariumConfigurator />} />
+                    <Route path="/terrarium/checkout/:projectId" element={<TerrariumQuoteCheckout />} />
                     <Route path="*" element={<NotFound />} />
                   </Routes>
                 </React.Suspense>
