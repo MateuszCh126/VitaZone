@@ -44,8 +44,9 @@
 - Expanded the code reference to map 191 selected source/config candidates and distinguish code, mock-test evidence, and owner/environment-dependent unknowns. Expanded the route audit to 16 routes, with explicit limits for historic renders and mock-based observations.
 - Updated skill/tool inventory with the five scanned skill roots, exact snapshot counts, and a clear distinction between skills fully read and workflows only inventoried.
 - Corrected an FAQ answer that implied an unverified contact channel; added a regression assertion.
-- PR #2 remained draft/open at the recorded head and had no GitHub checks. PR #3 was `DIRTY` against `main` and remains subject to separate review; neither branch should be merged until conflict resolution and the accepted verification suite complete.
-- Resumed verification on the updated local tree: `pnpm exec vitest run` — 26 files / 112 tests passed; `pnpm lint` passed; `pnpm build` passed with the existing 11-month-old Browserslist data warning; `pnpm check:secrets` passed; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 passed on demo/mock data. Review of PR #3 and clean integration with latest `main` are still pending. Do not deploy or migrate production data.
+- PR #2 was draft/open against `codex/vitazone-trust-checkout` with no GitHub checks. Direct comparison with `main` exposed 19 conflicts. The current branch now contains a local merge commit from `origin/main`; conflicts were reconciled and the tree passes the verification suite. The merge commit has not yet been pushed and PR #2's base still needs updating/review on GitHub.
+- PR #3 was `DIRTY` against `main`; its independent review found five code conflicts plus a checkout-session recovery edge case. Resolution and regression verification are pending. Do not deploy or migrate production data.
+- Verification after PR #2/main reconciliation: `pnpm exec vitest run` — 26 files / 112 tests passed; `pnpm lint` passed; `pnpm build` passed with the existing 11-month-old Browserslist data warning; `pnpm check:secrets` passed; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 passed on demo/mock data.
 
 ## Sources
 
