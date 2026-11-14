@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Bieżący audyt i poprawki powstają na `codex/vitazone-visual-refresh` (PR #2). Po zakończeniu audytu, zielonej weryfikacji i przeglądzie konfliktów użytkownik polecił zintegrować ukończone, bezpieczne zmiany z `main`; wdrożenie nadal wymaga osobnego polecenia.
+- Audyt sklepu, warstwa wizualna i konfigurator terrarium zostały scalone do `main` przez PR #2 i PR #3. Pozostałe pozycje poniżej są roadmapą — ich niewykonane bramki pozostają otwarte. Wdrożenie i migracja produkcyjna nadal wymagają osobnego polecenia oraz potwierdzonych danych właściciela.
 - Używamy syntetycznych fixture; bez dumpów/połączeń do produkcyjnej bazy, transakcji live i sekretów w repo/logach.
 - Ceny, stan, prawne informacje, marketing claims, logistyka i dane zwierząt wymagają źródła i właściciela.
 - Kupujący bez konta i z kontem są wspierani; konto pozostaje opcjonalne.
@@ -33,7 +33,7 @@
 
 ## Cel, metryki i dowód
 
-**Status:** plan roboczy do realizacji w kolejnych zmianach PR #2; punkty zależne od firmy, klientów lub prawnika są oznaczone i nie powinny być zastępowane fikcyjnymi danymi.
+**Status:** roadmapa kolejnych prac po PR #2 i PR #3; nie wszystkie zadania planu zostały wykonane. Punkty zależne od firmy, klientów, dostawców lub prawnika są oznaczone i nie powinny być zastępowane fikcyjnymi danymi.
 **Stan bazowy:** branch `codex/vitazone-visual-refresh`, SPA React 19/Vite, Express 5, PostgreSQL przez `pg`, Stripe Checkout, Vercel Functions.
 **Zasady:** zachować markę black/green i spokojny charakter; nie wprowadzać manipulacyjnej presji; ceny, stan, reputacja i treści prawne muszą mieć dowód; prace i testy lokalne używają syntetycznych danych; bez migracji produkcyjnej i deployu. Integracja do `main` jest dozwolona po zakończeniu audytu, review, testów oraz rozwiązaniu konfliktów; nie używać force-push.
 
@@ -321,4 +321,4 @@ Nowy moduł powinien ukrywać złożoność za małym interfejsem, ujawniać kol
 7. SEO i wydajność mają test raw HTML/deep links, kontrolę crawl i powtarzalne lab/field results (field tylko jeśli dane istnieją).
 8. WCAG review obejmuje automated + manual, 200% zoom, czytnik ekranu i ograniczony ruch.
 9. CI wymagane na PR, powtarzalne kontrole lokalne, jawny status deploymentu i dowód rollback/operacji.
-10. Wszystkie zmiany są w gałęzi PR #2 albo rozbite zgodnie z uzgodnioną zależnością; `main` nietknięty, żadnego niezamówionego deployu.
+10. Zmiany objęte PR #2 i PR #3 są scalone do `main`; dalsze zadania wymagają osobnego zakresu, review i weryfikacji. Nie wykonano niezamówionego deployu ani migracji produkcyjnej.

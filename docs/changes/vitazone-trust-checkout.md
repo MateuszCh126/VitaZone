@@ -1,21 +1,21 @@
 ---
 title: "VitaZone: trust and guest checkout"
-status: draft-pr-open-awaiting-owner-facts-and-review
+status: merged-pr1-followups-in-pr2-owner-facts-pending
 owner: Codex
-updated: 2026-11-13
+updated: 2026-11-14
 ---
 
 # VitaZone — zaufanie i zakup bez konta
 
 ## Zakres i status
 
-[PR #1](https://github.com/MateuszCh126/VitaZone/pull/1) jest otwarty jako draft do `main`. Bieżące rozszerzenie integracji dostawy jest przygotowane lokalnie na gałęzi `codex/vitazone-trust-checkout`; przed wysłaniem wymaga końcowego przeglądu. Nie scalono ani nie wdrożono.
+[PR #1](https://github.com/MateuszCh126/VitaZone/pull/1) został scalony do `main`. Późniejsze poprawki zaufania, dostawy i warstwy wizualnej trafiły do `main` przez [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) (squash `005f272`). Historia niżej opisuje zakres i granice dowodów z tych iteracji; nie potwierdza wdrożenia produkcyjnego.
 
 - Checkout: dopuszczono gościa w API i UI. Serwer wiąże konto wyłącznie z sesją uwierzytelnioną, a klient nie przesyła `userId`. Odpowiedź publicznego sprawdzenia sesji ograniczona do statusu płatności; nie zwraca identyfikatora zamówienia ani jego historii. Id sesji przyjmowane w body POST zamiast ścieżki GET. Webhook pozostaje osobnym mechanizmem finalizacji. Admin listuje zamówienia gości przez adres ze snapshotu wysyłki.
 - Checkout UI: etykiety, autocomplete, typ e-mail, błędy przy polach, zakup bez logowania i bez przekierowania do panelu po zakupie gościa.
 - Listing: sortowanie po cenie i `created_at` oraz kolejność katalogu; chipy aktywnych filtrów, liczba wyników, jasny reset; dwie ścieżki wejściowe.
 - Niepotwierdzone badge'e i „Najczęściej wybierane” zastąpiono neutralnym oznaczeniem; bez danych nie pokazujemy bestsellerów i dopasowania na start.
-- Kontakt: usunięto jawnie fikcyjny telefon i adres. Kanał email jest nadal wpisany w istniejącym kodzie, lecz wymaga potwierdzenia przez właściciela.
+- Kontakt: w PR #1 usunięto jawnie fikcyjny telefon i adres. Niezweryfikowany adres e-mail usunięto później w PR #2; działający kanał kontaktu nadal wymaga potwierdzenia przez właściciela.
 - Cookies: równorzędna akceptacja/odmowa analityki, dostępna klawiaturą kontrolka i opis zgodny z istniejącym przełączaniem analityki Vercel. Marketing nie jest oferowany jako kategoria zgody.
 - SEO: poprawiona sitemap dla potwierdzonego aliasu i publicznych stron, wildcard kieruje do prawdziwej 404, istniejący Product JSON-LD nie dodaje opinii ani ocen.
 - Badania i rejestr niepewności: [plan badań UX](../research/vitazone-ux-research.md).
@@ -38,7 +38,7 @@ updated: 2026-11-13
 
 ## Status przeglądu
 
-- PR #1 pozostaje otwarty jako draft; brak scalania i wdrożenia.
+- PR #1 został scalony do `main`; PR #2 później usunął niezweryfikowany kanał e-mail. Brak potwierdzenia wdrożenia produkcyjnego.
 - Runner Playwright działa lokalnie na loopbackie i używa wyłącznie mocków demo; prawdziwa transakcja i webhook Stripe pozostają niezweryfikowane.
 
 ## Dostawa InPost/DPD — przygotowanie integracji

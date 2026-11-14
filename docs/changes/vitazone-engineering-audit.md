@@ -45,7 +45,7 @@
 - Updated skill/tool inventory with the five scanned skill roots, exact snapshot counts, and a clear distinction between skills fully read and workflows only inventoried.
 - Corrected an FAQ answer that implied an unverified contact channel; added a regression assertion.
 - PR #2 had no GitHub checks. After reconciling 19 conflicts with `main`, the branch passed the full local suite and merged to `main` via squash as `005f272be5d7e4d868490058f37848ef224d752c`.
-- PR #3's independent review found code conflicts and an abandoned checkout retry edge case. The recovery fix and conflict resolution are now in the local PR #3 integration tree; its full verification is recorded in `docs/changes/terrarium-configurator.md`. The migration and live services remain untouched.
+- PR #3's independent review found code conflicts and an abandoned checkout retry edge case. Recovery and conflict fixes were verified and merged via squash commit `6713a14`; full evidence is in [terrarium-configurator.md](terrarium-configurator.md). The migration and live services remain untouched.
 - Verification for PR #2 before its merge: `pnpm exec vitest run` — 26 files / 112 tests passed; `pnpm lint` passed; `pnpm build` passed with the existing 11-month-old Browserslist data warning; `pnpm check:secrets` passed; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 passed on demo/mock data.
 
 ## Sources
