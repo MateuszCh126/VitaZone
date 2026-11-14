@@ -1,4 +1,6 @@
-# VitaZone Developer Handbook
+# VitaZone Developer Handbook — materiał historyczny
+
+> **Nie używaj jako źródła prawdy.** Ten handbook zawiera niezweryfikowane i nieaktualne deklaracje (w tym „Production Ready”) oraz opisy, które rozchodzą się z bieżącym kodem. Aktualny audyt, mapę modułów, fakty, ryzyka i plan prac znajdziesz w [`docs/technical/current-state-and-roadmap.md`](docs/technical/current-state-and-roadmap.md). Pozostawiono plik dla zachowania historii; aktualizacje dokumentacji prowadź w indeksie [`docs/README.md`](docs/README.md).
 
 > **Version**: 3.0.0 (Commercial Poland Release)
 > **Status**: Production Ready

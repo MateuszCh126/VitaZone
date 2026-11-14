@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
-import { useNavigate, useSearchParams } from 'react-router-dom';
+import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
     AlertCircle,
     Check,
@@ -33,6 +34,7 @@ const Checkout = () => {
     const [step, setStep] = useState(1);
     const [isSubmitting, setIsSubmitting] = useState(false);
     const [isAgreed, setIsAgreed] = useState(false);
+    const [ageAgreementError, setAgeAgreementError] = useState('');
     const [shippingQuotes, setShippingQuotes] = useState([]);
     const [selectedDeliveryMethod, setSelectedDeliveryMethod] = useState('');
     const [shippingQuoteError, setShippingQuoteError] = useState('');
@@ -43,6 +45,11 @@ const Checkout = () => {
         message: ''
     });
     const didClearCartRef = useRef(false);
+    const cartRef = useRef(cart);
+    const deliveryHeadingRef = useRef(null);
+    const paymentHeadingRef = useRef(null);
+    const previousStepRef = useRef(step);
+    const ageAgreementRef = useRef(null);
 
     const [formData, setFormData] = useState({
         fullName: user?.full_name || user?.name || '',
@@ -55,6 +62,7 @@ const Checkout = () => {
         house_number: user?.houseNumber || '',
         apartment_number: user?.apartmentNumber || ''
     });
+    cartRef.current = cart;
 
     useEffect(() => {
         setFormData((current) => ({
@@ -70,6 +78,14 @@ const Checkout = () => {
             apartment_number: current.apartment_number || user?.apartmentNumber || ''
         }));
     }, [user]);
+
+    useEffect(() => {
+        if (previousStepRef.current === step) return;
+        previousStepRef.current = step;
+        window.requestAnimationFrame(() => {
+            (step === 1 ? deliveryHeadingRef.current : paymentHeadingRef.current)?.focus();
+        });
+    }, [step]);
 
     const subtotal = useMemo(() => cartTotal, [cartTotal]);
     const discountValue = useMemo(() => (appliedDiscount ? appliedDiscount.amount / 100 : 0), [appliedDiscount]);
@@ -128,11 +144,14 @@ const Checkout = () => {
                         didClearCartRef.current = true;
                         const trackedPurchaseKey = `purchase:${sessionId}`;
                         if (!window.sessionStorage.getItem(trackedPurchaseKey)) {
-                            trackEvent('purchase', {
-                                ...(Number.isFinite(total) ? { value: total } : {}),
-                                currency: 'PLN',
-                                itemCount: cart.length
-                            });
+                            const purchaseEvent = {
+                                currency: typeof data.currency === 'string' ? data.currency : 'PLN',
+                                itemCount: cartRef.current.reduce((count, item) => count + item.quantity, 0)
+                            };
+                            if (Number.isInteger(data.amountTotalCents)) {
+                                purchaseEvent.value = data.amountTotalCents / 100;
+                            }
+                            trackEvent('purchase', purchaseEvent);
                             window.sessionStorage.setItem(trackedPurchaseKey, '1');
                         }
                         await clearCart();
@@ -154,7 +173,7 @@ const Checkout = () => {
                 if (data.checkoutStatus === 'expired') {
                     setCheckoutState({
                         type: 'expired',
-                        message: 'Sesja płatności wygasła. Stock został zwolniony, możesz rozpocząć checkout ponownie.'
+                        message: 'Sesja płatności wygasła. Rezerwacja produktów została zwolniona. Możesz rozpocząć zakup ponownie.'
                     });
                     return;
                 }
@@ -272,10 +291,8 @@ const Checkout = () => {
         }
 
         if (!isAgreed) {
-            setCheckoutState({
-                type: 'error',
-                message: 'Musisz potwierdzić pełnoletność oraz akceptację zasad wydania żywych zwierząt opisanych w regulaminie.'
-            });
+            setAgeAgreementError('Zaznacz to oświadczenie, aby przejść do płatności.');
+            window.requestAnimationFrame(() => ageAgreementRef.current?.focus());
             return;
         }
 
@@ -370,7 +387,7 @@ const Checkout = () => {
                             {checkoutState.type === 'pending' && 'Synchronizacja w toku'}
                             {checkoutState.type === 'cancelled' && 'Płatność przerwana'}
                             {checkoutState.type === 'expired' && 'Sesja wygasła'}
-                            {checkoutState.type === 'error' && 'Nie udało się dokończyć checkoutu'}
+                            {checkoutState.type === 'error' && 'Nie udało się zakończyć płatności'}
                         </h2>
                         <p className="text-sm text-gray-200">{checkoutState.message}</p>
                     </div>
@@ -382,36 +399,65 @@ const Checkout = () => {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center px-6 py-12 text-center">
-                <div className="text-sm text-gray-400">Ładowanie checkoutu...</div>
+                <div className="text-sm text-gray-400">Ładowanie podsumowania zamówienia...</div>
+            </div>
+        );
+    }
+
+    if (cart.length === 0) {
+        const hasPaymentStatus = checkoutState.type !== 'idle';
+
+        return (
+            <div className="min-h-screen px-6 py-16">
+                <Helmet>
+                    <title>{hasPaymentStatus ? 'Status płatności | VitaZone' : 'Pusty koszyk | VitaZone'}</title>
+                    <meta name="robots" content="noindex,follow" />
+                </Helmet>
+                <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-bg-secondary p-8 sm:p-12">
+                    {hasPaymentStatus && renderCheckoutStatus()}
+                    <h1 className="text-3xl font-bold">{hasPaymentStatus ? 'Status płatności' : 'Koszyk jest pusty'}</h1>
+                    {!hasPaymentStatus && (
+                        <p className="mt-3 max-w-xl leading-relaxed text-gray-300">
+                            Dodaj produkty do koszyka, zanim wybierzesz dostawę i przejdziesz do płatności.
+                        </p>
+                    )}
+                    <Link to="/shop" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2 font-semibold text-black transition-colors hover:bg-white">
+                        Wróć do asortymentu
+                    </Link>
+                </div>
             </div>
         );
     }
 
     return (
         <div className="min-h-screen px-6 py-12">
+            <Helmet>
+                <title>Finalizacja zamówienia | VitaZone</title>
+                <meta name="robots" content="noindex,follow" />
+            </Helmet>
             <div className="mx-auto max-w-5xl">
                 {renderCheckoutStatus()}
 
                 <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Bezpieczna kasa</h1>
+                        <h1 className="text-3xl font-bold">Finalizacja zamówienia</h1>
                         <p className="mt-2 text-sm text-gray-400">
                             Finalizacja zamówienia odbywa się w Stripe Checkout. Dane karty wpisujesz wyłącznie w infrastrukturze Stripe.
                         </p>
                     </div>
                     <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-4 md:block">
                         <div className="flex items-center gap-2 text-sm font-bold text-primary">
-                            <ShieldCheck size={16} /> Stripe + HTTPS
+                            <ShieldCheck size={16} /> Płatność przez Stripe
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">Platnosc przebiega na zabezpieczonej stronie Stripe.</div>
+                        <div className="mt-1 text-xs text-gray-400">Dane płatności podajesz bezpośrednio w Stripe.</div>
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-12 lg:flex-row">
                     <div className="flex-1">
                         <div className="mb-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>1</div>
-                            <h2 className={`text-xl font-bold ${step === 1 ? 'text-white' : 'text-gray-500'}`}>Dane dostawy</h2>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>1</div>
+                            <h2 ref={deliveryHeadingRef} tabIndex={-1} aria-current={step === 1 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 1 ? 'text-white' : 'text-gray-400'}`}>Dane dostawy</h2>
                         </div>
 
                         {step === 1 && (
@@ -433,6 +479,11 @@ const Checkout = () => {
                                     <InputField name="house_number" label="Numer domu" placeholder="np. 12" autoComplete="address-line2" formData={formData} handleChange={handleChange} errors={errors} />
                                     <InputField name="apartment_number" label="Numer lokalu (opcjonalnie)" placeholder="np. 4" autoComplete="address-line3" required={false} formData={formData} handleChange={handleChange} errors={errors} />
                                 </div>
+
+                                <p className="text-xs leading-relaxed text-gray-400">
+                                    Przy wycenie kosztu dostawy Furgonetka otrzyma dane odbiorcy z formularza i parametry paczki.{' '}
+                                    <Link to="/privacy" className="text-primary underline underline-offset-2 hover:text-white">Informacje o danych</Link>
+                                </p>
 
                                 {shippingQuotes.length > 0 && (
                                     <fieldset className="space-y-3 rounded-2xl border border-white/10 bg-white/5 p-5">
@@ -470,8 +521,8 @@ const Checkout = () => {
                         )}
 
                         <div className="mb-8 mt-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>2</div>
-                            <h2 className={`text-xl font-bold ${step === 2 ? 'text-white' : 'text-gray-500'}`}>Płatność</h2>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>2</div>
+                            <h2 ref={paymentHeadingRef} tabIndex={-1} aria-current={step === 2 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 2 ? 'text-white' : 'text-gray-400'}`}>Płatność</h2>
                         </div>
 
                         {step === 2 && (
@@ -479,7 +530,7 @@ const Checkout = () => {
                                 <div className="rounded-2xl border border-primary/30 bg-white/5 p-5">
                                     <div className="flex items-center gap-3 text-lg font-bold">
                                         <CreditCard className="text-primary" />
-                                        Bezpieczna płatność w Stripe Checkout
+                                        Płatność przez Stripe Checkout
                                     </div>
                                     <p className="mt-2 text-sm text-gray-400">
                                         Po kliknięciu przycisku przejdziesz do hostowanej strony Stripe, gdzie opłacisz zamówienie kartą lub inną metodą aktywną na koncie.
@@ -487,7 +538,7 @@ const Checkout = () => {
                                 </div>
 
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod rabatowy</label>
+                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-400">Kod rabatowy</label>
                                     <div className="flex gap-2">
                                         <input
                                             id="checkout-promo-code"
@@ -542,16 +593,23 @@ const Checkout = () => {
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
                                     <div className={`flex items-start gap-3 rounded-lg border p-4 transition-colors ${!isAgreed && isSubmitting ? 'border-red-500 bg-red-500/10' : 'border-white/10 bg-black/20'}`}>
                                         <input
+                                            ref={ageAgreementRef}
                                             type="checkbox"
                                             id="checkoutAge"
                                             checked={isAgreed}
-                                            onChange={(event) => setIsAgreed(event.target.checked)}
+                                            aria-invalid={Boolean(ageAgreementError)}
+                                            aria-describedby={ageAgreementError ? 'checkout-age-error' : undefined}
+                                            onChange={(event) => {
+                                                setIsAgreed(event.target.checked);
+                                                if (event.target.checked) setAgeAgreementError('');
+                                            }}
                                             className="mt-1 h-4 w-4 rounded border-white/20 bg-black/50 text-primary focus:ring-primary"
                                         />
                                         <label htmlFor="checkoutAge" className="cursor-pointer text-sm leading-relaxed text-gray-300">
                                             <span className="font-bold text-red-400">[Wymagane]</span> Oświadczam, że mam ukończone 18 lat oraz że (jeśli zamówienie obejmuje żywe zwierzęta) akceptuję zasady ich wydania i transportu opisane w Regulaminie.
                                         </label>
                                     </div>
+                                    {ageAgreementError && <p id="checkout-age-error" role="alert" className="mt-2 text-sm text-red-400">{ageAgreementError}</p>}
                                 </div>
 
                                 <div className="flex flex-col gap-3 sm:flex-row">
@@ -563,7 +621,7 @@ const Checkout = () => {
                                     </button>
                                     <button
                                         onClick={handleStartCheckout}
-                                        disabled={!isAgreed || isSubmitting || !selectedDeliveryMethod}
+                                        disabled={isSubmitting || !selectedDeliveryMethod}
                                         className="flex flex-1 items-center justify-center gap-2 rounded-xl bg-primary px-6 py-4 font-bold text-black transition-colors hover:bg-white disabled:cursor-not-allowed disabled:opacity-50"
                                     >
                                         {isSubmitting ? (
@@ -580,9 +638,9 @@ const Checkout = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                                     <ShieldCheck size={14} />
-                                    Bezpieczne szyfrowane polaczenie
+                                    Dane płatności podajesz na stronie Stripe.
                                 </div>
                             </motion.div>
                         )}
@@ -595,7 +653,7 @@ const Checkout = () => {
                             <div className="max-h-80 space-y-4 overflow-y-auto pr-2">
                                 {cart.length === 0 && (
                                     <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-5 text-sm text-gray-400">
-                                        Koszyk jest pusty. Dodaj produkty, aby rozpocząć checkout.
+                                        Koszyk jest pusty. Dodaj produkty, aby przejść do płatności.
                                     </div>
                                 )}
 

@@ -1,0 +1,40 @@
+.hero-particles {
+  position: absolute;
+  inset: 0;
+  z-index: 1;
+  overflow: hidden;
+  pointer-events: none;
+}
+
+.hero-particle {
+  position: absolute;
+  display: block;
+  width: 3px;
+  height: 3px;
+  border-radius: 50%;
+  background: rgb(var(--color-primary) / 0.55);
+  opacity: 0.35;
+  animation: hero-particle-drift 9s ease-in-out infinite alternate;
+  will-change: transform, opacity;
+}
+
+.hero-particle:nth-child(1) { left: 8%; top: 18%; animation-delay: -1s; }
+.hero-particle:nth-child(2) { left: 19%; top: 72%; animation-delay: -4s; }
+.hero-particle:nth-child(3) { left: 34%; top: 31%; animation-delay: -6s; }
+.hero-particle:nth-child(4) { left: 47%; top: 82%; animation-delay: -2s; }
+.hero-particle:nth-child(5) { left: 63%; top: 16%; animation-delay: -7s; }
+.hero-particle:nth-child(6) { left: 76%; top: 63%; animation-delay: -3s; }
+.hero-particle:nth-child(7) { left: 88%; top: 35%; animation-delay: -5s; }
+.hero-particle:nth-child(8) { left: 94%; top: 86%; animation-delay: -8s; }
+
+@keyframes hero-particle-drift {
+  from { transform: translate3d(0, 0, 0); opacity: 0.2; }
+  to { transform: translate3d(0, -9px, 0); opacity: 0.5; }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .hero-particle {
+    animation: none;
+    will-change: auto;
+  }
+}

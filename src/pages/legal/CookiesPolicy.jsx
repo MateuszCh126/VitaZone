@@ -2,21 +2,7 @@
 import { motion } from 'framer-motion';
 import { Cookie, Info } from 'lucide-react';
 import { Helmet } from 'react-helmet-async';
-
-const cookieTypes = [
-  {
-    title: 'Niezbędne',
-    description: 'Służą do prawidłowego działania sklepu, logowania, koszyka i obsługi sesji użytkownika.'
-  },
-  {
-    title: 'Analityczne',
-    description: 'Pomagają zrozumieć, jak użytkownicy korzystają ze strony i które elementy warto dalej rozwijać.'
-  },
-  {
-    title: 'Funkcjonalne',
-    description: 'Pozwalają zapamiętać wybrane ustawienia i poprawić wygodę korzystania ze sklepu.'
-  }
-];
+import LegalDraftNotice from '../../components/LegalDraftNotice';
 
 const CookiesPolicy = () => {
   return (
@@ -37,15 +23,17 @@ const CookiesPolicy = () => {
           className="mx-auto max-w-4xl space-y-8"
         >
           <div className="space-y-4 text-center">
-            <h1 className="bg-gradient-to-r from-emerald-400 to-emerald-600 bg-clip-text text-4xl font-bold text-transparent">
+            <h1 className="text-4xl font-bold text-white">
               Polityka cookies
             </h1>
-            <p className="text-neutral-400">Wyjaśniamy, jakich plików cookies używamy i po co są potrzebne.</p>
+            <p className="text-neutral-400">Informacje o ustawieniach zgody i elementach przeglądarki wykorzystywanych przez VitaZone.</p>
           </div>
+
+          <LegalDraftNotice />
 
           <div className="space-y-6 rounded-[2rem] border border-neutral-700/50 bg-neutral-800/50 p-8 shadow-xl backdrop-blur-sm">
             <section className="space-y-3">
-              <h2 className="flex items-center gap-2 text-2xl font-semibold text-emerald-400">
+              <h2 className="flex items-center gap-2 text-2xl font-semibold text-primary">
                 <Cookie className="h-6 w-6" /> Czym są cookies?
               </h2>
               <p className="leading-relaxed text-neutral-300">
@@ -55,28 +43,25 @@ const CookiesPolicy = () => {
             </section>
 
             <section className="space-y-4">
-              <h2 className="text-2xl font-semibold text-emerald-400">Jakie cookies wykorzystujemy?</h2>
+              <h2 className="text-2xl font-semibold text-primary">Jakie cookies wykorzystujemy?</h2>
               <div className="space-y-4">
-                {cookieTypes.map((item) => (
-                  <div key={item.title} className="flex gap-3 rounded-2xl bg-neutral-900/50 p-4">
-                    <div className="h-fit rounded-lg bg-emerald-500/10 p-2">
-                      <Info className="h-5 w-5 text-emerald-400" />
-                    </div>
-                    <div>
-                      <strong className="block text-emerald-300">{item.title}</strong>
-                      <p className="mt-1 text-neutral-300">{item.description}</p>
-                    </div>
-                  </div>
-                ))}
+                <div className="flex gap-3 rounded-2xl bg-neutral-900/50 p-4">
+                  <div className="h-fit rounded-lg bg-primary/10 p-2"><Info className="h-5 w-5 text-primary" /></div>
+                  <div><strong className="block text-primary">Zgoda i ustawienia</strong><p className="mt-1 text-neutral-300">Wybór analityki zapisujemy w pamięci lokalnej przeglądarki. Dokładna lista plików lub identyfikatorów używanych przez dostawców zewnętrznych wymaga potwierdzenia po audycie konfiguracji produkcyjnej.</p></div>
+                </div>
+                <div className="flex gap-3 rounded-2xl bg-neutral-900/50 p-4">
+                  <div className="h-fit rounded-lg bg-primary/10 p-2"><Info className="h-5 w-5 text-primary" /></div>
+                  <div><strong className="block text-primary">Elementy wymagane do działania</strong><p className="mt-1 text-neutral-300">Sklep korzysta z pamięci przeglądarki do zachowania ustawienia zgody i obsługi wybranych funkcji. Szczegółowa inwentaryzacja storage, sesji i czasu przechowywania jest do potwierdzenia przez właściciela.</p></div>
+                </div>
               </div>
             </section>
 
             <section className="space-y-3">
-              <h2 className="text-2xl font-semibold text-emerald-400">Zarządzanie zgodą</h2>
+              <h2 className="text-2xl font-semibold text-primary">Zarządzanie zgodą</h2>
               <p className="leading-relaxed text-neutral-300">
-                Ustawienia cookies można zmieniać z poziomu przeglądarki oraz banera zgód dostępnego na stronie.
-                Zgodę na analitykę można odrzucić lub zmienić w banerze. Niezbędne elementy pozostają aktywne, aby sklep i koszyk działały.
+                Zgodę na analitykę możesz zmienić w dowolnym momencie, otwierając ustawienia prywatności w stopce. Analityka jest domyślnie wyłączona do czasu wyboru. Niezbędne elementy pozostają aktywne.
               </p>
+              <button type="button" onClick={() => window.dispatchEvent(new Event('open_cookie_settings'))} className="rounded-lg border border-primary/40 px-4 py-2 font-semibold text-primary hover:bg-primary/10">Otwórz ustawienia prywatności</button>
             </section>
           </div>
         </motion.div>

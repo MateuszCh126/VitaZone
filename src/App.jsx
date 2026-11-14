@@ -1,5 +1,6 @@
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route } from 'react-router-dom';
+import { MotionConfig } from 'framer-motion';
 
 import { CartProvider } from './context/CartContext';
 import { AuthProvider } from './context/AuthContext';
@@ -10,8 +11,6 @@ import Navbar from './components/Navbar';
 import Footer from './components/Footer';
 import ScrollToTop from './components/ScrollToTop';
 
-const MouseGlow = lazyWithRetry(() => import('./components/MouseGlow'));
-const Particles = lazyWithRetry(() => import('./components/Particles'));
 const CookieBanner = lazyWithRetry(() => import('./components/CookieBanner'));
 const ChatWidget = lazyWithRetry(() => import('./components/ChatWidget'));
 const VercelInsights = lazyWithRetry(() => import('./components/VercelInsights'));
@@ -50,7 +49,6 @@ const scheduleIdleTask = (callback, timeout = 1200) => {
 function App() {
   const [analyticsEnabled, setAnalyticsEnabled] = React.useState(false);
   const [deferredUi, setDeferredUi] = React.useState({
-    ambientEffects: false,
     chatWidget: false,
     cookieBanner: false
   });
@@ -83,13 +81,6 @@ function App() {
 
     const cookieTimerId = window.setTimeout(() => loadDeferredUi('cookieBanner'), 250);
 
-    const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
-    const supportsAmbientEffects = window.matchMedia('(min-width: 768px)').matches && !prefersReducedMotion;
-
-    const clearAmbientTask = supportsAmbientEffects
-      ? scheduleIdleTask(() => loadDeferredUi('ambientEffects'), 1400)
-      : () => {};
-
     const clearChatIdleTask = scheduleIdleTask(() => loadDeferredUi('chatWidget'), 1800);
 
     const interactionEvents = ['pointerdown', 'keydown', 'touchstart', 'focusin'];
@@ -106,7 +97,6 @@ function App() {
 
     return () => {
       window.clearTimeout(cookieTimerId);
-      clearAmbientTask();
       clearChatIdleTask();
       interactionEvents.forEach((eventName) => {
         window.removeEventListener(eventName, triggerChatLoad);
@@ -115,6 +105,7 @@ function App() {
   }, []);
 
   return (
+    <MotionConfig reducedMotion="user">
     <HelmetProvider>
       <Router>
         <AuthProvider>
@@ -122,11 +113,17 @@ function App() {
             <div className="min-h-screen overflow-x-hidden bg-bg text-text selection:bg-primary selection:text-black">
               <Helmet>
                 <title>VitaZone | Zwierzęta egzotyczne, terraria i akcesoria terrarystyczne</title>
-                <meta
+                  <meta
                   name="description"
-                  content="VitaZone to sklep terrarystyczny ze zwierzętami egzotycznymi, terrariami i akcesoriami do kompletnej aranżacji terrarium."
+                  content="Katalog VitaZone obejmuje zwierzęta egzotyczne, terraria i wyposażenie terrarystyczne."
                 />
               </Helmet>
+              <a
+                href="#main-content"
+                className="sr-only focus:not-sr-only focus:fixed focus:left-4 focus:top-4 focus:z-[100] focus:rounded-lg focus:bg-primary focus:px-4 focus:py-3 focus:font-semibold focus:text-black"
+              >
+                Przejdź do treści
+              </a>
               <ScrollToTop />
               {analyticsEnabled && (
                 <React.Suspense fallback={null}>
@@ -134,12 +131,6 @@ function App() {
                 </React.Suspense>
               )}
               <Navbar />
-              {deferredUi.ambientEffects && (
-                <React.Suspense fallback={null}>
-                  <MouseGlow />
-                  <Particles />
-                </React.Suspense>
-              )}
               {deferredUi.cookieBanner && (
                 <React.Suspense fallback={null}>
                   <CookieBanner />
@@ -150,7 +141,7 @@ function App() {
                   <ChatWidget />
                 </React.Suspense>
               )}
-              <main className="relative z-10 min-h-screen pt-16 sm:pt-20">
+              <main id="main-content" tabIndex={-1} className="relative z-10 min-h-screen pt-16 sm:pt-20">
                 <React.Suspense
                   fallback={
                     <div className="flex min-h-screen items-center justify-center">
@@ -184,6 +175,7 @@ function App() {
         </AuthProvider>
       </Router>
     </HelmetProvider>
+    </MotionConfig>
   );
 }
 

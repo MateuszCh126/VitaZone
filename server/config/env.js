@@ -23,6 +23,7 @@ const env = cleanEnv(process.env, {
     STRIPE_CHECKOUT_EXPIRES_MINUTES: num({ default: 30 }),
     ORDER_SHIPPING_CENTS: num({ default: DEFAULT_SHIPPING_AMOUNT_CENTS }),
     FURGONETKA_ACCESS_TOKEN: str({ default: '' }),
+    FURGONETKA_TIMEOUT_MS: num({ default: 10000 }),
     FURGONETKA_PICKUP_NAME: str({ default: '' }),
     FURGONETKA_PICKUP_COMPANY: str({ default: '' }),
     FURGONETKA_PICKUP_EMAIL: str({ default: '' }),

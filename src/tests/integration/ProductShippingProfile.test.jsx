@@ -27,7 +27,7 @@ describe('product shipping package profile editing', () => {
         fireEvent.change(screen.getByLabelText('Specyfikacja produktu i paczki (JSON)'), {
             target: { value: '{"shipping_parcels":[{"width":30,"depth":20,"height":10,"weight":2}]}' }
         });
-        fireEvent.click(screen.getByRole('button', { name: 'Zapisz Zmiany' }));
+        fireEvent.click(screen.getByRole('button', { name: 'Zapisz zmiany' }));
 
         await waitFor(() => expect(onSubmit).toHaveBeenCalledWith(expect.objectContaining({
             specs: { shipping_parcels: [{ width: 30, depth: 20, height: 10, weight: 2 }] }

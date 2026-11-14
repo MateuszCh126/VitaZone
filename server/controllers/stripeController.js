@@ -306,7 +306,9 @@ export const getCheckoutSessionStatus = async (req, res) => {
         const orderId = session.metadata?.orderId || session.client_reference_id;
         const sessionUserId = session.metadata?.userId;
 
-        if (sessionUserId && sessionUserId !== req.user?.id) {
+        // The checkout-session ID is the bearer proof for guest polling. Keep
+        // signed-out sessions usable, but reject an authenticated different owner.
+        if (sessionUserId && req.user?.id && sessionUserId !== req.user.id) {
             return res.status(403).json({ error: 'Brak dostępu' });
         }
 
@@ -323,6 +325,11 @@ export const getCheckoutSessionStatus = async (req, res) => {
             checkoutStatus: session.status,
             paymentStatus: session.payment_status
         };
+
+        if (Number.isInteger(session.amount_total) && typeof session.currency === 'string') {
+            response.amountTotalCents = session.amount_total;
+            response.currency = session.currency.toUpperCase();
+        }
 
         if (sessionUserId && req.user?.id === sessionUserId) {
             response.orderId = orderId || null;
@@ -362,6 +369,24 @@ export const handleStripeWebhook = async (req, res) => {
                 const orderId = session.metadata?.orderId || session.client_reference_id;
                 if (session.payment_status === 'paid' && orderId) {
                     await markOrderPaidFromStripe(orderId, typeof session.payment_intent === 'string' ? session.payment_intent : session.id);
+                }
+                break;
+            }
+
+            case 'checkout.session.async_payment_succeeded': {
+                const session = event.data.object;
+                const orderId = session.metadata?.orderId || session.client_reference_id;
+                if (orderId) {
+                    await markOrderPaidFromStripe(orderId, typeof session.payment_intent === 'string' ? session.payment_intent : session.id);
+                }
+                break;
+            }
+
+            case 'checkout.session.async_payment_failed': {
+                const session = event.data.object;
+                const orderId = session.metadata?.orderId || session.client_reference_id;
+                if (orderId) {
+                    await orderRepo.releasePendingOrder(orderId, session.id);
                 }
                 break;
             }
