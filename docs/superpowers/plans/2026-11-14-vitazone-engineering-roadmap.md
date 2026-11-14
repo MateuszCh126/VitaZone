@@ -12,7 +12,7 @@
 
 ## Global Constraints
 
-- Pozostajemy na `codex/vitazone-visual-refresh` (PR #2); `main` bez zmian, brak merge i deployu.
+- Bieżący audyt i poprawki powstają na `codex/vitazone-visual-refresh` (PR #2). Po zakończeniu audytu, zielonej weryfikacji i przeglądzie konfliktów użytkownik polecił zintegrować ukończone, bezpieczne zmiany z `main`; wdrożenie nadal wymaga osobnego polecenia.
 - Używamy syntetycznych fixture; bez dumpów/połączeń do produkcyjnej bazy, transakcji live i sekretów w repo/logach.
 - Ceny, stan, prawne informacje, marketing claims, logistyka i dane zwierząt wymagają źródła i właściciela.
 - Kupujący bez konta i z kontem są wspierani; konto pozostaje opcjonalne.
@@ -35,7 +35,7 @@
 
 **Status:** plan roboczy do realizacji w kolejnych zmianach PR #2; punkty zależne od firmy, klientów lub prawnika są oznaczone i nie powinny być zastępowane fikcyjnymi danymi.
 **Stan bazowy:** branch `codex/vitazone-visual-refresh`, SPA React 19/Vite, Express 5, PostgreSQL przez `pg`, Stripe Checkout, Vercel Functions.
-**Zasady:** zachować markę black/green i spokojny charakter; nie wprowadzać manipulacyjnej presji; ceny, stan, reputacja i treści prawne muszą mieć dowód; prace i testy lokalne używają syntetycznych danych; bez migracji produkcyjnej, merge do `main` i deployu.
+**Zasady:** zachować markę black/green i spokojny charakter; nie wprowadzać manipulacyjnej presji; ceny, stan, reputacja i treści prawne muszą mieć dowód; prace i testy lokalne używają syntetycznych danych; bez migracji produkcyjnej i deployu. Integracja do `main` jest dozwolona po zakończeniu audytu, review, testów oraz rozwiązaniu konfliktów; nie używać force-push.
 
 ## 1. Cel, metryki i dowód
 

@@ -6,11 +6,11 @@
 
 Dokumentacja używa trzech poziomów: diagramów systemu i przepływów, map modułów oraz katalogu plików źródłowych. Wpis pliku objaśnia rolę i główną odpowiedzialność, a nie każdą instrukcję linia po linii. Dla złożonych modułów dokładamy kontrakty, skutki uboczne, błędy i testy. Taki układ pozwala utrzymać mapę kodu przy zmianach implementacji; szczegóły funkcji należy aktualizować razem z kodem.
 
-Oznaczenia: **obecne** = potwierdzone w bieżącym drzewie kodu; **docelowe** = proponowany kierunek; **do potwierdzenia** = zależne od hosta, właściciela lub środowiska, którego nie sprawdzono.
+Poniższy opis dotyczy commita `e33917d38ec54813f3b58f8d0dcdf701d44dd89f` (HEAD podczas audytu). Oznaczenia dowodów: **[kod]** — obecność i zachowanie wynikają z odczytanego źródła; **[test/mock]** — zakres istniejących testów opartych na mockach/fixture; **[właściciel/środowisko]** — faktu nie da się ustalić z repo i wymaga potwierdzenia poza nim. Obecność kodu lub testu nie dowodzi aktywnej konfiguracji, realnego ruchu ani działania integracji. Tabele poniżej są mapą odpowiedzialności i głównych punktów wejścia, a nie gwarancją kompletności scenariuszy.
 
 ## System — C4 context
 
-VitaZone to sklep webowy React/Vite. Klient przeglądarkowy komunikuje się z API Express, które korzysta z PostgreSQL i zewnętrznych dostawców. Uruchomienie API w Vercel i lokalny serwer Express współdzielą część kodu, ale środowiska różnią się cyklem życia funkcji, współbieżnością i konfiguracją.
+**[kod]** VitaZone zawiera SPA React 19/Vite i API Express 5, używające PostgreSQL przez `pg`. API ma lokalny listener w `server.js` i adapter funkcji `api/index.js` dla Vercel. Kod ma adaptery Stripe, Resend, Furgonetka i Google Gemini oraz telemetrię Vercel po stronie UI. **[właściciel/środowisko]** Repo nie potwierdza, że klucze, konta, umowy, deployment, migracje ani produkcyjny ruch są skonfigurowane. Testy dostawców używają stubów/mocków.
 
 ```mermaid
 flowchart LR
@@ -26,7 +26,7 @@ flowchart LR
   Web --> API
 ```
 
-Obecność integracji w kodzie nie potwierdza skonfigurowania kluczy, aktywnego konta, umowy handlowej, produkcyjnego ruchu ani kompletności umów prawnych. Obecny stan zewnętrznej strony produkcyjnej nie został potwierdzony renderem z powodu Vercel Security Checkpoint; CLI pokazał historyczną publikację i alias, lecz nie dowodzi mapowania repozytorium do deploymentu.
+**[właściciel/środowisko]** Obecność integracji w kodzie nie potwierdza skonfigurowania kluczy, aktywnego konta, umowy handlowej, produkcyjnego ruchu ani kompletności umów prawnych. Deployment i zewnętrzny stan strony nie były w tym audycie sprawdzane.
 
 ## Kontenery i przepływ żądania
 
@@ -44,11 +44,27 @@ flowchart TD
 
 ### Zakup i płatność — obecne punkty kontroli
 
-1. Strony React zbierają koszyk i dane checkoutu; `CartContext` jest stanem interfejsu, nie źródłem autorytatywnej ceny.
-2. `/api` przechodzi przez Express, middleware sesji/CSRF/limiterów i trasę domenową. Schematy Zod walidują wejście w wybranych trasach.
-3. Repozytorium zamówień sprawdza produkt/cenę/dostępność i rezerwuje/dekrementuje stock przy utworzeniu zamówienia — przed utworzeniem Stripe Checkout Session. Błąd lub niejednoznaczny wynik Stripe może zatem pozostawić rezerwację, podczas gdy kod kompensacyjny uznać ją za nieudaną. Szczegóły i wymagane testy opisuje [stan techniczny](current-state-and-roadmap.md#6-architektura-i-przepływy) oraz [plan wdrożenia](../superpowers/plans/2026-11-14-vitazone-engineering-roadmap.md).
-4. Stripe webhook jest przyjmowany z surowym body i podpisem; redirect przeglądarki nie jest dowodem płatności.
-5. Powiadomienie e-mail i status zamówienia są osobnymi efektami ubocznymi. Testy obecnie używają mocków; nie przeprowadzono transakcji z prawdziwym providerem.
+1. **[kod]** `CartContext` obsługuje stan koszyka UI i żądania do API. Kwota w UI nie jest źródłem ceny.
+2. **[kod]** `POST /api/stripe/create-checkout-session` w `stripeController.createCheckoutSession` waliduje checkout, tworzy zamówienie przez `orderRepository.createOrder`, a następnie tworzy Stripe Checkout Session. Repozytorium w transakcji blokuje/odczytuje produkty, liczy cenę z DB, zmniejsza stock, nalicza rabat, zapisuje snapshot adresu i pozycji, po czym zatwierdza transakcję przed wywołaniem Stripe.
+3. **[kod]** Błąd utworzenia sesji uruchamia próbę kompensacji `safelyReleasePendingOrder`; niezależność PostgreSQL i Stripe oznacza, że timeout/niejednoznaczny wynik może rozdzielić stan dostawcy i bazy. Webhook `handleStripeWebhook` dostaje raw body przed `express.json`, weryfikuje podpis i obsługuje zdarzenia płatności.
+4. **[kod]** Status sesji ma osobny endpoint; klientowy redirect nie jest samodzielnym potwierdzeniem płatności. Zmiana statusu, wyczerpanie/anulowanie i e-mail są odrębnymi efektami.
+5. **[test/mock]** `tests/unit/stripeController.test.js`, `stripePaymentRetry.test.js`, `stripeShippingCheckout.test.js` oraz UI `Checkout.test.jsx` sprawdzają wybrane zachowania na mockach/stubach. Nie dowodzą integracji z prawdziwym Stripe, transakcyjności na PostgreSQL ani stanu konta dostawcy. Przegląd ryzyk: [stan techniczny](current-state-and-roadmap.md) i [plan](../superpowers/plans/2026-11-14-vitazone-engineering-roadmap.md).
+
+### Główne punkty wejścia API
+
+| Montaż w `server.js` | Główne trasy / odpowiedzialność |
+|---|---|
+| `/api/auth` | `POST /register`, `/login`, `/logout`; `GET /me` w `routes/authRoutes.js`. Sesja cookie i haszowanie realizowane w trasie z `userRepository`. |
+| `/api/cart` | `GET /`, `POST /sync`, `POST /items`, `PUT /items/:productId`, `DELETE /items/:productId`, `DELETE /` (`cartRoutes.js`); trasy wymagają `authenticate`. |
+| `/api/users` | `GET /:id`, `PUT /:id` (`userRoutes.js`); `verifyToken` na poziomie montażu. |
+| `/api/catalog` w praktyce `/api` | `GET /health`, `/products`, `/categories`, `/species/search`, `/products/:id` (`catalogRoutes.js`). |
+| `/api/orders` | `POST /`, `GET /user/:userId`, `GET /:id`, `PATCH /:id/cancel` (`orderRoutes.js`); `POST /` zwraca 410, gdy `ALLOW_MANUAL_ORDER_CREATION` nie jest aktywne. |
+| `/api/stripe` | `GET /config`, `POST /create-checkout-session`, `POST /checkout-session/status` (`stripeRoutes.js`); webhook `/api/stripe/webhook` montowany wcześniej z raw body. |
+| `/api/shipping` | `POST /quotes` (`shippingRoutes.js`). |
+| `/api/discounts` | `POST /validate`, trasy admina w `adminRoutes.js`. |
+| `/api/chat`, `/api/upload`, `/api/admin`, `/api` | Chat, upload, operacje panelu oraz zgody prawne: `chatRoutes.js`, `uploadRoutes.js`, `adminRoutes.js`, `legalRoutes.js`. `/api/admin` i `/api/upload` są chronione `verifyAdmin`; `/api` zawiera też publiczny katalog. |
+
+W kolejności w `server.js` są CORS, osobna trasa webhooka, parsowanie JSON/form, statyczne `/uploads`, Helmet/cookie parser, CSRF origin dla `/api`, request ID i `AsyncLocalStorage`, globalny limiter, limitery/guardy tras i końcowy `errorHandler`. Dla poszczególnych routerów część walidacji Zod jest jawna, ale nie jest to jednolity globalny etap.
 
 ## Granice modułów i odpowiedzialności
 
@@ -66,7 +82,7 @@ flowchart TD
 
 ## Rejestr plików
 
-Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów znajdujące się w repo. Lockfile są wymienione oddzielnie, bo ich znaczenie jest operacyjne. Wpis „fixture” oznacza dane syntetyczne/testowe, nie zweryfikowaną ofertę.
+Pozycje katalogu plików oznaczają **[kod]**: plik jest śledzony w repo na wskazanym HEAD, a rola wynika z jego treści lub miejsca użycia. W sekcji Testy oznaczenie **[test/mock]** dotyczy zakresu testu i jego fixture; nie oznacza testu produkcyjnej bazy/providerów. Twierdzenia o aktywnych usługach, danych firmowych lub konfiguracji poza repo oznaczają **[właściciel/środowisko]**. Lockfile są wymienione oddzielnie, bo ich znaczenie jest operacyjne. Wpis „fixture” oznacza dane syntetyczne/testowe, nie zweryfikowaną ofertę.
 
 ### Aplikacja i konfiguracja główna
 
@@ -84,7 +100,7 @@ Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów z
 | `playwright.config.js` | Konfiguracja przeglądarkowych testów E2E, portu i przeglądarki. |
 | `package.json` | Zależności, skrypty i przypięcie pnpm `10.33.0`. |
 | `pnpm-lock.yaml` | Lockfile zgodny z deklarowanym package managerem. |
-| `package-lock.json` | Drugi śledzony lockfile; źródło rozbieżności, do usunięcia po potwierdzeniu pipeline. |
+| `package-lock.json` | Drugi śledzony lockfile obok `pnpm-lock.yaml`; `package.json` deklaruje pnpm. |
 | `vercel.json` | Routing/konfiguracja hostingu Vercel; wpływa na funkcję API i fallback SPA. |
 | `api/index.js` | Adapter uruchamiający Express jako funkcję Vercel. |
 | `server.js` | Budowa Express app, middleware, routery i lokalny listener. |
@@ -93,15 +109,15 @@ Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów z
 | `.env.example` | Nazwy i placeholdery konfiguracji, m.in. `FURGONETKA_TIMEOUT_MS=10000`. Bez sekretów; opisuje wymagania runtime. |
 | `database.json` | Konfiguracja/artefakt bazodanowy; przed zmianą ustalić konsumenta i nie wpisywać realnych danych. |
 | `check_api.js` | Narzędzie ręcznej kontroli endpointów; sprawdzić target i wymagane env przed uruchomieniem. |
-| `schema.sql` | Deklaratywny, destrukcyjny reset legacy; nie używać jako migracji ani na bazie współdzielonej. |
-| `VitaZonedb.sql` | Starszy, odrębny schemat; materiał historyczny, nie drugi kanoniczny schemat. |
-| `migrations/20240111_address_role.sql` | Stary migracyjny SQL w katalogu root; nie należy do aktywnego discoverera `server/scripts`. |
+| `schema.sql` | Destrukcyjny reset legacy, nie migracja. W jego kolejności wykonywania indeksy `idx_carts_user` i `idx_consents_*` są tworzone przed tabelami `carts` i `legal_consents`, więc świeże wykonanie zatrzymuje się na brakującej tabeli, zanim dojdzie do dalszej części pliku. |
+| `VitaZonedb.sql` | Starszy, odrębny schemat z kwotami dziesiętnymi zamiast centów; materiał historyczny, nie drugi kanoniczny schemat. |
+| `migrations/20240111_address_role.sql` | Stary migracyjny SQL w katalogu root; nie należy do discoverera `server/scripts/run-migrations.js`. |
 
 ### Strony (`src/pages`)
 
 | Plik | Widok / odpowiedzialność |
 |---|---|
-| `src/pages/Home.jsx` | Strona startowa i rozdzielenie intencji zakupowych; CTA weryfikować względem docelowej ścieżki. |
+| `src/pages/Home.jsx`, `src/pages/Home.css` | Strona startowa i jej style; CTA weryfikować względem docelowej ścieżki. |
 | `src/pages/Shop.jsx` | Listing, wyszukiwanie, filtry, sortowanie, paginacja/empty/error stany. |
 | `src/pages/ProductDetail.jsx` | Karta produktu, dane katalogowe, obraz/galeria, wysyłka, meta i JSON-LD po fetchu. |
 | `src/pages/Checkout.jsx` | Dane klienta, podsumowanie, utworzenie sesji płatności; serwer przelicza cenę. |
@@ -222,16 +238,16 @@ Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów z
 |---|---|
 | `server/scripts/db.js` | Utworzenie połączenia/puli `pg` wykorzystywanej przez skrypty. |
 | `server/scripts/check_schema.js` | Kontrola schematu; ma odrębne ustawienia SSL do przeglądu. |
-| `server/scripts/run-migrations.js` | Automatycznie odkrywa JS skrypty o prefiksie `migrate_` lub `run_migration_`, prowadzi ledger według nazwy; obejmuje też historyczne skrypty i nie jest kanonicznym migratorem SQL. |
-| `server/scripts/run_migration_003.js` | Wrapper dla migracji snapshotów zamówienia. |
-| `server/scripts/run_migration_004.js` | Wrapper snapshotu podatku. |
-| `server/scripts/run_migration_005.js` | Wrapper podatku produktu; sprawdzić propagation błędu/exit. |
+| `server/scripts/run-migrations.js` | Odkrywa JS o prefiksie `migrate_` lub `run_migration_`, prowadzi ledger `_migrations` po nazwie; przez filtr obejmuje też historyczne skrypty i nie uruchamia bezpośrednio plików `.sql`. |
+| `server/scripts/run_migration_003.js` | Wrapper snapshotu nazwy pozycji; przechwytuje błąd bez ustawienia niezerowego kodu i nie zamyka jawnie puli. |
+| `server/scripts/run_migration_004.js` | Wrapper snapshotu podatku; przechwytuje błąd bez ustawienia niezerowego kodu i nie zamyka jawnie puli. |
+| `server/scripts/run_migration_005.js` | Wrapper podatku produktu; `finally` wywołuje `process.exit(0)`, również po błędzie. |
 | `server/scripts/run_rollback_003.js` | Wrapper rollbacku migracji snapshotów. |
 | `server/scripts/migrate.js` | Legacy reset/uruchomienie schematu; na branchu chroniony opt-in, nie wdrożeniowy workflow. |
 | `server/scripts/migrate_v2.js` | Historyczny migrator przyrostowy; inwentaryzować przed użyciem. |
 | `server/scripts/migrate_v3.js` | Historyczny wariant migratora. |
 | `server/scripts/migrate_v4.js` | Historyczny wariant migratora. |
-| `server/scripts/migrate_names.js` | Historyczna zmiana pól nazw; propagacja exit wymaga naprawy. |
+| `server/scripts/migrate_names.js` | Zmiana nazw `full_name` → `first_name`/`last_name`; pasuje do filtra `migrate_` aktywnego runnera. `finally` ustawia `process.exit(0)`, także po błędzie. |
 | `server/scripts/add_indexes.js` | Skrypt indeksów; wykonać dopiero po planie/fixture i review blokad. |
 | `server/scripts/add_last_active.js` | Historyczny skrypt zmiany schematu. |
 | `server/scripts/drop_columns.js` | Destrukcyjna zmiana pól; nie uruchamiać bez audytu zależności i backupu. |
@@ -253,7 +269,34 @@ Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów z
 | `server/scripts/migrations/rollback/002_rollback_discount_codes.sql` | Rollback tabel rabatowych. |
 | `server/scripts/migrations/rollback/003_rollback_snapshots.sql` | Rollback snapshotów; utrata danych wymaga określonej polityki. |
 
-### Testy
+### Główne symbole domenowe i ograniczenia schematu
+
+| Moduł | Punkty odpowiedzialności |
+|---|---|
+| `repositories/orderRepository.js` | `createOrder` liczy kwotę na bazie zablokowanych rekordów produktów, aktualizuje stock i zapisuje zamówienie/pozycje w transakcji; `loadOrderSchemaSupport` warunkowo obsługuje dwa snapshoty pozycji; odczyty `findByUserId`, `findById`, `findAllOrders`, `findAdminOrderById`; status/płatność `updateOrderStatusWithTransition`, `markOrderPaidWithTransition`, `releasePendingOrder`, `markOrderRefundedByPaymentId`, `cancelOrder`. |
+| `server/controllers/stripeController.js` | `createCheckoutSession`, `getCheckoutSessionStatus`, `handleStripeWebhook`; pomocniczo `safelyReleasePendingOrder`, `markOrderPaidFromStripe`, normalizacja dozwolonych originów i budowa line items. |
+| `server/services/shippingService.js` | `getShippingQuotes`, `createFurgonetkaGateway`, `resolveReviewedShippingQuote`; klasyfikacja kategorii żywych zwierząt i standardowych paczek. `furgonetkaClient.js` implementuje klienta HTTP z limitem czasu; kod nie tworzy etykiet nadawczych. |
+| `server/controllers/chatController.js` | `handleChat`, lokalne wyszukiwanie/sortowanie katalogu, składanie promptu/kontekstu i circuit breaker; zależność Gemini jest zewnętrzna, testy nie dowodzą jej dostępności. |
+| `repositories/productRepository.js`, `cartRepository.js`, `userRepository.js`, `discountRepository.js`, `legalRepository.js` | Odpowiednio zapytania katalogu, koszyka, konta/adresu, kodów rabatowych i zgód. `routes/adminRoutes.js` zawiera też bezpośredni SQL, więc repozytoria nie są jedyną ścieżką DB. |
+| `shared/orderStatus.js`, `shared/commerce.js` | Wspólne wartości statusów oraz domyślna kwota wysyłki używane przez API. |
+
+#### Statyczne porównanie schematu, SQL runtime i migracji
+
+Poniższe różnice wynikają z porównania plików w repo, a nie z odczytu działającej bazy (**[kod]**). Nie wskazują, która wersja schematu działa na hostingu (**[właściciel/środowisko]**).
+
+| Obszar | Stan repo i skutek |
+|---|---|
+| Użytkownicy | `schema.sql` definiuje `full_name`, `phone`; `userRepository.js` oraz `adminRoutes.js` czytają/piszą `first_name`, `last_name`, a `userRepository`/`adminRoutes` używają `deleted_at`. `userRepository.updateLastActive` używa `last_active_at`; `ensure_admin.js` oczekuje `is_verified`. Resetowy schemat nie deklaruje tych kolumn. `migrate_names.js` przekształca `full_name` do imienia/nazwiska i jest odkrywany przez filtr runnera. |
+| Adresy | `userRepository.js` używa `house_number` i `apartment_number`; `schema.sql` nie deklaruje ich w `addresses`. Root SQL `migrations/20240111_address_role.sql` dodaje te pola do `users` (oraz adresowe pola do `orders`), ale runtime czyta adres z tabeli `addresses`. |
+| Produkty | `productRepository.js` i `orderRepository.js` czytają/piszą `tax_rate`; resetowy `schema.sql` go nie zawiera. Dodaje go `005_add_product_tax.sql`, ale runner wyszukuje wrapper JS, nie `.sql`. |
+| Zamówienia | `orderRepository.js` używa `idempotency_key`, `discount_code_id`, `discount_amount_cents`, `order_items.product_name_snapshot`, `tax_rate_snapshot`. Resetowy `schema.sql` nie zawiera tych pól; SQL 001–004 istnieje, ale 001–002 nie mają wrapperów rozpoznawanych przez aktywny filtr runnera. Wrappery 003–005 wykonują tylko odpowiednie pliki SQL. |
+| Tabele/indeksy resetu | `schema.sql` stawia indeksy na `carts` i `legal_consents` przed definicjami tych tabel, więc reset jest kolejnościowo niespójny i zatrzyma się wcześniej. |
+| Historyczny schemat | `VitaZonedb.sql` przechowuje `price`/`total_amount` jako `DECIMAL`, podczas gdy aktualny runtime operuje na `price_cents`/`total_amount_cents`, oraz nie ma `specs`, `addresses`, `carts` ani `legal_consents`. |
+| Migrator | Runner zapisuje wyłącznie `filename`/czas w `_migrations`, odkrywa wszystkie pliki `migrate_*.js` i `run_migration_*.js` w katalogu skryptów; obejmuje m.in. historyczne `migrate_v2.js`–`v4.js` i `migrate_names.js`. Nie odkrywa SQL 001–005 samodzielnie. Wrappery 003–005 maskują co najmniej część błędów kodem wyjścia 0; runner nie zapisuje checksum. `pnpm migrate` wywołuje osobny reset `schema.sql`. |
+
+**Rekomendacje (nie stan obecny):** przed zmianą schematu porównać stan na zatwierdzonej, odizolowanej kopii i uzgodnić jedną historię; traktować `pnpm migrate` jako destrukcyjny reset, nie upgrade. Jedynym zapisanym ADR jest [ADR 0001 — workflow migracji PostgreSQL](../adr/0001-postgresql-migration-governance.md), ze statusem `Proposed`, nie zaakceptowana decyzja. Potencjalne osobne tematy ADR (jeszcze bez dokumentów): spójność/rezerwacja zamówienia i idempotencja Stripe; polityka identyfikacji gościa i dostępu do zamówień; źródło prawdy katalogu oraz walidacja podatku/wysyłki.
+
+### Testy — zakres [test/mock]
 
 | Plik | Co sprawdza / czego nie dowodzi |
 |---|---|
@@ -262,11 +305,16 @@ Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów z
 | `src/tests/integration/CartContext.test.jsx` | Zachowanie koszyka UI na mockach. |
 | `src/tests/integration/ChatWidget.test.jsx` | Interakcje widgetu czatu; nie sprawdza retencji u Google. |
 | `src/tests/integration/Checkout.test.jsx` | Formularz i przepływ checkoutu na mockach; nie potwierdza transakcji Stripe. |
+| `src/tests/integration/AdminDashboard.a11y.test.jsx`, `src/tests/integration/Dashboard.a11y.test.jsx` | Wybrane interakcje/semantyka paneli na fixture; nie jest pełnym audytem WCAG ani testem autoryzacji API. |
+| `src/tests/integration/FAQ.test.jsx` | Kontrakt renderu/treści FAQ. |
+| `src/tests/integration/HomeParticles.test.jsx` | Wybrany stan/obecność efektu tła strony głównej. |
+| `src/tests/integration/RouteCopy.test.jsx` | Statyczne asercje tekstów na stronach; nie potwierdza prawdziwości twierdzeń właściciela. |
 | `src/tests/integration/productBadges.test.js` | Reguły odznak produktu. |
 | `src/tests/integration/ProductDetail.gallery.test.jsx` | Zachowanie galerii. |
 | `src/tests/integration/ProductModal.a11y.test.jsx` | Kontrakt dostępności/fokusu modala admina. |
 | `src/tests/integration/ProductShippingProfile.test.jsx` | Mapowanie profilu wysyłki produktu. |
 | `src/tests/integration/productSorting.test.js` | Sortowanie produktu. |
+| `src/tests/design/greenPalette.test.js` | Reguły palety kolorów w plikach styli; nie zastępuje testu kontrastu. |
 | `tests/unit/demoDataSafety.test.js` | Blokady dla seed/sync danych demonstracyjnych. |
 | `tests/unit/productSchema.test.js` | Mapowanie i reguły schema produktu. |
 | `tests/unit/shippingQuotes.test.js` | Zachowanie wycen na stubach. |
@@ -292,7 +340,11 @@ Poniższe pozycje obejmują pliki aplikacji, konfiguracji, skryptów i testów z
 | `scripts/check-secrets.js` | Skanuje repo pod kątem wzorców sekretów; nie zastępuje secret managera ani przeglądu historii Git. |
 | `scripts/optimize_image.js` | Narzędzie konwersji/optymalizacji lokalnych obrazów; sprawdzić wejście/wyjście przed batch processing. |
 | `demo/package.json` | Zależności odrębnego demo. |
+| `demo/package-lock.json` | Lockfile odrębnego demo; nie jest lockfile głównej aplikacji. |
 | `demo/gateway.ts` | Demo gateway; oddzielić od ścieżek produkcyjnego sklepu. |
+| `.gitattributes`, `.gitignore` | Reguły Git/normalizacji oraz ignorowania plików. |
+| `.vite/deps/_metadata.json`, `.vite/deps/package.json` | Śledzone wygenerowane metadane cache Vite; nie są kodem źródłowym ani zależnościami runtime. |
+| `test-results/.last-run.json` | Śledzony artefakt stanu ostatniego uruchomienia Playwright, a nie test ani wynik dowodzący aktualnego zachowania. |
 
 ## Katalog, zamówienie i dane — pojęcia
 

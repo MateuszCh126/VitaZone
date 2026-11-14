@@ -59,7 +59,7 @@ const sections = [
       {
         question: 'Jak zgłosić problem z zamówieniem?',
         answer:
-          'Najlepiej napisać do sklepu i podać numer zamówienia, opis sytuacji oraz zdjęcia, jeśli sprawa dotyczy stanu przesyłki lub produktu.'
+          'Zachowaj numer zamówienia, krótki opis sytuacji oraz zdjęcia, jeśli dotyczą stanu przesyłki lub produktu. Kanał zgłoszenia zostanie podany po potwierdzeniu danych kontaktowych sklepu.'
       }
     ]
   }

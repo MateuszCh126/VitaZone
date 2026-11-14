@@ -26,6 +26,8 @@ describe('route copy claims and form semantics', () => {
     expect(`${contact}\n${faq}\n${footer}`).not.toContain('kontakt@animalsshop.pl');
     expect(contact).toContain('wymagają potwierdzenia przez właściciela');
     expect(faq).toContain('to="/contact"');
+    expect(faq).not.toMatch(/Najlepiej napisać do sklepu/i);
+    expect(faq).toMatch(/kanał zgłoszenia zostanie podany po potwierdzeniu danych kontaktowych/i);
   });
 
   it('uses the shared accent token for FAQ controls', () => {

@@ -1,6 +1,6 @@
 # VitaZone engineering audit and implementation plan
 
-**Status:** In progress — documentation and read-only audit additions are local to `codex/vitazone-visual-refresh`; not merged, not deployed.
+**Status:** In progress — audit/doc updates are being finalized on `codex/vitazone-visual-refresh`; owner authorized integration to `main` after review and verification. No deployment is authorized.
 **Date:** 2026-11-14
 **Branch / MR:** PR #2, draft; base `codex/vitazone-trust-checkout`.
 **Task:** project owner requested a fact-based technical description and detailed implementation roadmap, including modules/files, data architecture, every route and user-facing copy, visual quality, workflows/tools and research.
@@ -36,7 +36,16 @@
 - Visual review evidence is local, using fixture/demo data. It does not include screen reader, actual browser zoom at 200%, physical device, field CWV or customer study results.
 - Customer interviews and owner/legal facts remain outstanding. All user-impact, marketing, product-compatibility and legal conclusions that depend on those facts remain hypotheses or release gates.
 - Database migration and checkout recommendations have not been implemented by this documentation change; they must follow the detailed plan with disposable Postgres and provider test accounts only.
-- Changes described here belong to the PR #2 feature branch. Keep this work separate from `main`; verify the live GitHub state before making merge or deployment claims.
+- At the first audit snapshot these changes belonged to the PR #2 feature branch and were not merged. The owner later authorized integration to `main` after the remaining review, tests, and conflict checks. Verify live GitHub state before claiming a merge; deployment remains outside scope.
+
+## Resumed audit and integration gate (2026-11-14)
+
+- Reviewed the animation-specific guidance and code inventory. The project uses Framer Motion and CSS; no GSAP dependency or multi-step animation requirement was found. Recommendation is to keep the existing eight hero particles (reduced-motion aware) and avoid adding GSAP or ambient cursor glow.
+- Expanded the code reference to map 191 selected source/config candidates and distinguish code, mock-test evidence, and owner/environment-dependent unknowns. Expanded the route audit to 16 routes, with explicit limits for historic renders and mock-based observations.
+- Updated skill/tool inventory with the five scanned skill roots, exact snapshot counts, and a clear distinction between skills fully read and workflows only inventoried.
+- Corrected an FAQ answer that implied an unverified contact channel; added a regression assertion.
+- PR #2 remained draft/open at the recorded head and had no GitHub checks. PR #3 was `DIRTY` against `main` and remains subject to separate review; neither branch should be merged until conflict resolution and the accepted verification suite complete.
+- Resumed verification on the updated local tree: `pnpm exec vitest run` — 26 files / 112 tests passed; `pnpm lint` passed; `pnpm build` passed with the existing 11-month-old Browserslist data warning; `pnpm check:secrets` passed; `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 21/21 passed on demo/mock data. Review of PR #3 and clean integration with latest `main` are still pending. Do not deploy or migrate production data.
 
 ## Sources
 
