@@ -208,6 +208,7 @@ export const createTerrariumCheckoutSession = async (req, res) => {
             return res.status(409).json({ error: 'Oferta nie zawiera prawidłowego snapshotu cen' });
         }
 
+        const checkoutIdempotencyKey = `terrarium:${project.id}:q${project.quote_version}:a${project.checkout_attempt}`;
         const createdOrder = await orderRepo.createOrder({
             userId: req.user.id,
             paymentMethod: 'stripe_checkout',
@@ -222,7 +223,7 @@ export const createTerrariumCheckoutSession = async (req, res) => {
             street: shipping.street,
             houseNumber: shipping.house_number,
             apartmentNumber: shipping.apartment_number || null,
-            idempotencyKey: `terrarium:${project.id}:q${project.quote_version}:a${project.checkout_attempt}`,
+            idempotencyKey: checkoutIdempotencyKey,
             initialStatus: ORDER_STATUS.PAYMENT_PENDING,
             shippingAmountCents: env.ORDER_SHIPPING_CENTS
         });
@@ -231,17 +232,41 @@ export const createTerrariumCheckoutSession = async (req, res) => {
         const hydratedOrder = await orderRepo.findById(orderId);
         if (!hydratedOrder) throw new Error('Nie udało się odczytać utworzonego zamówienia');
 
+        if (hydratedOrder.status !== ORDER_STATUS.PAYMENT_PENDING) {
+            if (hydratedOrder.status === ORDER_STATUS.PENDING) {
+                await terrariumRepo.attachProjectCheckout({
+                    projectId: project.id,
+                    userId: req.user.id,
+                    orderId,
+                    sessionId: null
+                });
+                await terrariumRepo.markProjectPaidByOrder(orderId);
+                return res.status(409).json({ error: 'Ta konfiguracja została już opłacona' });
+            }
+            return res.status(409).json({ error: 'To zamówienie nie oczekuje już na płatność' });
+        }
+
+        const orderCreatedAt = Date.parse(hydratedOrder.created_at);
+        if (!Number.isFinite(orderCreatedAt)) throw new Error('Zamówienie nie ma prawidłowego czasu utworzenia');
+        const sessionExpiresAt = Math.floor(orderCreatedAt / 1000)
+            + (env.STRIPE_CHECKOUT_EXPIRES_MINUTES * 60);
+        if (sessionExpiresAt <= Math.floor(Date.now() / 1000)) {
+            return res.status(409).json({
+                error: 'Nie można bezpiecznie wznowić wygasłej próby płatności. Skontaktuj się ze sklepem przed ponowieniem.'
+            });
+        }
+
         const appUrl = buildAppUrl(req);
         session = await stripe.checkout.sessions.create({
             mode: 'payment',
             locale: 'pl',
             client_reference_id: orderId,
-            customer_email: shipping.email,
+            customer_email: hydratedOrder.shipping_address_json?.email || shipping.email,
             billing_address_collection: 'auto',
             phone_number_collection: { enabled: true },
             success_url: `${appUrl}/checkout?terrarium_session_id={CHECKOUT_SESSION_ID}`,
             cancel_url: `${appUrl}/terrarium/checkout/${project.id}?checkout=cancelled`,
-            expires_at: Math.floor(Date.now() / 1000) + (env.STRIPE_CHECKOUT_EXPIRES_MINUTES * 60),
+            expires_at: sessionExpiresAt,
             line_items: buildLineItems(hydratedOrder),
             metadata: {
                 orderId,
@@ -255,7 +280,7 @@ export const createTerrariumCheckoutSession = async (req, res) => {
                     terrariumProjectId: project.id
                 }
             }
-        });
+        }, { idempotencyKey: checkoutIdempotencyKey });
 
         const attachedProject = await terrariumRepo.attachProjectCheckout({
             projectId: project.id,

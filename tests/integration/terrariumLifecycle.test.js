@@ -267,6 +267,7 @@ describe('terrarium customer/admin/payment lifecycle', () => {
     mocks.orderRepo.findById
       .mockResolvedValueOnce({
         id: orderId, status: 'payment_pending', discount_amount_cents: 0,
+        created_at: '2026-11-14T12:00:00.000Z',
         items: quoteSnapshot.map((item) => ({ ...item, price_cents: item.unitPriceCents }))
       })
       .mockResolvedValueOnce({ id: orderId, status: 'pending' });
@@ -288,11 +289,68 @@ describe('terrarium customer/admin/payment lifecycle', () => {
       items: quoteSnapshot.map(({ productId, quantity }) => ({ productId, quantity }))
     }));
     expect(mocks.stripe.checkout.sessions.create).toHaveBeenCalledWith(expect.objectContaining({
+      expires_at: Math.floor(Date.parse('2026-11-14T12:00:00.000Z') / 1000) + 30 * 60,
       line_items: expect.arrayContaining([expect.objectContaining({
         price_data: expect.objectContaining({ unit_amount: 16100 })
       })])
-    }));
+    }), { idempotencyKey: `terrarium:${projectId}:q2:a1` });
     expect(mocks.terrariumRepo.markProjectPaidByOrder).toHaveBeenCalledWith(orderId);
+  });
+
+  it('recovers a stale pending project without creating a second order or Stripe session', async () => {
+    const quoteSnapshot = [
+      { productId: enclosureId, name: 'Terrarium testowe', quantity: 1, unitPriceCents: 12500, lineTotalCents: 12500 }
+    ];
+    mocks.terrariumRepo.findProjectByUser.mockResolvedValue({
+      ...projectRecord,
+      status: 'payment_pending',
+      quote_version: 2,
+      checkout_attempt: 7,
+      stripe_session_id: null,
+      order_id: null,
+      quote_json: { items: quoteSnapshot, totalCents: 12500 }
+    });
+    mocks.terrariumRepo.claimProjectCheckout.mockResolvedValue({
+      ...projectRecord,
+      status: 'payment_pending',
+      quote_version: 2,
+      checkout_attempt: 7,
+      quote_json: { items: quoteSnapshot, totalCents: 12500 }
+    });
+    mocks.orderRepo.createOrder.mockResolvedValue({ id: orderId });
+    mocks.orderRepo.findById
+      .mockResolvedValueOnce({
+        id: orderId,
+        status: 'payment_pending',
+        discount_amount_cents: 0,
+        created_at: '2026-11-14T12:00:00.000Z',
+        shipping_address_json: { email: 'jan@example.test' },
+        items: quoteSnapshot.map((item) => ({ ...item, price_cents: item.unitPriceCents }))
+      })
+      .mockResolvedValueOnce({ id: orderId, status: 'payment_pending' });
+    mocks.stripe.checkout.sessions.create.mockResolvedValue({ id: 'cs_test_recovered', url: 'https://checkout.stripe.test/session' });
+    mocks.terrariumRepo.attachProjectCheckout.mockResolvedValue({ id: projectId });
+    const res = response();
+
+    await createTerrariumCheckoutSession({
+      user: { id: 'customer-user-id' },
+      params: { projectId },
+      body: {
+        fullName: 'Jan Kowalski', email: 'jan@example.test', country: 'Polska',
+        city: 'Jelenia Góra', postal_code: '58-500', street: 'Kolejowa', house_number: '12'
+      },
+      headers: { origin: 'http://localhost:5173' }
+    }, res);
+
+    expect(res.statusCode).toBe(201);
+    expect(mocks.terrariumRepo.claimProjectCheckout).toHaveBeenCalledWith(projectId, 'customer-user-id');
+    expect(mocks.orderRepo.createOrder).toHaveBeenCalledWith(expect.objectContaining({
+      idempotencyKey: `terrarium:${projectId}:q2:a7`
+    }));
+    expect(mocks.stripe.checkout.sessions.create).toHaveBeenCalledWith(
+      expect.objectContaining({ customer_email: 'jan@example.test' }),
+      { idempotencyKey: `terrarium:${projectId}:q2:a7` }
+    );
   });
 
   it('marks a project paid when Stripe reports delayed payment success', async () => {

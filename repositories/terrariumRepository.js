@@ -134,9 +134,22 @@ export const acceptProjectQuote = async (projectId, userId) => {
 export const claimProjectCheckout = async (projectId, userId) => {
     const result = await db.query(`
         UPDATE terrarium_projects
-        SET status = 'payment_pending', checkout_attempt = checkout_attempt + 1, updated_at = NOW()
-        WHERE id = $1 AND user_id = $2 AND status = 'accepted'
+        SET status = 'payment_pending',
+            checkout_attempt = CASE
+                WHEN status = 'accepted' THEN checkout_attempt + 1
+                ELSE checkout_attempt
+            END,
+            updated_at = NOW()
+        WHERE id = $1 AND user_id = $2
           AND quote_expires_at > NOW() AND quote_json IS NOT NULL
+          AND (
+              status = 'accepted'
+              OR (
+                  status = 'payment_pending'
+                  AND stripe_session_id IS NULL
+                  AND updated_at < NOW() - INTERVAL '5 minutes'
+              )
+          )
         RETURNING *
     `, [projectId, userId]);
     return parseProject(result.rows[0]);
