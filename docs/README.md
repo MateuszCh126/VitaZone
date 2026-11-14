@@ -6,6 +6,7 @@ Dokumentacja odróżnia stan widoczny w bieżącym kodzie od planu, hipotez bada
 
 - [Stan techniczny i plan rozwoju](technical/current-state-and-roadmap.md) — architektura, przepływy, mapa modułów, baza danych, ryzyka, kolejność prac i kryteria odbioru.
 - [Notatki robocze audytu](technical/working-notes.md) — dziennik tej iteracji, wyniki kontroli i otwarte zadania.
+- [Audyt tras, treści i widoków](technical/route-audit.md) — przegląd wszystkich tras na lokalnych renderach desktop/mobile, twierdzeń w copy i stanów interfejsu.
 - [Design system i handoff](design-system/vitazone.md) — tokeny, responsywność, interakcje i checklisty dostępności.
 - [Zmiany zaufania i checkoutu](changes/vitazone-trust-checkout.md) — status i weryfikacja pierwszego etapu.
 - [Zmiany warstwy wizualnej](changes/vitazone-visual-refresh.md) — status PR #2 oraz ograniczenia renderu i danych.

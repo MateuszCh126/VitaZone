@@ -71,7 +71,7 @@ const FAQ = () => {
         <title>FAQ | VitaZone</title>
         <meta
           name="description"
-          content="Najczęściej zadawane pytania dotyczące wysyłki, płatności, zwrotów i obsługi zamówień w VitaZone."
+          content="Informacje o dostawie, płatnościach, zwrotach i obsłudze zamówień w VitaZone."
         />
       </Helmet>
 

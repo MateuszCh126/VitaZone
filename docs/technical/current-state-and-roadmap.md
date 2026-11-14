@@ -14,13 +14,13 @@ scope: "kod źródłowy bieżącej gałęzi codex/vitazone-visual-refresh"
 
 VitaZone jest sklepem React/Vite z osobnym API Express, PostgreSQL i integracją Stripe. Ma już podstawowe ścieżki katalogu, produktu, koszyka i gościnnej finalizacji. W tej iteracji poprawiono część języka interfejsu, kontrastu, modalu administracyjnego, walidacji schemy produktu i zabezpieczenia legacy resetu bazy. Największe ryzyka do rozwiązania przed traktowaniem sklepu jako gotowego do obsługi realnych transakcji to:
 
-1. **Baza i migracje:** `schema.sql` zawiera destrukcyjny reset, indeksy odwołują się do tabel przed ich utworzeniem, a uruchamiacze migracji nie tworzą spójnego, wersjonowanego i transakcyjnego workflow.
+1. **Baza i migracje:** `schema.sql` zawiera destrukcyjny reset i nie odpowiada kolumnom używanym przez repozytoria. Runner pomija przyrostowe pliki SQL, a niektóre skrypty jednorazowe mogą ukryć błąd. Nie ma potwierdzonej, bezpiecznej ścieżki zarówno dla świeżej bazy, jak i upgrade'u.
 2. **Źródło prawdy dla sklepu:** brak potwierdzenia danych firmy, e-maila, warunków dostaw/zwrotów, praw do zdjęć i prawdziwych parametrów produktów. Dokumenty prawne w aplikacji mają status roboczy.
 3. **Wyszukiwalność katalogu:** produkt jest pobierany po stronie klienta, więc meta i JSON-LD powstają po hydracji; sitemap jest statyczna i nie wymienia produktów.
 4. **Architektura backendu:** granice route/controller/use-case/repository są niespójne; kolekcje i paginacja wymagają ograniczeń; rate limiting w pamięci procesu nie daje globalnego limitu dla wielu instancji.
 5. **Dowody jakości:** testy i lokalne mocki nie dowodzą zachowania produkcyjnego Stripe, Furgonetki, e-maili, bazy ani Core Web Vitals. Nie ma badań użytkowników ani analitycznych danych bazowych.
 
-Motyw czerni i zieleni zostaje. Zielony ma działać jak akcent marki i orientacja, a nie ekranowa poświata ani stały efekt dekoracyjny. Poświatę kursora w tej iteracji zmniejszono do 96×96 px, `primary/3`, blur 32 px. Kierunek wizualny należy oceniać na prawdziwych fotografiach produktu, gdy właściciel potwierdzi źródło i przypisanie zdjęć.
+Motyw czerni i zieleni zostaje. Zielony ma działać jak akcent marki i orientacja, a nie ekranowa poświata ani stały efekt dekoracyjny. Po przeglądzie renderu nawet mały bloom od kursora nadal odciągał uwagę, więc komponent usunięto. Kierunek wizualny należy oceniać na prawdziwych fotografiach produktu, gdy właściciel potwierdzi źródło i przypisanie zdjęć.
 
 ## 2. Zakres i poziom pewności
 
@@ -78,7 +78,9 @@ To mapy do walidacji, nie persony oparte na danych. Rozpocząć od wywiadów kon
 | `/admin` | `src/pages/AdminDashboard.jsx` | panel admina; sprawdzić role, paginację, teksty i obsługę produktu. |
 | `*` | `src/pages/NotFound.jsx` | strona nieznanej trasy; dodać obserwację SEO statusu HTTP hosta. |
 
-Wspólna powłoka w `src/App.jsx`: `AuthProvider`, `CartProvider`, `Navbar`, `Footer`, `ScrollToTop`, granica `Suspense`, consent, chat, analityka po zgodzie i desktopowe efekty tła. Dane dostępu i kosztorysy przed zakupem są implementowane poza samą trasą; sprawdzić cały przepływ, nie tylko widok.
+Szczegółowy audyt każdego widoku, treści, widocznych stanów oraz ograniczeń renderu znajduje się w [audycie tras](route-audit.md). Obejmuje lokalne fikcyjne dane i nie zastępuje sprawdzenia produkcji ani badań klientów.
+
+Wspólna powłoka w `src/App.jsx`: `AuthProvider`, `CartProvider`, `Navbar`, `Footer`, `ScrollToTop`, granica `Suspense`, consent, chat i analityka po zgodzie. Nie ma już efektu poświaty kursora. Dane dostawy i płatności są implementowane poza samą trasą; sprawdzić cały przepływ, nie tylko widok.
 
 ## 5. Przegląd modułów i odpowiedzialności
 
@@ -95,7 +97,7 @@ Poniższa mapa opisuje pliki domenowo, aby aktualizować ją wraz ze zmianami. N
 | `src/components/ProductModal.jsx` | formularz admina do tworzenia/edycji produktu i uploadu. | obecnie dodano dialog/fokus/etykiety; kolejne kroki: walidacja schemy produktowej, upload, błędy sieci i testy keyboard. |
 | `src/components/CookieBanner.jsx`, `src/utils/consent.js` | pobranie i zapis wyboru cookies. | gwarantować, że odmowa blokuje skrypty opcjonalne, nie tylko zapisuje stan; testować zgodę, odmowę i ponowne otwarcie. |
 | `src/components/ChatWidget.jsx` | UI czatu katalogowego; kontaktuje się z endpointem API. | jasno ujawnić odbiorcę/model i dane wysyłane do Google; nie przedstawiać jako weterynarza. |
-| `src/components/MouseGlow.jsx` | dekoracyjny podążający halo dla precyzyjnego wskaźnika desktop. | bieżący wariant 96 px/3%/32 px; wyłączyć na dotyku i reduced-motion; usunąć, jeśli test wizualny pokaże rozproszenie. |
+| `src/components/MouseGlow.jsx` | komponent dekoracyjnego halo kursora. | Usunięty po render review: nawet mała poświata rozpraszała na ciemnym tle. Nie przywracać bez udowodnionej korzyści dla orientacji. |
 | `src/components/ErrorBoundary.jsx`, `LegalDraftNotice.jsx`, `VercelInsights.jsx` | granica błędu UI, oznaczenie roboczych dokumentów i warunkowy loader telemetryczny. | raportować błąd bez danych osobowych; insights tylko zgodnie z decyzją consent. |
 | `src/context/AuthContext.jsx` | stan sesji, login/logout/odtworzenie sesji z API. | backend jest autorytatywny; nie ufać wartościom profilu zapisanym w przeglądarce. |
 | `src/context/CartContext.jsx` | pozycje koszyka, zmiany ilości i persistencja po stronie klienta. | traktować koszyk jako intencję; backend przelicza ceny, rabat, dostępność i kwoty przy zamówieniu. |
@@ -192,6 +194,16 @@ Główny plik `schema.sql` deklaruje `users`, `addresses`, `categories`, `produc
 - `VitaZonedb.sql` jest odrębnym, starszym schematem, więc nie może być równorzędnym źródłem prawdy.
 - `server/scripts/run-migrations.js` szuka `migrate_*.js`/`run_migration_*.js` w katalogu skryptów, uruchamia child process i dopisuje ledger po fakcie. Nie aplikuje `.sql` z katalogu `migrations/` i nie obejmuje skryptu transakcją; katalogowa konwencja nie pasuje do realnych migracji.
 - `pnpm migrate` wywołuje reset przez `schema.sql`; dodana w tej gałęzi bramka wymaga `ALLOW_DESTRUCTIVE_SCHEMA_RESET=true`, drugi opt-in dla zdalnej bazy i odmawia środowiska production/Vercel. To awaryjna osłona legacy, **nie naprawa systemu migracji**.
+
+Przegląd źródeł domenowych wykazał ponadto, że deklarowany `schema.sql` nie jest kontraktem bieżącego runtime: repozytorium użytkowników odczytuje/zapisuje m.in. `first_name`, `last_name`, `deleted_at`, `last_active_at`, adres oczekuje `house_number`/`apartment_number`, produkt używa `tax_rate`, a zamówienie i pozycje używają idempotency/discount oraz snapshotów, których bazowy plik nie deklaruje. Dokładny diff kolumn trzeba zautomatyzować względem repozytoriów, migracji i wariantów schematu, zanim powstanie migrator.
+
+Pozostałe ryzyka potwierdzone statycznie w bieżących ścieżkach:
+
+- Runner `server/scripts/run-migrations.js` skanuje wybrane wzorce JavaScript i nie aplikuje `server/scripts/migrations/*.sql`. Część skryptów jednorazowych ma niespójny kod wyjścia/obsługę błędu; wejścia migracyjne wymagają inwentaryzacji.
+- Niektóre listy katalogu/admina/historii nie mają paginacji z maksymalnym limitem. Odpowiedź statystyk admina pobiera rekordy `orders` szerokim `SELECT`, co może przenosić snapshoty adresowe/PII mimo że ekran ich nie potrzebuje.
+- Koszyk używa odczytu i zapisu bez unikalnego ograniczenia koszyka użytkownika, a kontrola ilości przed upsertem może ścigać się przy równoległych żądaniach. Zamówienie blokuje stan produktu transakcyjnie, ale ścieżka idempotency SELECT-then-INSERT musi obsłużyć konflikt unique (`23505`).
+- `productSchema` dopuszcza szeroki kształt `specs`, a URL zdjęć wymaga polityki dozwolonych schematów/hostów. Utworzenie użytkownika wraz z opcjonalnym adresem wymaga transakcji, jeśli adres jest atomową częścią rejestracji.
+- Limiter jest lokalny dla procesu, a pula `pg` nie deklaruje jawnie limitu i timeoutów dopasowanych do serverless. To wnioski statyczne; nie połączono się z bazą.
 
 Żaden skrypt migracji/resetu nie został uruchomiony w audycie. Nie łączyć się do realnej bazy.
 
@@ -322,7 +334,7 @@ W PR #2 (gałąź `codex/vitazone-visual-refresh`) przed zakończeniem audytu wp
 - nieemitowanie Product Offer dla wartości `price_cents = 0`;
 - dialog `ProductModal` z etykietami, Escape, pętlą fokusu i przywróceniem fokusu;
 - poprawki języka w checkout/konto/panelu i kontrast pomocniczego tekstu;
-- ograniczenie halo kursora do 96×96 px, zieleni 3%, blur 32 px;
+- usunięcie halo kursora po render review, bo nadal było widoczne na czarnych powierzchniach;
 - usunięcie drugiej pustej wiadomości listingu, gdy katalog API już wyświetla stan błędu;
 - dokument indeksu, mapy stanu i ten plan.
 

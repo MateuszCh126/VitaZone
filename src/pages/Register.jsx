@@ -4,6 +4,7 @@ import { useNavigate, Link } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
 import { z } from 'zod';
+import { Helmet } from 'react-helmet-async';
 import { useAuth } from '../context/AuthContext';
 import { KeyRound, Mail, User, AlertCircle, ArrowRight } from 'lucide-react';
 
@@ -59,17 +60,18 @@ const Register = () => {
 
     return (
         <div className="min-h-screen flex items-center justify-center relative overflow-hidden py-20">
-            <div className="absolute inset-0 z-0 pointer-events-none">
-                <div className="absolute top-1/4 right-1/4 w-96 h-96 bg-primary/5 rounded-full blur-[100px]"></div>
-            </div>
+            <Helmet>
+                <title>Utwórz konto | VitaZone</title>
+                <meta name="robots" content="noindex,follow" />
+            </Helmet>
 
             <motion.div
                 initial={{ opacity: 0, y: 20 }}
                 animate={{ opacity: 1, y: 0 }}
-                className="glass p-8 md:p-12 rounded-2xl w-full max-w-md relative z-10 border border-white/10"
+                className="rounded-2xl border border-white/10 bg-bg-secondary p-8 md:p-12 w-full max-w-md relative z-10"
             >
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Utwórz konto</h2>
+                    <h1 className="text-3xl font-bold mb-2">Utwórz konto</h1>
                     <p className="text-gray-400">Konto pozwala sprawdzać historię swoich zamówień.</p>
                 </div>
 

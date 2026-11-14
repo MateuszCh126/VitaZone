@@ -162,8 +162,8 @@ const Home = () => {
         <div className="container relative z-10 mx-auto px-4 py-16 sm:px-6 sm:py-20">
           <div className="max-w-4xl">
             <h1 className="mb-6 text-4xl font-black tracking-[-0.03em] text-white sm:text-5xl md:text-6xl lg:text-7xl">
-              Terrarystyka bez przypadku.
-              <span className="block text-primary">Zwierzęta, terraria i wyposażenie w jednym miejscu.</span>
+              Terraria i wyposażenie
+              <span className="block text-primary">dla zwierząt egzotycznych.</span>
             </h1>
             <p className="mb-8 max-w-2xl text-base leading-relaxed text-gray-300 sm:text-lg md:text-xl">
               Przeglądaj zwierzęta egzotyczne, terraria i akcesoria terrarystyczne.

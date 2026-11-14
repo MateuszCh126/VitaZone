@@ -97,7 +97,7 @@ Do dokumentacji zastosować podział Diátaxis (wyjaśnienie stanu, referencja m
 6. Zaimplementowano część potwierdzonych poprawek wysokiego priorytetu na PR #2: kontrast, etykiety i focus management dialogu admina, nieprawidłowe JSON-LD, teksty checkoutu i panelu, bramkę legacy resetu DB, wyciszone halo i pojedynczy komunikat błędu katalogu. Cały bieżący zestaw weryfikacji przeszedł (wyniki niżej). Nie scalać niczego do `main` ani nie wdrażać.
 7. Utworzono indeks dokumentacji i oznaczono stary handbook jako historyczny/nieautorytatywny.
 
-## Wyniki bieżącej weryfikacji — 2026-11-14
+## Wyniki poprzedniej weryfikacji — 2026-11-14
 
 - `pnpm exec vitest run` — 16 plików, 78 testów zaliczonych.
 - `pnpm lint` — zaliczone bez błędów.
@@ -105,13 +105,31 @@ Do dokumentacji zastosować podział Diátaxis (wyjaśnienie stanu, referencja m
 - `pnpm check:secrets` — zaliczone.
 - `$env:PLAYWRIGHT_PORT = '4182'; pnpm test:e2e` — 14/14 scenariuszy na Chromium i fixture API demo, w tym przejście wszystkich 16 tras na szerokości 390 px bez błędu React/overflow oraz pojedynczy stan błędu katalogu.
 - `git diff --check` — zaliczone; Git wypisał wyłącznie ostrzeżenia o przyszłej konwersji LF → CRLF dla plików roboczych.
-- Lokalny Vite z mockowanym API: obejrzałem widok główny w 1440×900 i sprawdziłem `h1` oraz brak poziomego overflow; halo kursora jest ledwo widoczne na tle hero. Wcześniejszy visual review objął też zrzuty wybranych ekranów desktop/mobile.
+- Poprzedni lokalny render miał jeszcze halo kursora; został zastąpiony aktualnym renderem po jego całkowitym usunięciu (szczegóły w uzupełnieniu poniżej).
 - E2E nie weryfikuje produkcyjnych API, prawdziwych metod Stripe, Furgonetki ani rzeczywistej transakcji. Nie wykonano czytnika ekranu, zoomu przeglądarki 200%, testu na fizycznym urządzeniu ani pomiarów polowych.
 - Nie wykonano `pnpm migrate`, nie łączono się z bazą produkcyjną i nie wdrażano.
 
-## Zmiany w bieżącym audycie
+## Zmiany w poprzednim audycie
 
 - Utworzono `docs/README.md` i `docs/technical/current-state-and-roadmap.md`, a `DOCUMENTATION.md` oznaczono jako historyczny/nieautorytatywny.
-- Poświata kursora zmniejszona do 96×96 px, 3% zieleni i blur 32 px.
+- Wcześniejszy stan zmniejszył poświatę do 96×96 px; po następnym render review komponent został usunięty.
 - Katalog nie renderuje już drugiej pustej wiadomości przy aktywnym błędzie API.
 - Wyniki bieżących kontroli zapisane powyżej; PR #2 pozostaje draftem, bez merge do `main` i bez deploymentu.
+
+## Uzupełnienie audytu tras i aktualnego kodu — 2026-11-14
+
+- Ostatni zapis powyżej dotyczy wcześniejszego stanu PR. Po kolejnych zmianach uruchom kontrole ponownie; nie przypisuj wcześniejszych liczb nowym plikom.
+- Render lokalny obejmował 16 tras × dwa viewporty (1365×900 oraz 390×844), wyłącznie fikcyjne dane/API. Nie zaobserwowano błędów strony ani poziomego overflow w tych 32 stanach. Pełne ograniczenia są w [audycie tras](route-audit.md).
+- Po ocenie renderu nawet zmniejszony bloom nadal był widoczny na czarnych obszarach: `MouseGlow` usunięto z `App` i repozytorium. H1 strony głównej skrócono; login/rejestracja mają jednolite powierzchnie; checkout bez pozycji nie pokazuje formularza; historia bez zamówień ma stan pusty; prod ErrorBoundary nie ujawnia stack trace.
+- Statyczny przegląd bazy znalazł różnice między `schema.sql` a kolumnami runtime, pomijanie SQL w migration runnerze, szeroką odpowiedź statystyk admina, nieograniczone listy, współbieżność koszyka i niejednolitą obsługę błędów skryptów. Nie łączono się z DB ani nie uruchamiano migracji; szczegóły są w sekcji 7 planu technicznego.
+- Checkout i konta/admina testowane są tylko na mockach; aktywne metody płatności, umowy przewoźników, legalność 18+, zdjęcia i dane firmy wymagają właścicielskiego potwierdzenia.
+
+### Najnowsza weryfikacja po zmianach
+
+- `pnpm exec vitest run` — 16 plików, 79 testów przeszło.
+- `$env:PLAYWRIGHT_PORT='4182'; pnpm test:e2e` — 17/17 przeszło na Chromium z API demo; obejmuje pusty checkout, pustą historię konta i admina na koncie mock.
+- `pnpm lint` — przeszło bez błędów i ostrzeżeń po dodaniu brakującego importu `beforeEach` w teście checkoutu.
+- `pnpm build` — przeszło; pozostaje ostrzeżenie o starej bazie Browserslist/caniuse-lite (11 miesięcy).
+- `pnpm check:secrets` — przeszło. `git diff --check` — przeszło, z ostrzeżeniami Git o przyszłej konwersji LF→CRLF.
+- Wykonano punktowy screenshot strony głównej 1440×900 po usunięciu `MouseGlow`; na tym renderze poświata kursora nie występuje. Nie jest to pełny test interakcji ani dowód produkcyjnego zachowania.
+- E2E zgłosiło `ECONNREFUSED` w proxy Vite dla `/api/cart` i `/api/categories` przed mockami, ale 17/17 asercji zakończyło się powodzeniem. Żaden test nie zależy od prawdziwego API.

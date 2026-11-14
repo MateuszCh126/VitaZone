@@ -1,0 +1,73 @@
+# VitaZone — audyt tras, treści i widoków
+
+**Status:** audyt źródeł i lokalny przegląd renderu na branchu `codex/vitazone-visual-refresh`.
+**Data:** 2026-11-14.
+**Zakres:** każda trasa z `src/App.jsx`, wspólne elementy interfejsu i widoki renderowane lokalnie na fikcyjnych danych.
+
+> Wnioski o widoku są obserwacjami z testowego renderu, a nie oceną produkcyjnych danych. Fixture produktu wykorzystuje zdjęcie demonstracyjne. Nie otrzymano badań klientów ani prawdziwych zdjęć, informacji o marce, stanów magazynowych lub danych analitycznych. Wnioski o skuteczności sprzedaży pozostają hipotezami.
+
+## Metoda i granice dowodów
+
+- Źródłem tras jest [router](../../src/App.jsx). Wykonano render wszystkich 16 tras przy szerokości 1365 px i 390 px na lokalnym Vite; 32 zrzuty oraz metryki tymczasowo zapisano w katalogu Temp Windows, poza repozytorium.
+- Użyto fikcyjnego produktu „Terrarium demonstracyjne”, konta wylogowanego i mocków API. Osobny test Playwright renderuje `/dashboard` i `/admin` na wydzielonym koncie demo. Nie podłączono prawdziwej bazy ani integracji usług.
+- W przebiegu renderowym nie wystąpił `pageerror`; wszystkie 32 wejścia miały `scrollWidth === innerWidth`. To potwierdza brak błędu renderowania i poziomego overflow w tych viewportach oraz stanach, nie pełną poprawność UX.
+- Osobno sprawdzono homepage 1440×900 oraz aktualny ekran pustego checkoutu. Zrzuty są punktowe, nie zastępują pełnej inspekcji długich stron, długich nazw, galerii wielu zdjęć, fokusu klawiatury, powiększenia przeglądarki 200%, czytnika ekranu ani urządzenia fizycznego.
+- Testy istniejącego Playwright API są mockowane. Nie potwierdzają dostępności Stripe, Furgonetki, Resend, Google Gemini ani aktualności stanu produkcyjnego.
+- Badania jakościowe z klientami nie odbyły się; rekomendacje UX nie są faktami o konwersji.
+
+## Trasy publiczne i zakupowe
+
+| Trasa i źródło | Stan treści / działania widoczny w kodzie | Wygląd i zachowanie w renderze | Priorytet i dalsze działanie |
+|---|---|---|---|
+| `/` — [`Home.jsx`](../../src/pages/Home.jsx) | Wyszukiwanie, skróty dwóch podróży, kategorie i pozycje katalogu. Pierwszy CTA prowadzi bezpośrednio do kategorii „Terraria i zestawy”; nie jest przewodnikiem do kompletowania terrarium. Drugi ustawia `journey=existing`. | Zdjęcie dżungli jest najmocniejszym, rozpoznawalnym elementem marki. H1 po poprawce to „Terraria i wyposażenie / dla zwierząt egzotycznych”; zielona część zajmuje mniej linii niż wcześniejsze trzy linie neonowego tekstu. Obie ścieżki i wyszukiwarka są widoczne przy 390 px. | **P1 treść:** zweryfikować, czy kategoria rzeczywiście pomaga osobie kupującej pierwsze terrarium; do tego czasu nie przedstawiać jej jako kompletnego, zatwierdzonego zestawu. **P2 wizualne:** zachować fotografię i CTA, dążyć do spokojniejszego podziału koloru po ocenie przez właściciela/klientów. |
+| `/shop` — [`Shop.jsx`](../../src/pages/Shop.jsx) | Kategoria, budżet, wyszukiwanie, sortowanie po katalogu/cenie/`created_at`, aktywne filtry, liczba wyników, retry, empty state. W filtrach widoczne nagłówki są powiązane z polami przez `aria-labelledby`; prompt ścieżki uzupełnień brzmi teraz „Czego szukasz?”. | W teście jest jeden produkt demo, więc przestrzeń siatki nie jest reprezentatywna dla prawdziwego katalogu. W 390 px listing nie powoduje poziomego overflow. | **P1 danych:** sprawdzić wiarygodność dat `created_at`, zdjęć, cen i aktywnych produktów. **P2 testy:** renderować pełny katalog, pustą listę, błąd API, długie nazwy i filtry dotykowe na telefonie. Jedno źródło error/retry już zastąpiło dwa nakładające się komunikaty. |
+| `/product/:id` — [`ProductDetail.jsx`](../../src/pages/ProductDetail.jsx) | Szczegóły, galeria, cena, stan, zakup, dostawa i dane JSON-LD. Dane meta i canonical są dodawane dopiero, gdy przeglądarka pobierze produkt i wykona React. | Przy fikcyjnym produkcie widoczny jest podział: zdjęcie po lewej, decyzja/cena po prawej. Sam mock nie ocenia jakości zdjęcia, kompletności parametrów, praw do materiału ani prawdziwej dostępności. | **P1 SEO:** sprawdzić surowy HTML na podglądzie i wybrać SSR/SSG/prerender dla aktywnych produktów. **P1 prawdy oferty:** canonical używa obecnie stałego `vitazone.vercel.app`; potwierdzić domenę. **P2:** brak zdjęcia używa dziś zdjęcia hero `/hero-bg.webp`, co może udawać zdjęcie produktu; zastąpić neutralnym placeholderem. Sformułowanie „Gotowe do zamówienia” opiera się na dodatnim stock API, lecz nie gwarantuje rezerwacji do czasu finalizacji. |
+| `/about` — [`About.jsx`](../../src/pages/About.jsx) | Opisuje asortyment oraz proces sprawdzenia produktu, koszyka i płatności; nie pokazuje potwierdzonej historii firmy, osób ani źródeł wiedzy. | Render ma duży, wyśrodkowany tytuł i trzy jednakowo traktowane karty z ikonami; użytkownik widział podobną strukturę na swoim zrzucie. Jest czytelnie, ale układ przypomina ogólną stronę funkcji aplikacji. | **P1 faktów:** właściciel dostarcza historię, zdjęcia i wyróżniki, jeśli mają się pojawić. **P2 kompozycja:** alternatywa to krótkie, rzeczowe „Jak zamawiać” z konkretnym diagramem albo opowieść o firmie oparta na zweryfikowanych materiałach; nie dopisywać fikcyjnego story. |
+| `/contact` — [`Contact.jsx`](../../src/pages/Contact.jsx) | Jedynym kanałem w kodzie jest `mailto:kontakt@animalsshop.pl`; adres jest ukryty za „Napisz do obsługi VitaZone”. Brak godzin i adresu, więc widok ich nie fabrykuje. | W szerokim widoku pojedyncza karta kontaktu zajmuje mało lewej kolumny, a prawa zawiera dwa bloki — pozostaje duża nierównowaga przestrzeni. Na telefonie sekcje układają się pionowo. | **P0 publikacja:** właściciel musi zweryfikować skrzynkę i dane sprzedawcy. **P2:** po weryfikacji pokazać prawdziwy adres i ułożyć CTA symetrycznie; nie deklarować czasu odpowiedzi bez danych. |
+| `/faq` — [`FAQ.jsx`](../../src/pages/FAQ.jsx) | Odpowiedzi o dostawie, płatnościach i wyjątkach prawnych zawierają zastrzeżenia. Treść twierdzi jednak, że kilka kategorii można połączyć w zamówieniu; to nie potwierdza wspólnej metody wysyłki. Link do maila powtarza niezweryfikowaną skrzynkę. Meta description zmieniono z „Najczęściej zadawane” na neutralny opis. | Grupowane, natywne disclosure `<details>` dobrze porządkują pytania; stan zamknięty skraca długi dokument. Nie sprawdzono jeszcze screen readera/klawiatury. | **P0 publikacja:** właściciel, operator i prawnik potwierdzają dostawę, płatności i wyjątki. **P1:** rozdzielić „kilka kategorii w koszyku” od „można wysłać razem”; nie potwierdzać wspólnej przesyłki bez walidacji reguł przewoźnika. |
+| `/login` — [`Login.jsx`](../../src/pages/Login.jsx) | Komunikaty formularza w języku polskim, etykiety e-mail/hasła i błędy pól. Brak resetu hasła w tym widoku; audyt nie potwierdza, czy endpoint istnieje poza nim. | Usunięto duże zielone i fioletowe plamy rozmycia. Karta jest jednolitą ciemną powierzchnią, a tytuł jest `h1`. Zostaje wyłącznie stały launcher czatu. | **P1:** zweryfikować reset hasła, lockout i błąd API; dodać widoczny reset wyłącznie, jeśli istnieje prawdziwy przepływ. Strona otrzymała tytuł i `noindex,follow`. |
+| `/register` — [`Register.jsx`](../../src/pages/Register.jsx) | Formularz wymaga imienia, nazwiska, e-maila, hasła, 18+ i regulaminu; newsletter jest opcjonalny. Obecna bramka 18+ dotyczy wszystkich kont. | Usunięto rozmyty glow i zastosowano tę samą neutralną kartę co w logowaniu; tytuł trasy jest `h1`. Formularz jest długi na telefonie i wymaga przewijania. | **P0/prawnik:** potwierdzić zakres 18+ dla konta i produktów; nie zmieniać wymogu samodzielnie. **P1:** sprawdzić podstawę/tekst zgody newslettera i jej wycofanie. Strona ma tytuł i `noindex,follow`. |
+| `/checkout` — [`Checkout.jsx`](../../src/pages/Checkout.jsx) | Checkout gościa/konta, formularz, wycena, regulacja statusu Stripe. Widoczne copy teraz nazywa finalizację i mówi, że dane płatności podaje się na stronie Stripe; statusy płatności pozostają zależne od API. | Formularz/podsumowanie to przejrzysty podział na desktopie. Bez towaru w koszyku dawniej nadal pokazywano dane adresowe i CTA wyceny; dodano ekran pustego koszyka z powrotem do katalogu. Zrzut tego nowego stanu: jedna spokojna karta zamiast nieaktywnego formularza. | **P0 przed live:** potwierdzić metody Stripe, role/transfer danych przewoźnika, tekst ostatniego przycisku i 18+. Testować cancel/expiry/fail/replay/stock race na sandbox. Trasa ma `noindex`. |
+| `/dashboard` — [`Dashboard.jsx`](../../src/pages/Dashboard.jsx) | Historia i ustawienia konta. Zwrot i zgłoszenie prowadzą do przygotowania e-maila, nie tworzą automatycznej sprawy; etykiety wyjaśniają teraz „Napisz w sprawie…”. | Dodano stan pustej historii z krótkim wyjaśnieniem i CTA do katalogu. Render tego stanu jest sprawdzany na wydzielonym, mockowanym koncie demo. | **P1 prywatność:** sprawdzić paginację i kontrolę dostępu historii. **P2:** opisać różnice akcji mailto vs pełny zwrot; nie sugerować, że zwrot został zgłoszony. |
+| `/admin` — [`AdminDashboard.jsx`](../../src/pages/AdminDashboard.jsx) | Kolejka, katalog, kupony, użytkownicy i statystyki. Fake „Status sklepu: Aktywny” zamieniono wcześniej na neutralny opis. Licznik `products.length` miał podpis „Unikalne Gatunki”; poprawiono na „Produkty w katalogu”. | Demo render zalogowanego administratora sprawdzane przez Playwright na stubowanych endpointach. Zmniejszono dekoracyjne ikony w stat cards i ujednolicono kolor akcentu do zieleni marki. | **P1 bezpieczeństwo/dane:** audyt paginacji, PII w statystykach, nazw metryk i empty/error state. Wartość „Aktywni użytkownicy” opiera się na 20-minutowym oknie, które musi być komunikowane jako definicja, nie ogólny KPI. |
+| `*` — [`NotFound.jsx`](../../src/pages/NotFound.jsx) | Strona ma `noindex,follow` i link do katalogu. | Prosty, czytelny ekran; mobile smoke bez overflow. | **P2 infrastruktura:** potwierdzić, że host zwraca HTTP 404, a nie tylko pokazuje SPA fallback z 200. |
+
+## Wspólne elementy
+
+| Moduł | Stan / uwagi | Następny krok |
+|---|---|---|
+| [`Navbar.jsx`](../../src/components/Navbar.jsx), [`Footer.jsx`](../../src/components/Footer.jsx) | Nawigacja, ikona koszyka/profilu, stopka i ustawienia prywatności; e-mail w stopce wymaga właścicielskiego potwierdzenia. | Przegląd klawiatury na prawdziwym menu i finalny test z czytnikiem. |
+| [`CartDrawer.jsx`](../../src/components/CartDrawer.jsx) | Panel/sekcja koszyka i warunkowa informacja prawna. | Zweryfikować focus trap/zwrot fokusu oraz regułę odstąpienia per typ towaru po opinii prawnej. |
+| [`CookieBanner.jsx`](../../src/components/CookieBanner.jsx), [`consent.js`](../../src/utils/consent.js) | Odrzuć/dostosuj/akceptuj i kontrola Vercel Analytics są testowane mockami. | Na preview/produkcyjnej stronie nagrać ruch/storage przed zgodą, po odmowie i po wycofaniu; politykę dopasować do rzeczywistego wykazu. |
+| [`ChatWidget.jsx`](../../src/components/ChatWidget.jsx), `chatController.js` | Interfejs objaśnia zakres katalogowy i brak porady weterynaryjnej; żądanie wysyła historię do zewnętrznego modelu Google. | Ujawnić retencję i przekazywanie danych zgodnie z polityką; zaobserwować, czy intensywna zielona bańka nie konkuruje z CTA. |
+| [`ProductModal.jsx`](../../src/components/ProductModal.jsx) | Formularz admina dostał role/name dialogu, etykiety, fokus początkowy, Escape, cykl Tab i przywrócenie fokusu. | Ręczny keyboard test na realnym panelu admina, w tym upload i błędy przy polu. |
+| [`ErrorBoundary.jsx`](../../src/components/ErrorBoundary.jsx) | Szczegóły błędu i stack są teraz pokazywane wyłącznie przy `import.meta.env.DEV`; produkcja widzi tekst naprawczy. | Dodać obserwowalny, nieujawniający PII identyfikator incydentu, gdy backend będzie miał spójne request IDs po stronie klienta. |
+| `MouseGlow` (usunięty komponent) | Usunięto z powłoki aplikacji i z repozytorium: nawet mały bloom nadal był widoczny na dużych czarnych polach i przypominał dekoracyjny efekt „AI”. | Nie odtwarzać bez testu renderu i wyraźnej wartości dla orientacji; zachować kontrast oraz prawdziwe zdjęcia jako wizualny punkt marki. |
+
+## Otwarte bramki i plan
+
+1. **P0: fakty właściciela i legal review:** pełne dane firmy, kanał kontaktu, warunki i metody dostawy/płatności, prawa i przypisanie zdjęć, specyfikacje, stan, wymogi 18+, regulamin/prywatność/zwroty. Wprowadzać dopiero po potwierdzeniu; sekcje prawne mają draft notice.
+2. **P1: trafność oferty:** zamienić fallback zdjęcia produktu na neutralny brak zdjęcia; dodać zweryfikowane parametry produktu; nie traktować dodatniego stock z API jako gwarancji aż do rezerwacji; przetestować długie nazwy i galerie.
+3. **P1: SEO i kanoniczny host:** obecne title/description/canonical produktu powstają w kliencie. Potwierdzić host, zbudować `robots` i dynamiczną sitemapę katalogu, sprawdzić surowy HTML/status/canonical/schema bez hydracji na preview.
+4. **P1: konto i checkout:** testy zwrotu Stripe, błędu/wygaśnięcia, zamówienia gościa, statusu konta, maili i pomocy. Legal signoff dla 18+, zgody newslettera, płatnego przycisku i transferu danych.
+5. **P2: tożsamość firmy i gęstość:** po materiałach ownera przerobić `/about` z powtarzanych kart na konkretną historię albo diagram; wyrównać `/contact` po zweryfikowaniu skrzynki. Nie wypełniać pustej przestrzeni fikcyjnymi benefitami.
+6. **P2: a11y i devices:** realne keyboard, focus, screen reader, zoom 200%, reduced motion, dotyk, długie polskie ciągi, kontrast/WCAG 2.2 AA. Aktualne 390 px smoke nie jest zoomem 200%.
+
+## Rejestr claimów do dowodu
+
+| Claim / pole | Dlaczego wymaga dowodu | Właściciel źródła |
+|---|---|---|
+| „Pierwsze terrarium” / kompletność zestawu | CTA prowadzi do działu, a nie zatwierdzonej listy kompletnego wyposażenia. | właściciel + kompetentne źródło hodowlane |
+| Zdjęcie odpowiada produktowi i może być używane | Demo/hosted zdjęcia wymagają przypisania i licencji. | właściciel katalogu |
+| „Gotowe do zamówienia” / liczba sztuk | aktualne API i finalizacja mogą ścigać się o stan. | magazyn/order service |
+| łączenie wielu kategorii w jednej dostawie | zależy od rodzaju towarów, wymiarów i przewoźnika. | logistyka/operator |
+| czas wysyłki, kontakt, płatność, zwroty | brak kontraktów/firmowych danych; dokumenty mają status roboczy. | właściciel + prawnik/księgowość |
+| revenue growth / active users | wartości pochodzą z SQL i konkretnych okien/statusów; UI musi pokazywać definicję. | właściciel analityki |
+
+## Wiązane materiały
+
+- [Stan techniczny i plan rozwoju](current-state-and-roadmap.md)
+- [Notatki audytu i fakty w repozytorium](working-notes.md)
+- [Design system i handoff](../design-system/vitazone.md)
+- [Plan badań UX](../research/vitazone-ux-research.md)
+- [Przegląd prawa polskiego](../research/vitazone-polish-consumer-law-review.md)

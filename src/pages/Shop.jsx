@@ -129,12 +129,12 @@ const Shop = () => {
   const renderFilters = () => (
     <div className="glass sticky top-24 rounded-3xl p-6">
       <div className="mb-8">
-        <h3 className="mb-4 flex items-center gap-2 text-lg font-bold">
+        <h3 id="catalog-search-heading" className="mb-4 flex items-center gap-2 text-lg font-bold">
           <Search size={18} className="text-primary" /> Szukaj
         </h3>
         <input
           type="text"
-          aria-label="Szukaj produktu lub gatunku"
+          aria-labelledby="catalog-search-heading"
           placeholder="Szukaj produktu lub gatunku"
           value={searchQuery}
           onChange={(event) => handleSearchChange(event.target.value)}
@@ -166,11 +166,11 @@ const Shop = () => {
 
       <div>
         <div className="mb-4 flex items-center justify-between">
-          <h3 className="text-lg font-bold">Budżet</h3>
+          <h3 id="catalog-budget-heading" className="text-lg font-bold">Budżet</h3>
           <span className="text-sm font-mono text-primary">do {priceRange} zł</span>
         </div>
         <input
-          aria-label="Maksymalna cena produktu"
+          aria-labelledby="catalog-budget-heading"
           aria-valuetext={`Do ${priceRange} zł`}
           type="range"
           min="0"
@@ -203,7 +203,7 @@ const Shop = () => {
 
       {journey === 'existing' && (
         <section className="mb-8 rounded-3xl border border-primary/20 bg-primary/[0.04] p-6" aria-labelledby="existing-journey-title">
-          <h2 id="existing-journey-title" className="text-xl font-bold text-white">Czego szukasz do swojego terrarium?</h2>
+          <h2 id="existing-journey-title" className="text-xl font-bold text-white">Czego szukasz?</h2>
           <p className="mt-2 text-sm text-gray-400">Wybierz dział albo przejdź do pełnej oferty.</p>
           <div className="mt-4 flex flex-wrap gap-3">
             {['Ogrzewanie i oświetlenie', 'Podłoża i dekoracje', 'Pokarm i suplementy'].map((category) => (

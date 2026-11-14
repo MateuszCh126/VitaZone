@@ -226,6 +226,15 @@ const Dashboard = () => {
                                 className="space-y-4"
                             >
                                 <h2 className="text-2xl font-bold mb-6">Historia zamówień</h2>
+                                {orders.length === 0 ? (
+                                    <div className="rounded-2xl border border-white/10 bg-bg-secondary p-8">
+                                        <h3 className="text-lg font-semibold">Nie masz jeszcze zamówień</h3>
+                                        <p className="mt-2 text-sm text-gray-400">Gdy złożysz zamówienie, jego status i szczegóły pojawią się tutaj.</p>
+                                        <Link to="/shop" className="mt-5 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2 font-semibold text-black transition-colors hover:bg-white">
+                                            Przejdź do asortymentu
+                                        </Link>
+                                    </div>
+                                ) : null}
                                 {orders.map((order) => (
                                     <div key={order.id} className="glass p-6 rounded-xl border border-white/5 flex flex-col gap-4">
                                         <div className="flex justify-between items-start border-b border-white/5 pb-4">

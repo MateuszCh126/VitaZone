@@ -247,7 +247,7 @@ const AdminDashboard = () => {
             {/* Stats Overview */}
             <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-12">
                 <StatCard
-                    icon={<TrendingUp className="text-green-500" />}
+                    icon={<TrendingUp className="text-primary" />}
                     label="Całkowity przychód"
                     value={`${Number(stats?.totalRevenue || 0).toLocaleString('pl-PL')} zł`}
                     subtext={`${stats?.revenueGrowth || 0}% od ostatniego miesiąca`}
@@ -259,16 +259,16 @@ const AdminDashboard = () => {
                     subtext={`W realizacji: ${stats?.ordersProcessing || 0}`}
                 />
                 <StatCard
-                    icon={<Users className="text-blue-500" />}
+                    icon={<Users className="text-primary" />}
                     label="Aktywni użytkownicy"
                     value={stats?.activeUsers || 0}
                     subtext="Aktywni (ostatnie 20 min)"
                 />
                 <StatCard
-                    icon={<Package className="text-orange-500" />}
+                    icon={<Package className="text-primary" />}
                     label="Asortyment"
                     value={products.length}
-                    subtext="Unikalne Gatunki"
+                    subtext="Produkty w katalogu"
                 />
             </div>
 
@@ -724,9 +724,9 @@ const AdminDashboard = () => {
 };
 
 const StatCard = ({ icon, label, value, subtext }) => (
-    <div className="glass p-6 rounded-2xl border border-white/5 relative overflow-hidden group">
-        <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-            {React.cloneElement(icon, { size: 64 })}
+    <div className="glass p-6 rounded-2xl border border-white/5 relative overflow-hidden">
+        <div className="pointer-events-none absolute top-0 right-0 p-4 opacity-[0.04]" aria-hidden="true">
+            {React.cloneElement(icon, { size: 48 })}
         </div>
         <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-white/5 rounded-lg">{icon}</div>

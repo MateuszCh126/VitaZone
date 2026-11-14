@@ -13,7 +13,10 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 
 ## Wykonane
 
-- Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% do 320×320 px, `primary/10`, blur 105 px i bez screen blend; po uwagach z przeglądu zmniejszono je dalej do 144×144 px, `primary/5`, blur 48 px, a w audycie do 96×96 px, `primary/3`, blur 32 px.
+- Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% przez warianty 320×320, 144×144 i 96×96 px, aż do całkowitego usunięcia. Render review wykazał, że nawet najmniejszy nadal był widoczny na ciemnych powierzchniach.
+- Skrócono główny nagłówek do informacji o kategorii sklepu; logowanie i rejestracja dostały jednolite ciemne powierzchnie zamiast dekoracyjnych rozmytych plam.
+- Pusty checkout prowadzi do katalogu bez niepotrzebnego formularza dostawy; historia konta bez zamówień pokazuje pomocny link do sklepu. Błędy React nie pokazują stack trace użytkownikom produkcyjnym.
+- Dodano lokalny route audit z renderami wszystkich 16 tras desktop/mobile i osobnymi E2E dla mockowanych widoków konta/admina: [audyt](../technical/route-audit.md).
 - Usunięto stale animowaną warstwę cząsteczek z `App`; nieużywany komponent usunięto.
 - Podmieniono niedziałający adres zdjęcia okładkowego kategorii „Węże”; poprawiono też obraz i datę przykładowego produktu używanego przez testy, aby lokalny podgląd nie przedstawiał błędnego zdjęcia ani fałszywej etykiety nowości.
 - Zredukowano motion zoomu zdjęć do 1.03/220 ms.

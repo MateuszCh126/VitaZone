@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { motion } from 'framer-motion';
 import { Link, useNavigate, useSearchParams } from 'react-router-dom';
+import { Helmet } from 'react-helmet-async';
 import {
     AlertCircle,
     Check,
@@ -403,8 +404,37 @@ const Checkout = () => {
         );
     }
 
+    if (cart.length === 0) {
+        const hasPaymentStatus = checkoutState.type !== 'idle';
+
+        return (
+            <div className="min-h-screen px-6 py-16">
+                <Helmet>
+                    <title>{hasPaymentStatus ? 'Status płatności | VitaZone' : 'Pusty koszyk | VitaZone'}</title>
+                    <meta name="robots" content="noindex,follow" />
+                </Helmet>
+                <div className="mx-auto max-w-3xl rounded-3xl border border-white/10 bg-bg-secondary p-8 sm:p-12">
+                    {hasPaymentStatus && renderCheckoutStatus()}
+                    <h1 className="text-3xl font-bold">{hasPaymentStatus ? 'Status płatności' : 'Koszyk jest pusty'}</h1>
+                    {!hasPaymentStatus && (
+                        <p className="mt-3 max-w-xl leading-relaxed text-gray-300">
+                            Dodaj produkty do koszyka, zanim wybierzesz dostawę i przejdziesz do płatności.
+                        </p>
+                    )}
+                    <Link to="/shop" className="mt-6 inline-flex min-h-11 items-center rounded-full bg-primary px-5 py-2 font-semibold text-black transition-colors hover:bg-white">
+                        Wróć do asortymentu
+                    </Link>
+                </div>
+            </div>
+        );
+    }
+
     return (
         <div className="min-h-screen px-6 py-12">
+            <Helmet>
+                <title>Finalizacja zamówienia | VitaZone</title>
+                <meta name="robots" content="noindex,follow" />
+            </Helmet>
             <div className="mx-auto max-w-5xl">
                 {renderCheckoutStatus()}
 
@@ -417,9 +447,9 @@ const Checkout = () => {
                     </div>
                     <div className="hidden rounded-2xl border border-white/10 bg-white/5 p-4 md:block">
                         <div className="flex items-center gap-2 text-sm font-bold text-primary">
-                            <ShieldCheck size={16} /> Stripe + HTTPS
+                            <ShieldCheck size={16} /> Płatność przez Stripe
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">Płatność odbywa się na stronie Stripe.</div>
+                        <div className="mt-1 text-xs text-gray-400">Dane płatności podajesz bezpośrednio w Stripe.</div>
                     </div>
                 </div>
 

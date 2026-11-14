@@ -25,13 +25,39 @@ test.describe('VitaZone storefront (demo data)', () => {
       }
     });
 
-    await page.route('**/api/auth/me', (route) => route.fulfill({ status: 401, json: { error: 'Unauthorized' } }));
+    await page.route('**/api/auth/me', (route) => {
+      const searchParams = new URL(page.url()).searchParams;
+      if (searchParams.has('dashboard-demo') || searchParams.has('admin-demo')) {
+        const role = searchParams.has('admin-demo') ? 'admin' : 'user';
+        return route.fulfill({
+          status: 200,
+          json: {
+            id: 'demo-user-0001',
+            email: 'demo@example.test',
+            name: 'Użytkownik demo',
+            firstName: 'Użytkownik',
+            lastName: 'Demo',
+            role,
+            created_at: '2026-01-01T00:00:00.000Z'
+          }
+        });
+      }
+      return route.fulfill({ status: 401, json: { error: 'Unauthorized' } });
+    });
     await page.route('**/api/consent', (route) => route.fulfill({ status: 204, body: '' }));
     await page.route('**/api/stripe/config', (route) => route.fulfill({
       status: 200,
       contentType: 'application/json',
       body: JSON.stringify({ shippingAmountCents: 1500 })
     }));
+    await page.route('**/api/orders/user/**', (route) => route.fulfill({ status: 200, json: [] }));
+    await page.route('**/api/admin/stats', (route) => route.fulfill({
+      status: 200,
+      json: { totalRevenue: 0, revenueGrowth: '0.0', totalOrders: 0, ordersProcessing: 0, activeUsers: 0 }
+    }));
+    await page.route('**/api/admin/orders', (route) => route.fulfill({ status: 200, json: [] }));
+    await page.route('**/api/admin/products', (route) => route.fulfill({ status: 200, json: [demoProduct] }));
+    await page.route('**/api/admin/users', (route) => route.fulfill({ status: 200, json: [] }));
     await page.route('**/api/products**', async (route) => {
       if (new URL(page.url()).searchParams.has('catalog-error-test')) {
         await route.fulfill({
@@ -69,10 +95,12 @@ test.describe('VitaZone storefront (demo data)', () => {
 
   test('labels account fields and connects validation errors to their inputs', async ({ page }) => {
     await page.goto('/login');
+    await expect(page.getByRole('heading', { level: 1, name: 'Witaj ponownie' })).toBeVisible();
     await expect(page.getByLabel('Adres email')).toBeVisible();
     await expect(page.getByLabel('Hasło')).toBeVisible();
 
     await page.goto('/register');
+    await expect(page.getByRole('heading', { level: 1, name: 'Utwórz konto' })).toBeVisible();
     await expect(page.getByLabel('Imię')).toBeVisible();
     await expect(page.getByLabel('Nazwisko')).toBeVisible();
     await expect(page.getByLabel('Adres email')).toBeVisible();
@@ -107,6 +135,8 @@ test.describe('VitaZone storefront (demo data)', () => {
 
   test('explains an empty search result and offers a direct filter reset', async ({ page }) => {
     await page.goto('/shop');
+    await expect(page.getByRole('textbox', { name: 'Szukaj' })).toBeVisible();
+    await expect(page.getByRole('slider', { name: 'Budżet' })).toBeVisible();
     await page.locator('aside').getByPlaceholder('Szukaj produktu lub gatunku').fill('fraza bez wyników');
 
     await expect(page.getByRole('heading', { name: 'Brak produktów dla wybranych filtrów' })).toBeVisible();
@@ -153,6 +183,22 @@ test.describe('VitaZone storefront (demo data)', () => {
     }
 
     expect(pageErrors).toEqual([]);
+  });
+
+  test('shows a useful empty state in the authenticated order history', async ({ page }) => {
+    await page.goto('/dashboard?dashboard-demo');
+    await page.getByRole('button', { name: 'Moje zamówienia' }).click();
+
+    await expect(page.getByRole('heading', { name: 'Nie masz jeszcze zamówień' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Przejdź do asortymentu' })).toHaveAttribute('href', '/shop');
+  });
+
+  test('renders the admin dashboard using isolated demo account and API data', async ({ page }) => {
+    await page.goto('/admin?admin-demo');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Zarządzanie sklepem' })).toBeVisible();
+    await expect(page.getByText('Produkty w katalogu')).toBeVisible();
+    await expect(page.getByText('Unikalne Gatunki')).toHaveCount(0);
   });
 
   test('does not show live-animal withdrawal guidance in an accessory-only cart', async ({ page }) => {
@@ -219,6 +265,15 @@ test.describe('VitaZone storefront (demo data)', () => {
       expectedShippingAmountCents: 1500
     });
     expect(checkoutPayload).not.toHaveProperty('userId');
+  });
+
+  test('gives an empty checkout a direct path back to the catalog', async ({ page }) => {
+    await page.goto('/checkout');
+
+    await expect(page.getByRole('heading', { level: 1, name: 'Koszyk jest pusty' })).toBeVisible();
+    await expect(page.getByRole('link', { name: 'Wróć do asortymentu' })).toHaveAttribute('href', '/shop');
+    await expect(page.getByLabel('Adres e-mail')).toHaveCount(0);
+    await expect(page.getByRole('button', { name: 'Sprawdź metody i koszt dostawy' })).toHaveCount(0);
   });
 
   test('explains the chat scope and displays its response', async ({ page }) => {
@@ -312,7 +367,7 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(filterToggle).toHaveAttribute('aria-expanded', 'false');
     await filterToggle.click();
     await expect(page.getByRole('button', { name: 'Ukryj filtry' })).toHaveAttribute('aria-expanded', 'true');
-    await page.locator('#mobile-product-filters').getByLabel('Szukaj produktu lub gatunku').fill('Terrarium demonstracyjne');
+    await page.locator('#mobile-product-filters').getByRole('textbox', { name: 'Szukaj' }).fill('Terrarium demonstracyjne');
     await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
     await page.getByRole('link', { name: /Szczegóły/ }).click();
     await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
@@ -329,7 +384,7 @@ test.describe('VitaZone storefront (demo data)', () => {
       await page.goto('/shop');
       await expect.poll(hasNoHorizontalOverflow).toBe(true);
       await page.getByRole('button', { name: 'Pokaż filtry' }).click();
-      await page.locator('#mobile-product-filters').getByLabel('Szukaj produktu lub gatunku').fill('Terrarium demonstracyjne');
+      await page.locator('#mobile-product-filters').getByRole('textbox', { name: 'Szukaj' }).fill('Terrarium demonstracyjne');
       await page.getByRole('link', { name: /Szczegóły/ }).click();
       await expect(page.getByRole('heading', { name: demoProduct.name })).toBeVisible();
       await expect.poll(hasNoHorizontalOverflow).toBe(true);
