@@ -25,3 +25,10 @@
 ## Related decision
 
 See [ADR 0001](../adr/0001-terrarium-projects-and-price-snapshots.md).
+
+## Follow-up interaction polish (2026-11-14)
+
+- Products can be dragged directly in the 3D view while staying on their selected mounting plane. The axis gizmo and directional nudge buttons are both available; nudge directions follow the selected floor or wall plane.
+- Transform changes are committed when the drag ends. The current design is autosaved to the browser session, including demo designs; demo products remain local-only and cannot be submitted.
+- The demo cork shelf supports the back and side walls, and its preview rotates to match the selected wall.
+- Follow-up verification: ESLint passed for the changed interaction files and `pnpm build` passed. Vite still reports the lazy-loaded 3D scene chunk above 500 kB; evaluate it again with production models and target devices.

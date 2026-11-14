@@ -151,10 +151,23 @@ export default function TerrariumConfigurator() {
   }, [enclosure, enclosureId, enclosures]);
 
   useEffect(() => {
-    if (!isDemo && enclosure && objects.length > 0) {
-      window.sessionStorage.setItem('terrarium-builder-draft', JSON.stringify(makeConfiguration(enclosure, objects)));
+    if (catalogState !== 'ready') return;
+    if (!isDemo && savedDraft?.enclosureProductId?.startsWith('demo-')) {
+      setObjects((current) => current.length ? [] : current);
+      setSelectedId((current) => current === null ? current : null);
+      window.sessionStorage.removeItem('terrarium-builder-draft');
     }
-  }, [enclosure, isDemo, objects]);
+  }, [catalogState, isDemo, savedDraft]);
+
+  useEffect(() => {
+    if (enclosure) {
+      try {
+        window.sessionStorage.setItem('terrarium-builder-draft', JSON.stringify(makeConfiguration(enclosure, objects)));
+      } catch {
+        // The in-memory configuration still works when browser storage is unavailable.
+      }
+    }
+  }, [enclosure, objects]);
 
   const estimate = useMemo(() => {
     if (!enclosure) return { items: [], totalCents: 0 };
@@ -202,10 +215,17 @@ export default function TerrariumConfigurator() {
 
   const updateSelectedPlacement = (change) => {
     if (!selectedObject || !selectedProduct || !enclosure) return;
+    const nextSurface = change.surface || selectedObject.surface;
+    const rotationDeg = { ...selectedObject.rotationDeg, ...(change.rotationDeg || {}) };
+    if (selectedProduct.demoKind === 'shelf' && change.surface && change.surface !== selectedObject.surface) {
+      const wasSideMounted = selectedObject.surface === 'left' || selectedObject.surface === 'right';
+      const willBeSideMounted = nextSurface === 'left' || nextSurface === 'right';
+      if (wasSideMounted !== willBeSideMounted) rotationDeg.y += willBeSideMounted ? 90 : -90;
+    }
     const next = {
       positionMm: { ...selectedObject.positionMm, ...(change.positionMm || {}) },
-      rotationDeg: { ...selectedObject.rotationDeg, ...(change.rotationDeg || {}) },
-      surface: change.surface || selectedObject.surface,
+      rotationDeg,
+      surface: nextSurface,
       product: productConfig(selectedProduct),
       enclosure: productConfig(enclosure)
     };
@@ -276,6 +296,11 @@ export default function TerrariumConfigurator() {
   const rotationAxis = selectedObject?.surface === 'floor' || selectedObject?.surface === 'ceiling'
     ? 'y'
     : selectedObject?.surface === 'back' ? 'z' : 'x';
+  const movementAxes = selectedObject?.surface === 'back'
+    ? { up: ['y', 10], down: ['y', -10], left: ['x', -10], right: ['x', 10] }
+    : selectedObject?.surface === 'left' || selectedObject?.surface === 'right'
+      ? { up: ['y', 10], down: ['y', -10], left: ['z', -10], right: ['z', 10] }
+      : { up: ['z', -10], down: ['z', 10], left: ['x', -10], right: ['x', 10] };
   const canChangeEnclosure = objects.length === 0;
 
   return (
@@ -389,11 +414,11 @@ export default function TerrariumConfigurator() {
                 {mode === 'translate' && (
                   <div className="mt-3 grid grid-cols-3 gap-1.5" aria-label="Przesuń wybrany element">
                     <span />
-                    <MoveButton label="Przesuń do tyłu" icon={<ArrowUp size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { z: selectedObject.positionMm.z - 10 } })} />
+                    <MoveButton label="Przesuń w górę / do tyłu" icon={<ArrowUp size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { [movementAxes.up[0]]: selectedObject.positionMm[movementAxes.up[0]] + movementAxes.up[1] } })} />
                     <span />
-                    <MoveButton label="Przesuń w lewo" icon={<ArrowLeft size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { x: selectedObject.positionMm.x - 10 } })} />
-                    <MoveButton label="Przesuń w dół" icon={<ArrowDown size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { z: selectedObject.positionMm.z + 10 } })} />
-                    <MoveButton label="Przesuń w prawo" icon={<ArrowRight size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { x: selectedObject.positionMm.x + 10 } })} />
+                    <MoveButton label="Przesuń w lewo" icon={<ArrowLeft size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { [movementAxes.left[0]]: selectedObject.positionMm[movementAxes.left[0]] + movementAxes.left[1] } })} />
+                    <MoveButton label="Przesuń w dół" icon={<ArrowDown size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { [movementAxes.down[0]]: selectedObject.positionMm[movementAxes.down[0]] + movementAxes.down[1] } })} />
+                    <MoveButton label="Przesuń w prawo" icon={<ArrowRight size={15} />} onClick={() => updateSelectedPlacement({ positionMm: { [movementAxes.right[0]]: selectedObject.positionMm[movementAxes.right[0]] + movementAxes.right[1] } })} />
                   </div>
                 )}
                 <p className="mt-3 text-[10px] leading-4 text-white/35">Położenie jest blokowane przy wybranej powierzchni. Element nie może wyjść poza wnętrze.</p>

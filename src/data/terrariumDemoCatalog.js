@@ -60,7 +60,7 @@ export const terrariumDemoCatalog = [
   {
     id: 'demo-cork-shelf',
     name: 'Półka korkowa',
-    description: 'Przykład elementu mocowanego do tylnej ściany.',
+    description: 'Przykład elementu mocowanego do tylnej lub bocznej ściany.',
     price_cents: 3499,
     stock: 8,
     is_active: true,
@@ -70,7 +70,7 @@ export const terrariumDemoCatalog = [
       terrariumDesigner: {
         role: 'element',
         dimensionsMm: { width: 240, height: 28, depth: 140 },
-        allowedMountSurfaces: ['back'],
+        allowedMountSurfaces: ['back', 'left', 'right'],
         model: model('demo-shelf')
       }
     }

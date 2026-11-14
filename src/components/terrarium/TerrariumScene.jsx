@@ -1,6 +1,7 @@
 import React, { Suspense, useMemo, useRef } from 'react';
 import { Canvas } from '@react-three/fiber';
 import { OrbitControls, TransformControls, useGLTF } from '@react-three/drei';
+import * as THREE from 'three';
 import * as SkeletonUtils from 'three/addons/utils/SkeletonUtils.js';
 import { millimetersToMeters, normalizePlacement } from '../../../shared/terrarium.js';
 
@@ -175,9 +176,11 @@ function PlacedProduct({
   onSelect,
   onTransform,
   readOnly,
-  enclosure
+  enclosure,
+  orbitControlsRef
 }) {
   const groupRef = useRef(null);
+  const dragRef = useRef(null);
   const config = product.specs.terrariumDesigner;
   const position = toVectorMeters(item.positionMm);
   const rotation = toRadians(item.rotationDeg);
@@ -188,22 +191,39 @@ function PlacedProduct({
     y: surface === 'back' || surface === 'left' || surface === 'right',
     z: surface === 'floor' || surface === 'ceiling' || surface === 'left' || surface === 'right'
   };
+  const getNormalizedTransform = () => {
+    if (!groupRef.current) return;
+    return normalizePlacement({
+      positionMm: {
+        x: groupRef.current.position.x * 1000,
+        y: groupRef.current.position.y * 1000,
+        z: groupRef.current.position.z * 1000
+      },
+      rotationDeg: toDegrees(groupRef.current.rotation),
+      surface,
+      product: config,
+      enclosure: enclosure.specs.terrariumDesigner
+    });
+  };
+  const applyNormalizedTransform = (next) => {
+    if (!groupRef.current || !next) return;
+    groupRef.current.position.set(...toVectorMeters(next.positionMm));
+    groupRef.current.rotation.set(...toRadians(next.rotationDeg));
+  };
   const handleObjectChange = () => {
     if (!groupRef.current) return;
     try {
-      const next = normalizePlacement({
-        positionMm: {
-          x: groupRef.current.position.x * 1000,
-          y: groupRef.current.position.y * 1000,
-          z: groupRef.current.position.z * 1000
-        },
-        rotationDeg: toDegrees(groupRef.current.rotation),
-        surface,
-        product: config,
-        enclosure: enclosure.specs.terrariumDesigner
-      });
-      groupRef.current.position.set(...toVectorMeters(next.positionMm));
-      groupRef.current.rotation.set(...toRadians(next.rotationDeg));
+      applyNormalizedTransform(getNormalizedTransform());
+    } catch {
+      groupRef.current.position.set(...position);
+      groupRef.current.rotation.set(...rotation);
+    }
+  };
+  const commitTransform = () => {
+    if (!groupRef.current) return;
+    try {
+      const next = getNormalizedTransform();
+      applyNormalizedTransform(next);
       onTransform(item.instanceId, next);
     } catch {
       groupRef.current.position.set(...position);
@@ -226,6 +246,60 @@ function PlacedProduct({
       }}
       onPointerOver={() => { document.body.style.cursor = 'grab'; }}
       onPointerOut={() => { document.body.style.cursor = ''; }}
+      onPointerDown={(event) => {
+        if (readOnly || mode !== 'translate' || !groupRef.current) return;
+        event.stopPropagation();
+        onSelect(item.instanceId);
+        const normal = surface === 'floor' || surface === 'ceiling'
+          ? new THREE.Vector3(0, 1, 0)
+          : surface === 'back' ? new THREE.Vector3(0, 0, 1) : new THREE.Vector3(1, 0, 0);
+        const plane = new THREE.Plane().setFromNormalAndCoplanarPoint(normal, groupRef.current.position);
+        const intersection = event.ray.intersectPlane(plane, new THREE.Vector3());
+        if (!intersection) return;
+        dragRef.current = {
+          pointerId: event.pointerId,
+          plane,
+          offset: groupRef.current.position.clone().sub(intersection)
+        };
+        event.target.setPointerCapture(event.pointerId);
+        if (orbitControlsRef.current) orbitControlsRef.current.enabled = false;
+        document.body.style.cursor = 'grabbing';
+      }}
+      onPointerMove={(event) => {
+        const drag = dragRef.current;
+        if (!drag || drag.pointerId !== event.pointerId || !groupRef.current) return;
+        event.stopPropagation();
+        const intersection = event.ray.intersectPlane(drag.plane, new THREE.Vector3());
+        if (!intersection) return;
+        const target = intersection.add(drag.offset);
+        try {
+          const next = normalizePlacement({
+            positionMm: { x: target.x * 1000, y: target.y * 1000, z: target.z * 1000 },
+            rotationDeg: toDegrees(groupRef.current.rotation),
+            surface,
+            product: config,
+            enclosure: enclosure.specs.terrariumDesigner
+          });
+          applyNormalizedTransform(next);
+        } catch {
+          // Keep the last valid position when a product cannot fit.
+        }
+      }}
+      onPointerUp={(event) => {
+        if (!dragRef.current || dragRef.current.pointerId !== event.pointerId) return;
+        event.stopPropagation();
+        dragRef.current = null;
+        try { event.target.releasePointerCapture(event.pointerId); } catch { /* Pointer capture may already be released. */ }
+        if (orbitControlsRef.current) orbitControlsRef.current.enabled = true;
+        document.body.style.cursor = 'grab';
+        commitTransform();
+      }}
+      onPointerCancel={() => {
+        dragRef.current = null;
+        if (orbitControlsRef.current) orbitControlsRef.current.enabled = true;
+        document.body.style.cursor = '';
+        commitTransform();
+      }}
     >
       {model}
       {selected && !readOnly && <mesh>
@@ -247,6 +321,7 @@ function PlacedProduct({
       showY={mode === 'rotate' ? rotateNormal === 'y' : translateAxes.y}
       showZ={mode === 'rotate' ? rotateNormal === 'z' : translateAxes.z}
       onObjectChange={handleObjectChange}
+      onMouseUp={commitTransform}
     >
       {object}
     </TransformControls>
@@ -254,6 +329,7 @@ function PlacedProduct({
 }
 
 function SceneContents({ enclosure, products, objects, selectedId, mode, onSelect, onTransform, readOnly }) {
+  const orbitControlsRef = useRef(null);
   const { innerDimensionsMm } = enclosure.specs.terrariumDesigner;
   const height = millimetersToMeters(innerDimensionsMm.height);
 
@@ -282,10 +358,11 @@ function SceneContents({ enclosure, products, objects, selectedId, mode, onSelec
             onTransform={onTransform}
             readOnly={readOnly}
             enclosure={enclosure}
+            orbitControlsRef={orbitControlsRef}
           />
         );
       })}
-      <OrbitControls makeDefault enableDamping dampingFactor={0.09} minDistance={0.7} maxDistance={3.4} maxPolarAngle={Math.PI * 0.92} />
+      <OrbitControls ref={orbitControlsRef} makeDefault enableDamping dampingFactor={0.09} minDistance={0.7} maxDistance={3.4} maxPolarAngle={Math.PI * 0.92} />
     </>
   );
 }
@@ -327,7 +404,7 @@ export default function TerrariumScene({
       </Canvas>
       </TerrariumSceneErrorBoundary>
       <div className="pointer-events-none absolute bottom-3 left-3 rounded-md border border-white/10 bg-black/55 px-3 py-2 text-[11px] text-white/65 backdrop-blur">
-        Przeciągnij, aby obrócić widok · kółko myszy, aby przybliżyć
+        Złap element lub strzałkę, aby go ustawić · puste miejsce obraca widok
       </div>
     </div>
   );

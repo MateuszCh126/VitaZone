@@ -20,6 +20,10 @@ export const lazyWithRetry = (componentImport) => React.lazy(async () => {
         window.sessionStorage.removeItem(RELOAD_FLAG_KEY);
         return importedModule;
     } catch (error) {
+        // A hard reload cannot repair a failed module while Vite is serving
+        // the same development graph, and can create a reload loop.
+        if (import.meta.env.DEV) throw error;
+
         if (!alreadyReloaded) {
             window.sessionStorage.setItem(RELOAD_FLAG_KEY, 'true');
             window.location.replace(buildReloadUrl());
