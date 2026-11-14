@@ -54,7 +54,7 @@ const Login = () => {
             >
                 <div className="text-center mb-8">
                     <h2 className="text-3xl font-bold mb-2">Witaj ponownie</h2>
-                    <p className="text-gray-400">Uzyskaj dostęp do swojej kolekcji.</p>
+                    <p className="text-gray-400">Sprawdzaj zamówienia i zarządzaj danymi konta.</p>
                 </div>
 
                 {serverError && (

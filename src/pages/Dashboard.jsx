@@ -278,13 +278,13 @@ const Dashboard = () => {
                                                     onClick={() => handleReturnOrder(order.id)}
                                                     className="text-gray-400 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-white/10 hover:bg-white/5"
                                                 >
-                                                    Zwróć
+                                                    Napisz w sprawie zwrotu
                                                 </button>
                                                 <button
                                                     onClick={() => handleReportIssue(order.id)}
                                                     className="text-gray-400 hover:text-white px-4 py-2 rounded-lg text-sm font-bold transition-colors border border-white/10 hover:bg-white/5"
                                                 >
-                                                    Zgłoś problem
+                                                    Napisz w sprawie tego zamówienia
                                                 </button>
                                             </div>
                                         </div>

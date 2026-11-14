@@ -46,7 +46,7 @@ describe('buildProductSchema', () => {
     })).toBeNull();
   });
 
-  it.each(['', ' ', false, '0', null, undefined])('rejects malformed price value %s', (priceCents) => {
+  it.each(['', ' ', false, '0', 0, null, undefined])('rejects malformed price value %s', (priceCents) => {
     expect(buildProductSchema({ ...product, price_cents: priceCents }, {
       canonicalUrl: 'https://vitazone.vercel.app/product/42',
       imageBaseUrl: 'https://vitazone.vercel.app'

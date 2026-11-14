@@ -23,7 +23,7 @@ describe('Checkout guest flow', () => {
     it('lets a signed-out customer view checkout and labels the email field', () => {
         render(<MemoryRouter><Checkout /></MemoryRouter>);
 
-        expect(screen.getByRole('heading', { name: 'Bezpieczna kasa' })).toBeInTheDocument();
+        expect(screen.getByRole('heading', { name: 'Finalizacja zamówienia' })).toBeInTheDocument();
         expect(screen.getByLabelText(/Adres e-mail/)).toBeInTheDocument();
         expect(screen.getByLabelText(/Telefon do dostawy/)).toBeInTheDocument();
     });

@@ -172,7 +172,7 @@ const Checkout = () => {
                 if (data.checkoutStatus === 'expired') {
                     setCheckoutState({
                         type: 'expired',
-                        message: 'Sesja płatności wygasła. Stock został zwolniony, możesz rozpocząć checkout ponownie.'
+                        message: 'Sesja płatności wygasła. Rezerwacja produktów została zwolniona. Możesz rozpocząć zakup ponownie.'
                     });
                     return;
                 }
@@ -386,7 +386,7 @@ const Checkout = () => {
                             {checkoutState.type === 'pending' && 'Synchronizacja w toku'}
                             {checkoutState.type === 'cancelled' && 'Płatność przerwana'}
                             {checkoutState.type === 'expired' && 'Sesja wygasła'}
-                            {checkoutState.type === 'error' && 'Nie udało się dokończyć checkoutu'}
+                            {checkoutState.type === 'error' && 'Nie udało się zakończyć płatności'}
                         </h2>
                         <p className="text-sm text-gray-200">{checkoutState.message}</p>
                     </div>
@@ -398,7 +398,7 @@ const Checkout = () => {
     if (loading) {
         return (
             <div className="flex min-h-screen items-center justify-center px-6 py-12 text-center">
-                <div className="text-sm text-gray-400">Ładowanie checkoutu...</div>
+                <div className="text-sm text-gray-400">Ładowanie podsumowania zamówienia...</div>
             </div>
         );
     }
@@ -410,7 +410,7 @@ const Checkout = () => {
 
                 <div className="mb-8 flex items-center justify-between gap-4">
                     <div>
-                        <h1 className="text-3xl font-bold">Bezpieczna kasa</h1>
+                        <h1 className="text-3xl font-bold">Finalizacja zamówienia</h1>
                         <p className="mt-2 text-sm text-gray-400">
                             Finalizacja zamówienia odbywa się w Stripe Checkout. Dane karty wpisujesz wyłącznie w infrastrukturze Stripe.
                         </p>
@@ -419,14 +419,14 @@ const Checkout = () => {
                         <div className="flex items-center gap-2 text-sm font-bold text-primary">
                             <ShieldCheck size={16} /> Stripe + HTTPS
                         </div>
-                        <div className="mt-1 text-xs text-gray-400">Platnosc przebiega na zabezpieczonej stronie Stripe.</div>
+                        <div className="mt-1 text-xs text-gray-400">Płatność odbywa się na stronie Stripe.</div>
                     </div>
                 </div>
 
                 <div className="flex flex-col gap-12 lg:flex-row">
                     <div className="flex-1">
                         <div className="mb-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>1</div>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 1 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>1</div>
                             <h2 ref={deliveryHeadingRef} tabIndex={-1} aria-current={step === 1 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 1 ? 'text-white' : 'text-gray-400'}`}>Dane dostawy</h2>
                         </div>
 
@@ -491,7 +491,7 @@ const Checkout = () => {
                         )}
 
                         <div className="mb-8 mt-8 flex items-center gap-4">
-                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-500'}`}>2</div>
+                            <div className={`flex h-8 w-8 items-center justify-center rounded-full font-bold ${step === 2 ? 'bg-primary text-black' : 'bg-gray-800 text-gray-300'}`}>2</div>
                             <h2 ref={paymentHeadingRef} tabIndex={-1} aria-current={step === 2 ? 'step' : undefined} className={`text-xl font-bold focus:outline-none focus-visible:ring-2 focus-visible:ring-primary ${step === 2 ? 'text-white' : 'text-gray-400'}`}>Płatność</h2>
                         </div>
 
@@ -500,7 +500,7 @@ const Checkout = () => {
                                 <div className="rounded-2xl border border-primary/30 bg-white/5 p-5">
                                     <div className="flex items-center gap-3 text-lg font-bold">
                                         <CreditCard className="text-primary" />
-                                        Bezpieczna płatność w Stripe Checkout
+                                        Płatność przez Stripe Checkout
                                     </div>
                                     <p className="mt-2 text-sm text-gray-400">
                                         Po kliknięciu przycisku przejdziesz do hostowanej strony Stripe, gdzie opłacisz zamówienie kartą lub inną metodą aktywną na koncie.
@@ -508,7 +508,7 @@ const Checkout = () => {
                                 </div>
 
                                 <div className="rounded-2xl border border-white/10 bg-white/5 p-5">
-                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-500">Kod rabatowy</label>
+                                    <label htmlFor="checkout-promo-code" className="mb-2 block text-xs font-bold uppercase text-gray-400">Kod rabatowy</label>
                                     <div className="flex gap-2">
                                         <input
                                             id="checkout-promo-code"
@@ -608,9 +608,9 @@ const Checkout = () => {
                                     </button>
                                 </div>
 
-                                <div className="flex items-center justify-center gap-2 text-xs text-gray-500">
+                                <div className="flex items-center justify-center gap-2 text-xs text-gray-400">
                                     <ShieldCheck size={14} />
-                                    Bezpieczne szyfrowane polaczenie
+                                    Dane płatności podajesz na stronie Stripe.
                                 </div>
                             </motion.div>
                         )}
@@ -623,7 +623,7 @@ const Checkout = () => {
                             <div className="max-h-80 space-y-4 overflow-y-auto pr-2">
                                 {cart.length === 0 && (
                                     <div className="rounded-xl border border-dashed border-white/10 bg-black/20 p-5 text-sm text-gray-400">
-                                        Koszyk jest pusty. Dodaj produkty, aby rozpocząć checkout.
+                                        Koszyk jest pusty. Dodaj produkty, aby przejść do płatności.
                                     </div>
                                 )}
 

@@ -22,7 +22,7 @@ const MouseGlow = () => {
         <motion.div
             aria-hidden="true"
             style={{ x, y, translateX: '-50%', translateY: '-50%' }}
-            className="pointer-events-none fixed left-0 top-0 z-0 hidden h-36 w-36 rounded-full bg-primary/5 blur-[48px] md:block"
+            className="pointer-events-none fixed left-0 top-0 z-0 hidden h-24 w-24 rounded-full bg-primary/[0.03] blur-[32px] md:block"
         />
     );
 };

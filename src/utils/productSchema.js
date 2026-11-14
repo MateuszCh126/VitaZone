@@ -19,7 +19,7 @@ export const buildProductSchema = (product, { canonicalUrl, imageBaseUrl }) => {
   const priceCents = product.price_cents;
   const hasPrice = typeof priceCents === 'number'
     && Number.isSafeInteger(priceCents)
-    && priceCents >= 0;
+    && priceCents > 0;
 
   if (!images.length || !hasPrice) return null;
 

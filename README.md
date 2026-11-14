@@ -14,11 +14,13 @@ React storefront for terrarium equipment and exotic animal products.
 
 ## Local Development
 
-- Install dependencies: `pnpm install` or `npm install`
-- Start frontend + API: `npm run dev`
-- Run lint: `npm run lint`
-- Run tests with coverage: `npm run test:coverage`
-- Build production bundle: `npm run build`
+- Install dependencies with the pinned package manager: `pnpm install`
+- Start frontend + API: `pnpm dev`
+- Run lint: `pnpm lint`
+- Run tests with coverage: `pnpm test:coverage`
+- Build production bundle: `pnpm build`
+
+`pnpm migrate` is a legacy, destructive schema reset and is blocked by default. It drops tables and must only be used with a disposable local database after explicitly setting `ALLOW_DESTRUCTIVE_SCHEMA_RESET=true`. A remote target needs a second opt-in, and production/Vercel targets are always refused. This command is not the routine forward-migration workflow; the migration system is documented for replacement in the technical roadmap.
 
 ## Deployment
 - Production deploys are triggered from `origin/main` through Vercel Git Integration.

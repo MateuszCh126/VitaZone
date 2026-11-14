@@ -61,7 +61,7 @@ const TermsAndConditions = () => {
             <section className="space-y-3">
               <h2 className="text-2xl font-semibold text-emerald-400">4. Dostawa</h2>
               <p className="leading-relaxed text-neutral-300">
-                Koszt dostawy jest pokazany w podsumowaniu checkoutu przed przejściem do płatności. Metody, terminy realizacji i zasady transportu poszczególnych produktów wymagają potwierdzenia przez sprzedawcę przed publikacją.
+                Koszt dostawy jest pokazany w podsumowaniu zamówienia przed przejściem do płatności. Metody, terminy realizacji i zasady transportu poszczególnych produktów wymagają potwierdzenia przez sprzedawcę przed publikacją.
               </p>
             </section>
 

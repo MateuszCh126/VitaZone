@@ -58,7 +58,7 @@ Kontenery trzymają się `container mx-auto`, z bocznym gutterem 16 px na telefo
 
 ### Tło i ruch
 
-- Halo kursora 320×320 px, `primary/10`, blur 105 px, bez screen blending i bez opacity layer. Ograniczone do `md` i precyzyjnego wskaźnika.
+- Halo kursora 96×96 px, `primary/3`, blur 32 px, bez screen blending i bez opacity layer. Ograniczone do `md` i precyzyjnego wskaźnika. Efekt ma być prawie niewidocznym tłem, nie plamą przykrywającą treść; usuń go, jeśli w realnym renderze nadal odciąga uwagę.
 - Ciągłe cząsteczki zostały usunięte z powierzchni sklepu. Ograniczone ruchy systemowe dostają globalny override animacji i transitionów; ambient effects nie są ładowane, gdy `prefers-reduced-motion: reduce` jest aktywne.
 - Żadna dekoracyjna animacja nie ma opóźniać widoczności produktu ani bloku decyzji.
 

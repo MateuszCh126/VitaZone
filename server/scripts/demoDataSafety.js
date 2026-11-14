@@ -21,3 +21,17 @@ export const assertDemoDataDatabaseAccess = (operation, env = process.env) => {
         throw new Error('Demo data can only target a local database unless ALLOW_REMOTE_DEMO_DATABASE=true is explicitly set.');
     }
 };
+
+export const assertDestructiveSchemaResetAccess = (env = process.env) => {
+    if (env.NODE_ENV === 'production' || env.VERCEL) {
+        throw new Error('Refusing to run a destructive schema reset in a production/Vercel environment.');
+    }
+
+    if (env.ALLOW_DESTRUCTIVE_SCHEMA_RESET !== 'true') {
+        throw new Error('Schema reset is disabled. Set ALLOW_DESTRUCTIVE_SCHEMA_RESET=true only for a disposable database.');
+    }
+
+    if (!isLocalDatabaseHost(env.DATABASE_URL) && env.ALLOW_REMOTE_DESTRUCTIVE_SCHEMA_RESET !== 'true') {
+        throw new Error('A remote schema reset requires a separate ALLOW_REMOTE_DESTRUCTIVE_SCHEMA_RESET=true opt-in.');
+    }
+};

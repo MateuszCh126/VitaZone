@@ -240,7 +240,7 @@ const AdminDashboard = () => {
                 </div>
                 <div>
                     <h1 className="text-4xl font-bold">Zarządzanie sklepem</h1>
-                    <p className="text-gray-500">Status sklepu: <span className="text-green-500 font-bold uppercase text-xs tracking-widest ml-1">Aktywny</span></p>
+                    <p className="text-gray-400">Panel administracyjny</p>
                 </div>
             </div>
 
@@ -297,7 +297,7 @@ const AdminDashboard = () => {
                                     <h2 className="text-2xl font-bold">Kolejka zamówień</h2>
                                     <div className="flex gap-2">
                                         <div className="glass px-4 py-2 rounded-lg text-sm flex items-center gap-2">
-                                            <Search size={14} className="text-gray-500" />
+                                            <Search size={14} className="text-gray-400" />
                                             <input className="bg-transparent border-none outline-none text-xs" placeholder="Szukaj zamówień..." />
                                         </div>
                                     </div>
@@ -323,7 +323,7 @@ const AdminDashboard = () => {
                                                 <div className="flex items-center gap-6">
                                                     <div className="text-right">
                                                         <div className="text-xl font-bold mb-1">{order.total_amount} zł</div>
-                                                        <div className="text-[10px] text-gray-500 uppercase tracking-widest">{order.payment_method}</div>
+                                                        <div className="text-[10px] text-gray-400 uppercase tracking-widest">{order.payment_method}</div>
                                                     </div>
                                                     <div className="h-10 w-[1px] bg-white/10 hidden md:block"></div>
                                                     <div className="flex flex-col gap-2">
@@ -386,7 +386,7 @@ const AdminDashboard = () => {
                                             <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6 text-sm">
                                                 {/* Items List */}
                                                 <div className="glass p-4 rounded-lg">
-                                                    <div className="text-gray-500 text-xs uppercase mb-2 font-bold">Produkty</div>
+                                                    <div className="text-gray-400 text-xs uppercase mb-2 font-bold">Produkty</div>
                                                     <ul className="space-y-2">
                                                         {Array.isArray(order.items) && order.items.map((item, idx) => (
                                                             <li key={idx} className="flex justify-between text-gray-300">
@@ -398,7 +398,7 @@ const AdminDashboard = () => {
 
                                                 {/* Shipping Info */}
                                                 <div className="glass p-4 rounded-lg">
-                                                    <div className="text-gray-500 text-xs uppercase mb-2 font-bold">Wysyłka</div>
+                                                    <div className="text-gray-400 text-xs uppercase mb-2 font-bold">Wysyłka</div>
                                                     {order.shipping_address_json ? (
                                                         <div className="text-gray-300">
                                                             <p>{order.shipping_address_json.country}, {order.shipping_address_json.city}</p>
@@ -412,18 +412,18 @@ const AdminDashboard = () => {
                                                             )}
                                                         </div>
                                                     ) : (
-                                                        <p className="text-gray-500 italic">Brak adresu</p>
+                                                        <p className="text-gray-400 italic">Brak adresu</p>
                                                     )}
                                                 </div>
                                             </div>
 
                                             <div className="grid grid-cols-2 gap-2 mb-6 text-sm">
                                                 <div className="glass p-3 rounded-lg text-center">
-                                                    <div className="text-gray-500 text-xs uppercase mb-1">Data</div>
+                                                    <div className="text-gray-400 text-xs uppercase mb-1">Data</div>
                                                     <div className="font-mono">{new Date(order.created_at).toLocaleDateString()}</div>
                                                 </div>
                                                 <div className="glass p-3 rounded-lg text-center">
-                                                    <div className="text-gray-500 text-xs uppercase mb-1">Kwota</div>
+                                                    <div className="text-gray-400 text-xs uppercase mb-1">Kwota</div>
                                                     <div className="font-mono text-primary font-bold">{parseFloat(order.total_amount).toFixed(2)} zł</div>
                                                 </div>
                                             </div>
@@ -465,7 +465,7 @@ const AdminDashboard = () => {
                                         </div>
                                     ))}
                                     {orders.filter(o => PROCESSING_ORDER_STATUSES.includes(o.status)).length === 0 && (
-                                        <div className="text-center text-gray-500 py-12">
+                                        <div className="text-center text-gray-400 py-12">
                                             Brak zamówień wymagających obsługi.
                                         </div>
                                     )}
@@ -522,7 +522,7 @@ const AdminDashboard = () => {
                                                             onClick={() => handleToggleActive(product)}
                                                             className={`flex items-center gap-2 text-xs font-bold px-2 py-1 rounded transition-colors ${product.is_active
                                                                 ? 'bg-green-500/10 text-green-500 hover:bg-green-500/20'
-                                                                : 'bg-gray-500/10 text-gray-500 hover:bg-gray-500/20'
+                                                                : 'bg-gray-500/10 text-gray-400 hover:bg-gray-500/20'
                                                                 }`}
                                                         >
                                                             {product.is_active ? <Eye size={14} /> : <EyeOff size={14} />}
@@ -586,7 +586,7 @@ const AdminDashboard = () => {
                                                 <tr key={u.id} className="hover:bg-white/5 transition-colors">
                                                     <td className="p-4">
                                                         <div className="font-bold">{u.name}</div>
-                                                        <div className="text-xs text-gray-500">{u.email}</div>
+                                                        <div className="text-xs text-gray-400">{u.email}</div>
                                                     </td>
                                                     <td className="p-4">
                                                         <span className={`text-[10px] px-2 py-1 rounded font-bold uppercase ${u.role === 'admin' ? 'bg-primary/20 text-primary' : 'bg-white/10 text-gray-400'}`}>
@@ -649,7 +649,7 @@ const AdminDashboard = () => {
                                 <div className="space-y-4">
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-4 text-sm">
                                         <div className="glass rounded-xl p-4">
-                                            <div className="text-xs uppercase text-gray-500 mb-2">Klient</div>
+                                            <div className="text-xs uppercase text-gray-400 mb-2">Klient</div>
                                             <div className="font-bold">{selectedOrderDetails.user_email}</div>
                                             <div className="text-gray-400">
                                                 {(selectedOrderDetails.first_name || selectedOrderDetails.last_name)
@@ -658,15 +658,15 @@ const AdminDashboard = () => {
                                             </div>
                                         </div>
                                         <div className="glass rounded-xl p-4">
-                                            <div className="text-xs uppercase text-gray-500 mb-2">Płatność i status</div>
+                                            <div className="text-xs uppercase text-gray-400 mb-2">Płatność i status</div>
                                             <div className="font-bold">{Number(selectedOrderDetails.total_amount || 0).toFixed(2)} zł</div>
                                             <div className="text-gray-400">{translateStatus(selectedOrderDetails.status)}</div>
-                                            <div className="text-[11px] uppercase tracking-wider text-gray-500 mt-1">{selectedOrderDetails.payment_method}</div>
+                                        <div className="text-[11px] uppercase tracking-wider text-gray-400 mt-1">{selectedOrderDetails.payment_method}</div>
                                         </div>
                                     </div>
 
                                     <div className="glass rounded-xl p-4 text-sm">
-                                        <div className="text-xs uppercase text-gray-500 mb-2">Adres dostawy</div>
+                                        <div className="text-xs uppercase text-gray-400 mb-2">Adres dostawy</div>
                                         {selectedOrderDetails.shipping_address_json ? (
                                             <div className="space-y-1 text-gray-300">
                                                 <div>{selectedOrderDetails.shipping_address_json.country}, {selectedOrderDetails.shipping_address_json.city}</div>
@@ -688,12 +688,12 @@ const AdminDashboard = () => {
                                                 )}
                                             </div>
                                         ) : (
-                                            <div className="text-gray-500 italic">Brak danych adresowych.</div>
+                                            <div className="text-gray-400 italic">Brak danych adresowych.</div>
                                         )}
                                     </div>
 
                                     <div className="glass rounded-xl p-4 text-sm">
-                                        <div className="text-xs uppercase text-gray-500 mb-2">Pozycje zamówienia</div>
+                                        <div className="text-xs uppercase text-gray-400 mb-2">Pozycje zamówienia</div>
                                         <div className="space-y-2">
                                             {(selectedOrderDetails.items || []).map((item) => (
                                                 <div key={item.id} className="flex justify-between gap-3 border-b border-white/5 pb-2 last:border-b-0 last:pb-0">
@@ -730,10 +730,10 @@ const StatCard = ({ icon, label, value, subtext }) => (
         </div>
         <div className="flex items-center gap-3 mb-4">
             <div className="p-2 bg-white/5 rounded-lg">{icon}</div>
-            <span className="text-xs font-medium text-gray-500 uppercase tracking-widest">{label}</span>
+            <span className="text-xs font-medium text-gray-400 uppercase tracking-widest">{label}</span>
         </div>
         <div className="text-3xl font-bold mb-1">{value}</div>
-        <div className="text-[10px] text-gray-500">{subtext}</div>
+        <div className="text-[10px] text-gray-400">{subtext}</div>
     </div>
 );
 

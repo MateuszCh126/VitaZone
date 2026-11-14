@@ -327,15 +327,13 @@ const Shop = () => {
             </AnimatePresence>
           </motion.div>
 
-          {filteredProducts.length === 0 && (
+          {!catalogError && filteredProducts.length === 0 && (
             <div className="rounded-3xl border border-white/10 bg-white/[0.03] px-8 py-16 text-center">
               <h2 className="text-2xl font-bold text-white">
-                {catalogError ? 'Oferta chwilowo niedostępna' : 'Brak produktów dla wybranych filtrów'}
+                Brak produktów dla wybranych filtrów
               </h2>
               <p className="mt-3 text-gray-400">
-                {catalogError
-                  ? 'Jeśli problem się powtarza, odśwież stronę lub wróć za chwilę.'
-                  : 'Spróbuj poszerzyć budżet, zmienić kategorię albo użyć krótszej frazy wyszukiwania.'}
+                Spróbuj poszerzyć budżet, zmienić kategorię albo użyć krótszej frazy wyszukiwania.
               </p>
             </div>
           )}

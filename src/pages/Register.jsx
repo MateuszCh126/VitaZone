@@ -69,8 +69,8 @@ const Register = () => {
                 className="glass p-8 md:p-12 rounded-2xl w-full max-w-md relative z-10 border border-white/10"
             >
                 <div className="text-center mb-8">
-                    <h2 className="text-3xl font-bold mb-2">Dołącz do Nas</h2>
-                    <p className="text-gray-400">Załóż bezpieczne konto i zadbaj o pupila.</p>
+                    <h2 className="text-3xl font-bold mb-2">Utwórz konto</h2>
+                    <p className="text-gray-400">Konto pozwala sprawdzać historię swoich zamówień.</p>
                 </div>
 
                 {serverError && (

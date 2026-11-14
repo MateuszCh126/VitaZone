@@ -13,7 +13,7 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 
 ## Wykonane
 
-- Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% do 320×320 px, `primary/10`, blur 105 px i bez screen blend; po uwagach z przeglądu zmniejszono je dalej do 144×144 px, `primary/5`, blur 48 px.
+- Halo kursora: z 600×600 px, `primary/20`, blur 140 px, `mix-blend-screen`, krycie 60% do 320×320 px, `primary/10`, blur 105 px i bez screen blend; po uwagach z przeglądu zmniejszono je dalej do 144×144 px, `primary/5`, blur 48 px, a w audycie do 96×96 px, `primary/3`, blur 32 px.
 - Usunięto stale animowaną warstwę cząsteczek z `App`; nieużywany komponent usunięto.
 - Podmieniono niedziałający adres zdjęcia okładkowego kategorii „Węże”; poprawiono też obraz i datę przykładowego produktu używanego przez testy, aby lokalny podgląd nie przedstawiał błędnego zdjęcia ani fałszywej etykiety nowości.
 - Zredukowano motion zoomu zdjęć do 1.03/220 ms.
@@ -39,6 +39,7 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 - Ustawienia analityki można ponownie otworzyć ze stopki; poprawiono etykietę pola czatu, zapowiedź nowych wiadomości, obsługę reduced motion w scrollowaniu oraz semantykę i fokus mobilnego menu. Koszyk otrzymał obsługę dialogu, Escape, pułapkę fokusu i przywrócenie fokusu.
 - Po zapisaniu zgody cookies fokus wraca do trwałego przycisku ustawień prywatności, także po pierwszej decyzji z banera.
 - Checkout używa jasnego nagłówka „Finalizacja zamówienia”, nie obiecuje niepotwierdzonej listy metod przed przejściem do Stripe i pokazuje polskie komunikaty o wygaśnięciu rezerwacji.
+- Przy błędzie pobrania katalogu listing pokazuje jedno źródło komunikatu zamiast powtarzać ten sam problem w stanie pustych wyników.
 - Bieżący krok checkoutu ma semantyczne `aria-current="step"`; numery kroków są dekoracyjne dla czytnika ekranu.
 - Galeria produktu ma nazwaną sekcję, ogłasza bieżące zdjęcie czytnikom ekranu i pozwala przełączać je strzałkami klawiatury bez utraty fokusu; zdjęcia nie zmieniają się automatycznie.
 - Profil użytkownika nie jest już trwale kopiowany do `localStorage`; istniejący klucz `exotic_user` jest usuwany, a sesję przy odświeżeniu odtwarza endpoint `/api/auth/me` z cookie. Adres pozostaje dostępny w pamięci aplikacji do uzupełnienia checkoutu.

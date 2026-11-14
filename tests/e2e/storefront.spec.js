@@ -33,6 +33,15 @@ test.describe('VitaZone storefront (demo data)', () => {
       body: JSON.stringify({ shippingAmountCents: 1500 })
     }));
     await page.route('**/api/products**', async (route) => {
+      if (new URL(page.url()).searchParams.has('catalog-error-test')) {
+        await route.fulfill({
+          status: 503,
+          contentType: 'application/json',
+          body: JSON.stringify({ error: 'Demo catalog failure' })
+        });
+        return;
+      }
+
       const url = new URL(route.request().url());
       const isProductDetail = url.pathname.endsWith(`/api/products/${demoProduct.id}`);
       await route.fulfill({
@@ -105,6 +114,47 @@ test.describe('VitaZone storefront (demo data)', () => {
     await expect(page.getByRole('status')).toContainText('Znaleziono 1 produkt');
   });
 
+  test('shows one actionable catalog error instead of duplicating an empty state', async ({ page }) => {
+    await page.goto('/shop?catalog-error-test');
+
+    await expect(page.getByRole('alert')).toContainText('Nie udało się pobrać pełnej oferty');
+    await expect(page.getByRole('button', { name: 'Spróbuj ponownie' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Oferta chwilowo niedostępna' })).toHaveCount(0);
+  });
+
+  test('renders every application route at a narrow viewport without a React crash', async ({ page }) => {
+    const pageErrors = [];
+    page.on('pageerror', (error) => pageErrors.push(error.message));
+    await page.setViewportSize({ width: 390, height: 844 });
+
+    const routes = [
+      '/',
+      '/shop',
+      `/product/${demoProduct.id}`,
+      '/about',
+      '/contact',
+      '/faq',
+      '/terms',
+      '/privacy',
+      '/cookies',
+      '/withdrawal',
+      '/login',
+      '/register',
+      '/checkout',
+      '/dashboard',
+      '/admin',
+      '/not-a-real-route'
+    ];
+
+    for (const route of routes) {
+      await page.goto(route);
+      await expect(page.getByRole('main')).toBeVisible();
+      expect(await page.evaluate(() => document.documentElement.scrollWidth <= window.innerWidth), route).toBe(true);
+    }
+
+    expect(pageErrors).toEqual([]);
+  });
+
   test('does not show live-animal withdrawal guidance in an accessory-only cart', async ({ page }) => {
     await page.goto(`/product/${demoProduct.id}`);
     await page.getByRole('button', { name: `Dodaj produkt ${demoProduct.name} do koszyka` }).click();
@@ -134,7 +184,7 @@ test.describe('VitaZone storefront (demo data)', () => {
     await page.getByRole('button', { name: /Otwórz koszyk/ }).click();
     await page.getByRole('dialog', { name: /Twój koszyk/ }).getByRole('button', { name: 'Przejdź do płatności' }).click();
 
-    await expect(page.getByRole('heading', { name: 'Bezpieczna kasa' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Finalizacja zamówienia' })).toBeVisible();
     await expect(page.getByRole('heading', { name: 'Dane dostawy' })).toHaveAttribute('aria-current', 'step');
     await expect(page.getByLabel('Adres e-mail')).toHaveAttribute('type', 'email');
     await expect(page.getByLabel('Kod pocztowy')).toHaveAttribute('autocomplete', 'postal-code');

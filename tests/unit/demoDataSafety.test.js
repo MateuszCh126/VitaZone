@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest';
-import { assertDemoDataDatabaseAccess } from '../../server/scripts/demoDataSafety.js';
+import {
+    assertDemoDataDatabaseAccess,
+    assertDestructiveSchemaResetAccess
+} from '../../server/scripts/demoDataSafety.js';
 
 const baseEnv = {
     NODE_ENV: 'development',
@@ -37,6 +40,43 @@ describe('demo database safety gate', () => {
         expect(() => assertDemoDataDatabaseAccess('seed', {
             ...baseEnv,
             ALLOW_DEMO_SEED: 'true'
+        })).not.toThrow();
+    });
+});
+
+describe('destructive schema reset safety gate', () => {
+    it('blocks local schema reset unless it has a separate explicit opt-in', () => {
+        expect(() => assertDestructiveSchemaResetAccess(baseEnv)).toThrow('ALLOW_DESTRUCTIVE_SCHEMA_RESET=true');
+        expect(() => assertDestructiveSchemaResetAccess({
+            ...baseEnv,
+            ALLOW_DESTRUCTIVE_SCHEMA_RESET: 'true'
+        })).not.toThrow();
+    });
+
+    it('always blocks production and Vercel schema resets', () => {
+        expect(() => assertDestructiveSchemaResetAccess({
+            ...baseEnv,
+            NODE_ENV: 'production',
+            ALLOW_DESTRUCTIVE_SCHEMA_RESET: 'true'
+        })).toThrow('production/Vercel');
+        expect(() => assertDestructiveSchemaResetAccess({
+            ...baseEnv,
+            VERCEL: '1',
+            ALLOW_DESTRUCTIVE_SCHEMA_RESET: 'true'
+        })).toThrow('production/Vercel');
+    });
+
+    it('requires a second opt-in for a remote schema reset target', () => {
+        expect(() => assertDestructiveSchemaResetAccess({
+            ...baseEnv,
+            DATABASE_URL: 'postgres://demo.example.test:5432/demo',
+            ALLOW_DESTRUCTIVE_SCHEMA_RESET: 'true'
+        })).toThrow('ALLOW_REMOTE_DESTRUCTIVE_SCHEMA_RESET=true');
+        expect(() => assertDestructiveSchemaResetAccess({
+            ...baseEnv,
+            DATABASE_URL: 'postgres://demo.example.test:5432/demo',
+            ALLOW_DESTRUCTIVE_SCHEMA_RESET: 'true',
+            ALLOW_REMOTE_DESTRUCTIVE_SCHEMA_RESET: 'true'
         })).not.toThrow();
     });
 });
