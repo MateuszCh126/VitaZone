@@ -1,6 +1,6 @@
 ---
 title: "VitaZone: calmer visual layer"
-status: draft-pr-open-awaiting-owner-facts-and-review
+status: merged-pr2-owner-facts-pending
 owner: Codex
 updated: 2026-11-14
 ---
@@ -9,7 +9,7 @@ updated: 2026-11-14
 
 ## Zakres
 
-Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implementacją `codex/vitazone-trust-checkout` (synchronizacja do `e8fb7f3`). [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) jest otwarty jako draft względem gałęzi trust. PR #1 jest do `main`. Zmian nie scalono ani nie wdrożono. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
+Warstwa wizualna i poprawki storefrontu zostały scalone przez [PR #2](https://github.com/MateuszCh126/VitaZone/pull/2) do `main` jako squash commit `005f272`. PR #1 również jest scalony. To nie potwierdza wdrożenia produkcyjnego; historyczne mapowanie Vercel i brakujące dane właściciela nadal wymagają wyjaśnienia. Szczegółowe tokeny oraz responsywne stany opisuje [handoff design systemu](../design-system/vitazone.md).
 
 ## Wykonane
 
@@ -17,7 +17,7 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 - Skrócono główny nagłówek do informacji o kategorii sklepu; logowanie i rejestracja dostały jednolite ciemne powierzchnie zamiast dekoracyjnych rozmytych plam.
 - Pusty checkout prowadzi do katalogu bez niepotrzebnego formularza dostawy; historia konta bez zamówień pokazuje pomocny link do sklepu. Błędy React nie pokazują stack trace użytkownikom produkcyjnym.
 - Dodano lokalny route audit z renderami wszystkich 16 tras desktop/mobile i osobnymi E2E dla mockowanych widoków konta/admina: [audyt](../technical/route-audit.md).
-- Usunięto stale animowaną warstwę cząsteczek z `App`; nieużywany komponent usunięto.
+- Usunięto globalną warstwę cząsteczek z `App`. Na późniejszą prośbę ruch wrócił w ograniczonej formie: osiem dekoracyjnych cząstek tylko w hero, ukrytych przed technologiami asystującymi i wyłączonych dla `prefers-reduced-motion`.
 - Podmieniono niedziałający adres zdjęcia okładkowego kategorii „Węże”; poprawiono też obraz i datę przykładowego produktu używanego przez testy, aby lokalny podgląd nie przedstawiał błędnego zdjęcia ani fałszywej etykiety nowości.
 - Zredukowano motion zoomu zdjęć do 1.03/220 ms.
 - Zdjęciowe karty kategorii i listingu mają wspólny promień 16 px.
@@ -71,4 +71,4 @@ Gałąź `codex/vitazone-visual-refresh` zawiera warstwę wizualną nad implemen
 
 ## Ograniczenia
 
-Brak badań z klientami, danych analitycznych i potwierdzonych źródeł praw do zdjęć. Fotografia, opisy/specyfikacje produktów, warunki dostaw, dane firmy i kontakt wymagają potwierdzenia z właścicielem. Usunięto historyczny kanał `kontakt@animalsshop.pl`; prawdziwy adres nie został jeszcze przekazany. Regulamin, zwroty i polityki prawne nadal wymagają sprawdzenia przez kompetentną osobę. PR #2 jest draftem i nie jest widoczny na produkcji. Historyczny projekt Vercel wskazywał źródłowe repozytorium `MateuszCh126/animalsshop`, nie `MateuszCh126/VitaZone`; dla bieżącego PR nie potwierdzono podglądu. Przed przygotowaniem preview trzeba ustalić źródło wdrożenia.
+Brak badań z klientami, danych analitycznych i potwierdzonych źródeł praw do zdjęć. Fotografia, opisy/specyfikacje produktów, warunki dostaw, dane firmy i kontakt wymagają potwierdzenia z właścicielem. Usunięto historyczny kanał `kontakt@animalsshop.pl`; działający adres nie został jeszcze przekazany. Regulamin, zwroty i polityki prawne nadal wymagają sprawdzenia przez kompetentną osobę. PR #2 jest scalony, ale nie potwierdzono wdrożenia tych zmian. Historyczny projekt Vercel wskazywał źródłowe repozytorium `MateuszCh126/animalsshop`, nie `MateuszCh126/VitaZone`; aktualne mapowanie hostingu nadal wymaga ustalenia.
